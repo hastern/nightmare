@@ -1,49 +1,90 @@
 #!/usr/bin/env python
 
+# ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
+#@file pyTest                                                                  #
+# pyTest is a tool for testing commandline applications.                       #
+#                                                                              #
+#                                                                              #
+#@author Hanno Sternberg <hanno@almostintelligent.de>                          #
+#@date 18.10.2012                                                              #
+# ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
+
 
 import sys
 import os
 import re
 import time
-from subprocess import *
+import subprocess
+
+__package__ = "pyTest"
 
 def isLambda(v):
-  return isinstance(v, type(lambda: None)) and v.__name__ == '<lambda>'
+	""" 
+	Test if a given value is a lambda function
+	
+	@type		v: Anything (preferable a lambda function)
+	@param		v: Some value
+	@rtype: 	Boolean
+	@return:	True, if the value is a lambda function
+	"""
+	return isinstance(v, type(lambda: None)) and v.__name__ == '<lambda>'
 
 class logger:
-	buffer = []
+	"""Logger class"""
+	_buffer = []
+	"""Message buffer"""
 	@staticmethod
 	def log(str):
 		"""
-		Writes a log message
+		Writes a log message to the buffer
 		
 		@type	str: String
 		@param	str: Log message
 		"""
 		msg = "[{0}] {1}".format(time.strftime("%H:%M:%S") , str.strip("\r\n") )
-		logger.buffer.append(msg)
+		logger._buffer.append(msg)
 		
 	@staticmethod
 	def flush(quiet = False):
+		"""
+		flushes the message buffer
+		
+		@type	quiet: Boolean
+		@param	quiet: Flag if the buffer should be printed or not
+		"""
 		if not quiet:
-			for b in logger.buffer:
+			for b in logger._buffer:
 				print b
 			sys.stdout.flush()
 		logger.clear()
 	
 	@staticmethod
 	def clear():
-		logger.buffer = []
+		"""
+		Clears the buffer
+		"""
+		logger._buffer = []
 
   
 class TestState:
+	"""Enumeration of test states"""
 	Waiting = 0
+	"""The test ist waiting for execution"""
 	Success = 1
+	"""The test was successful"""
 	Fail = 2
+	"""The test has failed"""
 	Error = 3
+	"""The test has producsed an error"""
 	
 	@staticmethod
 	def toString(state):
+		"""
+		Converts the enumeration value into a string
+		
+		@type	state: int
+		@param	state: Enumeration value
+		"""
 		if state == TestState.Waiting:
 			return "WAITING"
 		if state == TestState.Success:
@@ -55,14 +96,24 @@ class TestState:
 		return "UNKNOWN"
 	
 class TestSuiteMode:
-	Single = 0
-	Continuous = 1
+	"""Enumeration for testsuite modes """
+	Continuous = 0
+	"""Run all test"""
+	BreakOnFail = 1
+	"""Halt on first failed test"""
 	BreakOnError = 2
+	"""Halt only on errors"""
 	
 	@staticmethod
 	def toString(mode):
-		if mode == TestSuiteMode.Single:
-			return "SINGLE"
+		"""
+		Converts the enumeration value into a string
+		
+		@type	mode: int
+		@param	mode: Enumeration value
+		"""
+		if mode == TestSuiteMode.BreakOnFail:
+			return "BreakOnFail"
 		if mode == TestSuiteMode.Continuous:
 			return "CONTINUOUS"
 		if mode == TestSuiteMode.BreakOnError:
@@ -70,108 +121,174 @@ class TestSuiteMode:
 		return "UNKNOWN"
 
 class Test:
-	name = ""
-	descr = ""
-	cmd = None
-	expectOutput = ""
-	expectRetCode = "0"
-	output = ""
-	retCode = "0"
-	state = TestState.Waiting
+	"""A single test"""
+	_name = ""
+	"""The name of the test"""
+	_descr = ""
+	"""The description of the game"""
+	_cmd = None
+	"""The command to be executed"""
+	_expectOutput = ""
+	"""The expected output"""
+	_expectRetCode = 0
+	"""The expected return code"""
+	_output = ""
+	"""The output"""
+	_retCode = "0"
+	"""The return code"""
+	_state = TestState.Waiting
+	"""The state of the game"""
 	
 	def __init__(self, data):
+		"""
+		Initalises a test
+		
+		@type	data: Dictionary
+		@param	data: Dictionary with test definitions
+		"""
 		if 'name' in data:
-			self.name = data['name']
+			self._name = data['name']
 		if 'descr' in data:
-			self.descr = data['descr']
+			self._descr = data['descr']
 		if "cmd" in data:
-			self.cmd = data['cmd']
+			self._cmd = data['cmd']
 		else:
-			self.state = TestState.Error
+			self._state = TestState.Error
 		if 'expect' in data:
-			self.expectOutput = data['expect']
+			self._expectOutput = data['expect']
 		else:
-			self.expectOutput = ""
+			self._expectOutput = ""
 		if 'returnCode' in data:
-			self.expectRetCode = data['returnCode']
+			self._expectRetCode = data['returnCode']
 		else:
-			self.expectRetCode = "0"
+			self._expectRetCode = "0"
 			
 	def getName(self):
-		return self.name
+		"""Returns the name of the test"""
+		return self._name
 		
 	def getDescription(self):
-		return self.descr
+		"""Returns the description of the test"""
+		return self._descr
 		
 	def getCommand(self):
-		return self.cmd
+		"""Returns the command of the test"""
+		return self._cmd
 		
 	def getState(self):
-		return self.state
+		"""Returns the current test state"""
+		return self._state
 		
 	def getOutput(self):
-		return self.output
+		"""Returns the output"""
+		return self._output
 		
 	def getExpect(self):
-		return self.expectOutput
+		"""Returns the expected output"""
+		return self._expectOutput
 		
-	def checkReturnCode(self):
-		if (isLambda(self.expectRetCode)):
-			return self.expectRetCode(self.retCode)
-		elif (isinstance(self.expectRetCode, int) and isinstance(self.RetCode, int)):
-			return self.expectRetCode == self.retCode
-		elif (isinstance(self.expectRetCode, str)):
-			patCode = re.compile(self.expectRetCode, re.IGNORECASE)
-			return (patCode.match(str(self.retCode)) != None)
+	def _checkReturnCode(self):
+		"""
+		Tests the return code.
+		If it's a lambda function, it will be executed with the return code.
+		If it's a string, it will be treated as a regular expression.
+		If it's an integer, it gets compared with the expected code.
+		"""
+		if (isLambda(self._expectRetCode)):
+			return self._expectRetCode(self._retCode)
+		elif (isinstance(self._expectRetCode, int) and isinstance(self._RetCode, int)):
+			return self._expectRetCode == self._retCode
+		elif (isinstance(self._expectRetCode, str)):
+			patCode = re.compile(self._expectRetCode, re.IGNORECASE)
+			return (patCode.match(str(self._retCode)) != None)
 		return True
 		
-	def checkOutput(self):
-		patOut = re.compile(self.expectOutput, re.IGNORECASE | re.DOTALL)
-		return (patOut.match(self.output) != None)
+	def _checkOutput(self):
+		"""Tests the output"""
+		patOut = re.compile(self._expectOutput, re.IGNORECASE | re.DOTALL)
+		return (patOut.match(self._output) != None)
 	
 	def run(self):
-		if self.cmd != None:
+		"""Runs the test"""
+		if self._cmd != None:
 			try:
-				self.output = check_output(self.cmd, stderr=STDOUT, shell=True)
-				self.retCode = 0
+				self._output = subprocess.check_output(self._cmd, stderr=subprocess.STDOUT, shell=True)
+				self._retCode = 0
 			except CalledProcessError as e:
-				self.output = e.output
-				self.retCode = e.returncode
-			if self.checkReturnCode() and self.checkOutput():
-				self.state = TestState.Success
+				self._output = e.output
+				self._retCode = e.returncode
+			if self._checkReturnCode() and self._checkOutput():
+				self._state = TestState.Success
 			else:
-				self.state = TestState.Fail
+				self._state = TestState.Fail
 		else:
-			self.state = TestState.Error
-		return self.state
+			self._state = TestState.Error
+		return self._state
 
 class TestSuite:
-	success = 0
-	failed = 0
-	count = 0
-	error = 0
-	lastResult = TestState.Waiting
-	rate = 0
-	len = 0
+	"""A testsuite is a collection of tests"""
+	_success = 0
+	"""The number of successful tests"""
+	_failed = 0
+	"""The number of failed tests"""
+	_count = 0
+	"""A counter for the executed tests"""
+	_error = 0
+	"""The number of errors occured during the testrun"""
+	_lastResult = TestState.Waiting
+	"""The result of the last test"""
+	_rate = 0
+	"""The successrate of the testrun"""
+	_len = 0
+	"""The total number of tests in the suite"""
 	
-	testList = []
-	mode = TestSuiteMode.Single
+	_testList = []
+	"""The collection of tests"""
+	_mode = TestSuiteMode.BreakOnFail
+	"""The test suite mode"""
 	
-	def __init__(self, tests = [], mode=TestSuiteMode.Single):
+	def __init__(self, tests = [], mode=TestSuiteMode.BreakOnFail):
+		"""
+		Initialises a test suite
+		
+		@type	tests: List
+		@param	tests: List of tests, default is an empty list
+		
+		@type	mode: TestSuiteMode
+		@param	mode: The initial mode of the testsuite
+		"""
 		self.setMode(mode)
 		for t in tests:
 			self.addTest(t)
-		self.len = len(self.testList)
+		self._len = len(self._testList)
 	
 	def setMode(self, mode):
-		self.mode = mode
+		"""
+		Sets the mode of the testsuite
+		
+		@type	mode: TestSuiteMode
+		@param	mode: New mode
+		"""
+		self._mode = mode
 		
 	def addTest(self, data):
-		self.testList.append(Test(data))
+		"""
+		Adds a test to the suite
+		
+		@type	data: Test
+		@param	data: Test to add
+		"""
+		self._testList.append(Test(data))
 		
 	def runOne(self, n):
-		if (n < self.len):
-			result = self.testList[n].run()
+		"""
+		Run one single test
+		
+		@type	n: int
+		@param	n: Number of the test
+		"""
+		if (n < self._len):
+			result = self._testList[n].run()
 			print TestState.toString(result)
 			return result
 		logger.log("\tSorry but there is no test #{}".format(n))
@@ -179,46 +296,60 @@ class TestSuite:
 		return TestState.Error
 		
 	def runAll(self, quiet = False):
-		self.success = 0
-		self.failed = 0
-		self.count = 0
-		self.error = 0
-		lastResult = TestState.Waiting
+		"""
+		Runs the whole suite of tests
+		
+		@type	quiet: Boolean
+		@param	quiet: Flag, passed along to the logger
+		"""
+		self._success = 0
+		self._failed = 0
+		self._count = 0
+		self._error = 0
+		self._lastResult = TestState.Waiting
 		for t in self.testList:
-			self.count = self.count + 1 
-			self.lastResult = t.run()
+			self._count = self._count + 1 
+			self._lastResult = t.run()
 			logger.log("Test[{:02}] {} - {}: {}".format(self.count, t.getName(), t.getDescription(), TestState.toString(t.getState())))
 			logger.flush(quiet)
-			if (self.lastResult == TestState.Success):
-				self.success = self.success + 1
-			elif (self.lastResult == TestState.Fail):
-				self.failed = self.failed + 1
-			elif (self.lastResult == TestState.Error):
-				self.error = self.error + 1
-			if (self.mode == TestSuiteMode.Single) and (self.lastResult != TestState.Success):
+			if (self._lastResult == TestState.Success):
+				self._success = self._success + 1
+			elif (self._lastResult == TestState.Fail):
+				self._failed = self._failed + 1
+			elif (self._lastResult == TestState.Error):
+				self._error = self._error + 1
+			if (self._mode == TestSuiteMode.BreakOnFail) and (self._lastResult != TestState.Success):
 				break
-			if (self.mode == TestSuiteMode.BreakOnError) and (self.lastResult == TestState.Error):
+			if (self._mode == TestSuiteMode.BreakOnError) and (self._lastResult == TestState.Error):
 				break
 
 	def stats(self, quiet = False):
-		logger.log("I ran {} out of {} tests in total".format(self.count, len(self.testList)))
-		logger.log("\tSuccess: {}".format(self.success))
-		if (self.failed > 0):
-			logger.log("\tFailed: {}".format(self.failed))
-		if (self.error > 0):
-			logger.log("\tErrors: {}".format(self.error))
-		if (self.error == 0) and (self.failed == 0):
+		"""
+		Generate and write the stats
+		
+		@type	quiet: Boolean
+		@param	quiet: Flag, passed along to the logger
+		"""
+		logger.log("I ran {} out of {} tests in total".format(self._count, len(self._testList)))
+		logger.log("\tSuccess: {}".format(self._success))
+		if (self._failed > 0):
+			logger.log("\tFailed: {}".format(self._failed))
+		if (self._error > 0):
+			logger.log("\tErrors: {}".format(self._error))
+		if (self._error == 0) and (self._failed == 0):
 			logger.log("\tCongratulations, you passed all tests!")
-		self.rate = float(self.success) / float(self.len) * 100
-		return self.rate
+		self._rate = float(self._success) / float(self._len) * 100
+		return self._rate
 		
 class TestRunner:
+	"""Testrunner. Reads a testbench file and executes the testrun"""
 
 	def __init__(self):
+		"""Initialises the test runner"""
 		logger.log("Welcome to pyTest Version 1")
 		argv = sys.argv
 		argv.pop(0)
-		mode = TestSuiteMode.Single
+		mode = TestSuiteMode.BreakOnFail
 		suite = 'suite'
 		test = -1
 		quiet = False
