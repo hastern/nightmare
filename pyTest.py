@@ -2,7 +2,12 @@
 
 
 import sys
+import os
+import re
 from subprocess import *
+
+def isLambda(v):
+  return isinstance(v, type(lambda: None)) and v.__name__ == '<lambda>'
 
 class TestState:
 	Waiting = 0
@@ -42,9 +47,9 @@ class Test:
 	descr = ""
 	cmd = None
 	expectOutput = ""
-	expectRetCode = 0
+	expectRetCode = "0"
 	output = ""
-	retCode = 0
+	retCode = "0"
 	state = TestState.Waiting
 	
 	def __init__(self, data):
@@ -63,7 +68,7 @@ class Test:
 		if 'returnCode' in data:
 			self.expectRetCode = data['returnCode']
 		else:
-			self.expectRetCode = 0
+			self.expectRetCode = "0"
 			
 	def getName(self):
 		return self.name
@@ -83,15 +88,29 @@ class Test:
 	def getExpect(self):
 		return self.expectOutput
 		
+	def checkReturnCode(self):
+		if (isLambda(self.expectRetCode)):
+			return self.expectRetCode(self.retCode)
+		elif (isinstance(self.expectRetCode, str)):
+			patCode = re.compile(self.expectRetCode)
+			return patCode.match(self.retCode) != None
+		elif (isinstance(self.expectRetCode, int)):
+			return self.expectRetCode == self.retCode
+		return True
+		
+	def checkOutput(self):
+		patOut = re.compile(self.expectOutput)
+		return patOut.match(self.output, re.IGNORECASE | re.MULTILINE | re.DOTALL | re.DEBUG) != None
+	
 	def run(self):
 		if self.cmd != None:
 			try:
-				self.output = check_output(self.cmd, shell=True)
-				self.retCode = 0
+				self.output = check_output(self.cmd, stderr=STDOUT, shell=True)
+				self.retCode = "0"
 			except CalledProcessError as e:
 				self.output = e.output
-				self.retCode = e.returnCode
-			if (self.output.strip() == self.expectOutput.strip()) and (self.retCode == self.expectRetCode):
+				self.retCode = e.returncode
+			if self.checkReturnCode and self.checkOutput:
 				self.state = TestState.Success
 			else:
 				self.state = TestState.Fail
@@ -123,7 +142,7 @@ class TestSuite:
 		for t in self.testList:
 			count = count + 1 
 			lastResult = t.run()
-			print "Test[{}] {} - {}: {}".format(count, t.getName(), t.getDescription(), TestState.toString(t.getState()))
+			print "Test[{:02}] {} - {}: {}".format(count, t.getName(), t.getDescription(), TestState.toString(t.getState()))
 			if (lastResult == TestState.Success):
 				success = success + 1
 			elif (lastResult == TestState.Fail):
@@ -145,7 +164,7 @@ class TestSuite:
 		if (error > 0):
 			print "\tErrors: {}".format(error)
 		if (error == 0) and (failed == 0):
-			print "\tCongratulations - Passed all tests"
+			print "\tCongratulations, you passed all tests!"
 		
 class TestRunner:
 
@@ -153,9 +172,8 @@ class TestRunner:
 		print "Welcome to pyTest Version 1"
 		argv = sys.argv
 		argv.pop(0)
-		glb = {"__builtins__":None}
-		ctx = {'suite':None}
 		mode = TestSuiteMode.Single
+		suite = 'suite'
 		for arg in argv:
 			if (arg == "-c"):
 				print "\tI'm running in continuous mode now"
@@ -163,16 +181,21 @@ class TestRunner:
 			elif (arg == "-e"):
 				print "\tI'm running in continuous mode now, but will halt if an error occurs"
 				mode = TestSuiteMode.BreakOnError
+			elif (arg.startswith("-s")):
+				suite = arg[2:]
+				print "\tI'm using the testsuite '{}'".format(suite)
 			else:
 				f = arg
 		
 		print "\nReading testfile ..."
+		glb = {"__builtins__":None}
+		ctx = {suite:None}
 		execfile(f, glb, ctx)
-		if ('suite' in ctx):
-			if (ctx['suite'] != None):
-				TestSuite(ctx['suite'], mode).runAll()
+		if (suite in ctx):
+			if (ctx[suite] != None):
+				TestSuite(ctx[suite], mode).runAll()
 			else:
-				print "Sorry, but I can't find any tests inside that suite"
+				print "Sorry, but I can't find any tests inside the suite '{}'".format(suite)
 		else:
 			print "Sorry, but there was no test-suite in the file"
 		
