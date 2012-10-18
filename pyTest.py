@@ -4,11 +4,38 @@
 import sys
 import os
 import re
+import time
 from subprocess import *
 
 def isLambda(v):
   return isinstance(v, type(lambda: None)) and v.__name__ == '<lambda>'
 
+class logger:
+	buffer = []
+	@staticmethod
+	def log(str):
+		"""
+		Writes a log message
+		
+		@type	str: String
+		@param	str: Log message
+		"""
+		msg = "[{0}] {1}".format(time.strftime("%H:%M:%S") , str.strip("\r\n") )
+		logger.buffer.append(msg)
+		
+	@staticmethod
+	def flush(quiet = False):
+		if not quiet:
+			for b in logger.buffer:
+				print b
+			sys.stdout.flush()
+		logger.clear()
+	
+	@staticmethod
+	def clear():
+		logger.buffer = []
+
+  
 class TestState:
 	Waiting = 0
 	Success = 1
@@ -91,26 +118,26 @@ class Test:
 	def checkReturnCode(self):
 		if (isLambda(self.expectRetCode)):
 			return self.expectRetCode(self.retCode)
-		elif (isinstance(self.expectRetCode, str)):
-			patCode = re.compile(self.expectRetCode)
-			return patCode.match(self.retCode) != None
-		elif (isinstance(self.expectRetCode, int)):
+		elif (isinstance(self.expectRetCode, int) and isinstance(self.RetCode, int)):
 			return self.expectRetCode == self.retCode
+		elif (isinstance(self.expectRetCode, str)):
+			patCode = re.compile(self.expectRetCode, re.IGNORECASE)
+			return (patCode.match(str(self.retCode)) != None)
 		return True
 		
 	def checkOutput(self):
-		patOut = re.compile(self.expectOutput)
-		return patOut.match(self.output, re.IGNORECASE | re.MULTILINE | re.DOTALL | re.DEBUG) != None
+		patOut = re.compile(self.expectOutput, re.IGNORECASE | re.DOTALL)
+		return (patOut.match(self.output) != None)
 	
 	def run(self):
 		if self.cmd != None:
 			try:
 				self.output = check_output(self.cmd, stderr=STDOUT, shell=True)
-				self.retCode = "0"
+				self.retCode = 0
 			except CalledProcessError as e:
 				self.output = e.output
 				self.retCode = e.returncode
-			if self.checkReturnCode and self.checkOutput:
+			if self.checkReturnCode() and self.checkOutput():
 				self.state = TestState.Success
 			else:
 				self.state = TestState.Fail
@@ -119,6 +146,14 @@ class Test:
 		return self.state
 
 class TestSuite:
+	success = 0
+	failed = 0
+	count = 0
+	error = 0
+	lastResult = TestState.Waiting
+	rate = 0
+	len = 0
+	
 	testList = []
 	mode = TestSuiteMode.Single
 	
@@ -126,6 +161,7 @@ class TestSuite:
 		self.setMode(mode)
 		for t in tests:
 			self.addTest(t)
+		self.len = len(self.testList)
 	
 	def setMode(self, mode):
 		self.mode = mode
@@ -133,71 +169,100 @@ class TestSuite:
 	def addTest(self, data):
 		self.testList.append(Test(data))
 		
-	def runAll(self):
-		success = 0
-		failed = 0
-		count = 0
-		error = 0
+	def runOne(self, n):
+		if (n < self.len):
+			result = self.testList[n].run()
+			print TestState.toString(result)
+			return result
+		logger.log("\tSorry but there is no test #{}".format(n))
+		print TestState.toString(TestState.Error)
+		return TestState.Error
+		
+	def runAll(self, quiet = False):
+		self.success = 0
+		self.failed = 0
+		self.count = 0
+		self.error = 0
 		lastResult = TestState.Waiting
 		for t in self.testList:
-			count = count + 1 
-			lastResult = t.run()
-			print "Test[{:02}] {} - {}: {}".format(count, t.getName(), t.getDescription(), TestState.toString(t.getState()))
-			if (lastResult == TestState.Success):
-				success = success + 1
-			elif (lastResult == TestState.Fail):
-				#print "\tOutput was: {}".format(t.getOutput().strip())
-				#print "\tExpected was: {}".format(t.getExpect().strip())
-				failed = failed + 1
-			elif (lastResult == TestState.Error):
-				error = error + 1
-			if (self.mode == TestSuiteMode.Single) and (lastResult != TestState.Success):
+			self.count = self.count + 1 
+			self.lastResult = t.run()
+			logger.log("Test[{:02}] {} - {}: {}".format(self.count, t.getName(), t.getDescription(), TestState.toString(t.getState())))
+			logger.flush(quiet)
+			if (self.lastResult == TestState.Success):
+				self.success = self.success + 1
+			elif (self.lastResult == TestState.Fail):
+				self.failed = self.failed + 1
+			elif (self.lastResult == TestState.Error):
+				self.error = self.error + 1
+			if (self.mode == TestSuiteMode.Single) and (self.lastResult != TestState.Success):
 				break
-			if (self.mode == TestSuiteMode.BreakOnError) and (lastResult == TestState.Error):
+			if (self.mode == TestSuiteMode.BreakOnError) and (self.lastResult == TestState.Error):
 				break
-		
-		print "All finished!"
-		print "I ran {} out of {} tests in total".format(count, len(self.testList))
-		print "\tSuccess: {}".format(success)
-		if (failed > 0):
-			print "\tFailed: {}".format(failed)
-		if (error > 0):
-			print "\tErrors: {}".format(error)
-		if (error == 0) and (failed == 0):
-			print "\tCongratulations, you passed all tests!"
+
+	def stats(self, quiet = False):
+		logger.log("I ran {} out of {} tests in total".format(self.count, len(self.testList)))
+		logger.log("\tSuccess: {}".format(self.success))
+		if (self.failed > 0):
+			logger.log("\tFailed: {}".format(self.failed))
+		if (self.error > 0):
+			logger.log("\tErrors: {}".format(self.error))
+		if (self.error == 0) and (self.failed == 0):
+			logger.log("\tCongratulations, you passed all tests!")
+		self.rate = float(self.success) / float(self.len) * 100
+		return self.rate
 		
 class TestRunner:
 
 	def __init__(self):
-		print "Welcome to pyTest Version 1"
+		logger.log("Welcome to pyTest Version 1")
 		argv = sys.argv
 		argv.pop(0)
 		mode = TestSuiteMode.Single
 		suite = 'suite'
+		test = -1
+		quiet = False
 		for arg in argv:
 			if (arg == "-c"):
-				print "\tI'm running in continuous mode now"
+				logger.log("\tI'm running in continuous mode now")
 				mode = TestSuiteMode.Continuous
 			elif (arg == "-e"):
-				print "\tI'm running in continuous mode now, but will halt if an error occurs"
+				logger.log("\tI'm running in continuous mode now, but will halt if an error occurs")
 				mode = TestSuiteMode.BreakOnError
+			elif (arg == "-q"):
+				quiet = True
+			elif (arg == "-v"):
+				quiet = False
 			elif (arg.startswith("-s")):
 				suite = arg[2:]
-				print "\tI'm using the testsuite '{}'".format(suite)
+				logger.log("\tI'm using the testsuite '{}'".format(suite))
+			elif (arg.startswith("-t")):
+				test = int(arg[2:])
+				logger.log("\tI'm only running test #{}".format(test))
 			else:
 				f = arg
+				logger.log("\tI'm using testbench '{}'".format(f))
 		
-		print "\nReading testfile ..."
+		logger.log("\nReading testfile ...")
+		logger.flush(quiet)
 		glb = {"__builtins__":None}
 		ctx = {suite:None}
 		execfile(f, glb, ctx)
 		if (suite in ctx):
 			if (ctx[suite] != None):
-				TestSuite(ctx[suite], mode).runAll()
+				testsuite = TestSuite(ctx[suite], mode)
+				if (test == -1):
+					testsuite.runAll(quiet)
+					rate = testsuite.stats(quiet)
+					logger.flush(quiet)
+					print "{:2.2f}%".format(rate)
+				else:
+					testsuite.runOne(test)
 			else:
-				print "Sorry, but I can't find any tests inside the suite '{}'".format(suite)
+				logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(suite))
 		else:
-			print "Sorry, but there was no test-suite in the file"
+			logger.log("Sorry, but there was no test-suite in the file")
+		logger.flush(quiet)
 		
 if __name__ == "__main__":
 	TestRunner()
