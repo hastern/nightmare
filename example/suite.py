@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 # An example suite
+# This suite must be run from this diretory 
 
 test1 = {
 	"cmd":"dut.py success", 

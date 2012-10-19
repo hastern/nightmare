@@ -15,6 +15,9 @@ import os
 import re
 import time
 import subprocess
+import Tkinter as guitk
+from threading import Thread
+import tkFileDialog as fileDiag
 try:
 	import colorama
 except:
@@ -240,7 +243,7 @@ class Test:
 	def getExpect(self):
 		"""Returns the expected output"""
 		return self._expectOutput
-		
+				
 	def _check(self, exp, out):
 		"""
 		Test an expectation against an output
@@ -313,10 +316,21 @@ class TestSuite:
 		@param	mode: The initial mode of the testsuite
 		"""
 		self.setMode(mode)
+		self._testList = []
 		for t in tests:
 			self.addTest(t)
 		self._len = len(self._testList)
+		self._succes = TestSuite._success
+		self._failed = TestSuite._failed
+		self._count = TestSuite._count
+		self._error = TestSuite._error
+		self._lastResult = TestSuite._lastResult
+		self._rate = TestSuite._rate
 	
+	def getRate(self):
+		"""Returns the success rate"""
+		return self._rate
+		
 	def setMode(self, mode):
 		"""
 		Sets the mode of the testsuite
@@ -334,6 +348,9 @@ class TestSuite:
 		@param	data: Test to add
 		"""
 		self._testList.append(Test(data))
+		
+	def getTests(self):
+		return self._testList
 		
 	def runOne(self, n):
 		"""
@@ -378,6 +395,10 @@ class TestSuite:
 			if (self._mode == TestSuiteMode.BreakOnError) and (self._lastResult == TestState.Error):
 				break
 
+	def calcRate(self):
+		self._rate = float(self._success) / float(self._len) * 100
+		return self._rate
+				
 	def stats(self, quiet = False):
 		"""
 		Generate and write the stats
@@ -393,67 +414,206 @@ class TestSuite:
 			logger.log(TermColor.colorText("\tErrors: {}".format(self._error), TermColor.Yellow))
 		if (self._error == 0) and (self._failed == 0):
 			logger.log("\tCongratulations, you passed all tests!")
-		self._rate = float(self._success) / float(self._len) * 100
-		return self._rate
+		return self.calcRate()
 		
 class TestRunner:
 	"""Testrunner. Reads a testbench file and executes the testrun"""
-
+	suite = "suite"
+	"""Test suite selector"""
+	test = -1
+	"""single test selector"""
+	quiet = False
+	"""Definition of the programs verbosity"""
+	mode = TestSuiteMode.BreakOnFail
+	"""Mode for the test suite"""
+	file = ""
+	"""test bench file"""
+	
 	def __init__(self):
 		"""Initialises the test runner"""
 		logger.log("Welcome to pyTest Version 1")
+		self.suite = TestRunner.suite
+		self.test = TestRunner.test
+		self.quiet = TestRunner.quiet
+		self.mode = TestRunner.mode
+		self.file = TestRunner.file
+	
+	def parseArgv(self):
+		"""Parses the argument vector"""
 		argv = sys.argv
-		argv.pop(0)
-		mode = TestSuiteMode.BreakOnFail
-		suite = 'suite'
-		test = -1
-		quiet = False
+		argv.pop(0) # remove program name
 		for arg in argv:
 			if (arg == "-c"):
 				logger.log("\tI'm running in continuous mode now")
-				mode = TestSuiteMode.Continuous
+				self.mode = TestSuiteMode.Continuous
 			elif (arg == "-e"):
 				logger.log("\tI'm running in continuous mode now, but will halt if an error occurs")
-				mode = TestSuiteMode.BreakOnError
+				self.mode = TestSuiteMode.BreakOnError
 			elif (arg == "-q"):
-				quiet = True
+				self.quiet = True
 			elif (arg == "-v"):
-				quiet = False
+				self.quiet = False
 			elif (arg.startswith("-s")):
-				suite = arg[2:]
+				self.suite = arg[2:]
 				logger.log("\tI'm using the testsuite '{}'".format(suite))
 			elif (arg == "--no-color"):
 				TermColor.active = False
 			elif (arg.startswith("-t")):
-				test = int(arg[2:])
+				self.test = int(arg[2:])
 				logger.log("\tI'm only running test #{}".format(test))
 			else:
-				f = arg
-				logger.log("\tI'm using testbench '{}'".format(f))
+				self.file = arg
+				logger.log("\tI'm using testbench '{}'".format(self.file))
 		
+	def run(self):
 		logger.log("\nReading testfile ...")
-		logger.flush(quiet)
+		logger.flush(self.quiet)
 		glb = {"__builtins__":None}
-		ctx = {suite:None}
-		execfile(f, glb, ctx)
-		if (suite in ctx):
-			if (ctx[suite] != None):
-				testsuite = TestSuite(ctx[suite], mode)
-				if (test == -1):
-					testsuite.runAll(quiet)
-					rate = testsuite.stats(quiet)
-					logger.flush(quiet)
-					print "{:2.2f}%".format(rate)
+		ctx = {self.suite:None}
+		runsuite = None
+		execfile(self.file, glb, ctx)
+		if (self.suite in ctx):
+			if (ctx[self.suite] != None):
+				runsuite = TestSuite(ctx[self.suite], self.mode)
+				if (self.test == -1):
+					runsuite.runAll(self.quiet)
+					rate = runsuite.stats(self.quiet)
+					logger.flush(self.quiet)
 				else:
-					testsuite.runOne(test)
+					runsuite.runOne(self.test)
 			else:
-				logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(suite))
+				logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
 		else:
 			logger.log("Sorry, but there was no test-suite in the file")
-		logger.flush(quiet)
+		logger.flush(self.quiet)
+		return runsuite
+	
+
+class TestRunnerGui(Thread):
+	"""Graphical User Interface"""
+	_whnd = None
+	_runner = None
+	_testList = None
+	_mode = None
+	_file = None
+	_suite = None
+	
+	gui = None
+	
+	
+	@staticmethod
+	def loadTestBench():
+		fn = fileDiag.askopenfilename(initialdir=".")
+		TestRunnerGui.gui._file['text'] = os.path.relpath(fn)
+		
+	@staticmethod
+	def runAll():
+		TestRunnerGui.gui._createTestList()
+		TestRunnerGui.gui._runner.suite = TestRunnerGui.gui._suite.get()
+		TestRunnerGui.gui._runner.file = TestRunnerGui.gui._file.cget('text')
+		TestRunnerGui.gui._runner.mode = TestRunnerGui.gui._mode.get()
+		resultSuite = TestRunnerGui.gui._runner.run()
+		n = 0
+		for test in resultSuite.getTests():
+			n = n + 1
+			TestRunnerGui.gui._displayTest(n, test)
+		
+	
+	def _getFile(self, master, lbl, cmd=None):
+		"""
+		Generate a file selection 
+		
+		@type	master: Tkinter.Widget
+		@param	master: Parent widget
+		
+		@type	lbl: String
+		@param	lbl: Label text
+				
+		@type	cmd: Callback
+		@param	cmd: Callback function
+		"""
+		f = guitk.Frame(master, padx=5)
+		guitk.Button(f, text=lbl, command=cmd, width=len(lbl)+2).pack()
+		label = guitk.Label(f, text="", width=15, anchor=guitk.W)
+		label.pack()
+		f.pack()
+		return label
+	
+	def _testListHead(self):
+		f = guitk.Frame(self._testList)
+		guitk.Label(f, text="#", width=3).pack(side=guitk.LEFT)
+		guitk.Label(f, text="Name", width=15).pack(side=guitk.LEFT)
+		guitk.Label(f, text="Description", width=40).pack(side=guitk.LEFT)
+		guitk.Label(f, text="", width=5).pack(side=guitk.LEFT)
+		f.pack()
+	
+	def _displayTest(self, n, test):
+		"""
+		Displays a test		
+		"""
+		if test.getState() == TestState.Success:
+			col = "#080"
+		elif test.getState() == TestState.Fail:
+			col = "#800"
+		elif test.getState() == TestState.Error:
+			col = "#880"
+		f = guitk.Frame(self._testList)
+		guitk.Label(f, text=str(n), bg = col, width=3).grid(row=n, column=0)
+		guitk.Label(f, text=test.getName(), bg = col, width=15).grid(row=n, column=1)
+		guitk.Label(f, text=test.getDescription(), bg = col, width=40).grid(row=n, column=2)
+		guitk.Button(f, text="Run", width=5).grid(row=n, column=3)
+		f.pack()
+
+				
+	def _labelEntry(self, master, lbl, var=None):
+		""" """
+		f = guitk.Frame(master)
+		guitk.Label(f, text=lbl, width=15).pack()
+		guitk.Entry(f, textvariable=var, width=15).pack()
+		f.pack()
+		
+	def _createTestList(self):
+		if self._testList != None:
+			self._testList.pack_forget()
+			self._testList.destroy()
+		self._testList = guitk.Frame(self._whnd, padx=5, pady=5)
+		self._testList.pack()
+		self._testListHead()
+	
+	def __init__(self):
+		super(TestRunnerGui,self).__init__()
+		self._runner = TestRunner()
+		self._whnd = guitk.Tk()
+		
+		cfgFrame = guitk.Frame(self._whnd, padx=10, pady=10)
+		self._file = self._getFile(cfgFrame, lbl="Load Testbench", cmd=TestRunnerGui.loadTestBench)
+		self._suite = guitk.StringVar(cfgFrame, self._runner.suite)
+		self._labelEntry(cfgFrame, "Testsuite", var=self._suite)
+		actionFrame = guitk.LabelFrame(cfgFrame, text="Mode", padx=1, pady=5)
+		self._mode = guitk.IntVar(actionFrame, TestSuiteMode.BreakOnFail)
+		guitk.Radiobutton(actionFrame, text="Continuous", variable=self._mode, value=TestSuiteMode.Continuous).grid(row=0)
+		guitk.Radiobutton(actionFrame, text="Halt on Fail", variable=self._mode, value=TestSuiteMode.BreakOnFail).grid(row=1)
+		guitk.Radiobutton(actionFrame, text="Halt on Error", variable=self._mode, value=TestSuiteMode.BreakOnError).grid(row=2)
+		actionFrame.pack()
+		btn = guitk.Button(cfgFrame, text="Run all", width=15, command=TestRunnerGui.runAll)
+		btn.pack()
+		cfgFrame.pack(side=guitk.LEFT, expand=guitk.Y, fill=guitk.Y)
+		
+		self._createTestList()
+		
+		
+	def run(self):
+		self._whnd.mainloop()
 		
 if __name__ == "__main__":
 	TermColor.init()
-	TestRunner()
+	if len(sys.argv) == 1:
+		TestRunnerGui.gui = TestRunnerGui()
+		TestRunnerGui.gui.start()
+	else:
+		runner = TestRunner()
+		runner.parseArgv()
+		suite = runner.run()
+		print "{:2.2f}%".format(suite.getRate())
 
 			
