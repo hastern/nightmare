@@ -15,9 +15,63 @@ import os
 import re
 import time
 import subprocess
+try:
+	import colorama
+except:
+	colorama = None
+
+
 
 __package__ = "pyTest"
 
+class TermColor:
+	""" Print colored text """
+	Black = 0
+	"""Black color code"""
+	Red = 1
+	"""Red color code"""
+	Green = 2
+	"""Green color code"""
+	Yellow = 3
+	"""Yellow color code"""
+	Blue = 4
+	"""Blue color code"""
+	Purple = 5
+	"""Purple color code"""
+	Cyan = 6
+	"""Cyan color code"""
+	White = 7
+	"""White color code"""
+	Normal = 0
+	"""Normal text style"""
+	Bold = 1
+	"""Bold text style"""
+	Dim = 2
+	"""Dim text style"""
+	Background = 40
+	"""Change background color"""
+	Text = 30
+	"""Change text color"""
+	
+	active = True
+	"""activate colorfull output"""
+	
+	
+	@staticmethod
+	def colorText(text, color = 7, where = 30, style = 0):
+		if TermColor.active and ((colorama is not None) or (os.getenv('ANSI_COLORS_DISABLED') is not None)):
+			colStr = str(where + color)
+			styleStr = "{:02}".format(style)
+			return "\033[{};{}m{}".format(styleStr, colStr, text)
+		else:
+			return text
+			
+	@staticmethod
+	def init():
+		if colorama is not None:
+			colorama.init(autoreset=True)
+		
+		
 def isLambda(v):
 	""" 
 	Test if a given value is a lambda function
@@ -86,14 +140,14 @@ class TestState:
 		@param	state: Enumeration value
 		"""
 		if state == TestState.Waiting:
-			return "WAITING"
+			return TermColor.colorText("WAITING", TermColor.White)
 		if state == TestState.Success:
-			return "SUCCESS"
+			return TermColor.colorText("SUCCESS", TermColor.Green, TermColor.Background)
 		if state == TestState.Fail:
-			return "FAIL"
+			return TermColor.colorText("FAIL", TermColor.Red, TermColor.Background)
 		if state == TestState.Error:
-			return "ERROR"
-		return "UNKNOWN"
+			return TermColor.colorText("ERROR", TermColor.Red)
+		return TermColor.colorText("UNKNOWN", TermColor.Yellow)
 	
 class TestSuiteMode:
 	"""Enumeration for testsuite modes """
@@ -113,12 +167,12 @@ class TestSuiteMode:
 		@param	mode: Enumeration value
 		"""
 		if mode == TestSuiteMode.BreakOnFail:
-			return "BreakOnFail"
+			return "Break On Fail"
 		if mode == TestSuiteMode.Continuous:
-			return "CONTINUOUS"
+			return "Continuous"
 		if mode == TestSuiteMode.BreakOnError:
-			return "BREAK ON ERROR"
-		return "UNKNOWN"
+			return "Break on Error"
+		return "Unknown mode"
 
 class Test:
 	"""A single test"""
@@ -134,7 +188,7 @@ class Test:
 	"""The expected return code"""
 	_output = ""
 	"""The output"""
-	_retCode = "0"
+	_retCode = 0
 	"""The return code"""
 	_state = TestState.Waiting
 	"""The state of the game"""
@@ -161,7 +215,7 @@ class Test:
 		if 'returnCode' in data:
 			self._expectRetCode = data['returnCode']
 		else:
-			self._expectRetCode = "0"
+			self._expectRetCode = 0
 			
 	def getName(self):
 		"""Returns the name of the test"""
@@ -187,26 +241,27 @@ class Test:
 		"""Returns the expected output"""
 		return self._expectOutput
 		
-	def _checkReturnCode(self):
+	def _check(self, exp, out):
 		"""
-		Tests the return code.
-		If it's a lambda function, it will be executed with the return code.
+		Test an expectation against an output
+		If it's a lambda function, it will be executed with the output
 		If it's a string, it will be treated as a regular expression.
-		If it's an integer, it gets compared with the expected code.
+		If it's an integer, it gets compared with the output
+		@type	exp: String, Int, lambda 
+		@param	exp: Expected result
+		@type 	out: String, Int
+		@param	out: output The output
+		@rtype:	Boolean
+		@return: Result of the comparison
 		"""
-		if (isLambda(self._expectRetCode)):
-			return self._expectRetCode(self._retCode)
-		elif (isinstance(self._expectRetCode, int) and isinstance(self._RetCode, int)):
-			return self._expectRetCode == self._retCode
-		elif (isinstance(self._expectRetCode, str)):
-			patCode = re.compile(self._expectRetCode, re.IGNORECASE)
-			return (patCode.match(str(self._retCode)) != None)
-		return True
-		
-	def _checkOutput(self):
-		"""Tests the output"""
-		patOut = re.compile(self._expectOutput, re.IGNORECASE | re.DOTALL)
-		return (patOut.match(self._output) != None)
+		if (isLambda(exp)):
+			return exp(out)
+		elif (isinstance(exp, int) and isinstance(out, int)):
+			return exp == out
+		elif isinstance(exp, str):
+			patCode = re.compile(exp, re.IGNORECASE)
+			return (patCode.match(str(out)) != None)
+		return False
 	
 	def run(self):
 		"""Runs the test"""
@@ -214,10 +269,10 @@ class Test:
 			try:
 				self._output = subprocess.check_output(self._cmd, stderr=subprocess.STDOUT, shell=True)
 				self._retCode = 0
-			except CalledProcessError as e:
+			except subprocess.CalledProcessError as e:
 				self._output = e.output
 				self._retCode = e.returncode
-			if self._checkReturnCode() and self._checkOutput():
+			if self._check(self._expectRetCode, self._retCode) and self._check(self._expectOutput,self._output):
 				self._state = TestState.Success
 			else:
 				self._state = TestState.Fail
@@ -307,10 +362,10 @@ class TestSuite:
 		self._count = 0
 		self._error = 0
 		self._lastResult = TestState.Waiting
-		for t in self.testList:
+		for t in self._testList:
 			self._count = self._count + 1 
 			self._lastResult = t.run()
-			logger.log("Test[{:02}] {} - {}: {}".format(self.count, t.getName(), t.getDescription(), TestState.toString(t.getState())))
+			logger.log("Test[{:02}] {} - {}: {}".format(self._count, t.getName(), t.getDescription(), TestState.toString(t.getState())))
 			logger.flush(quiet)
 			if (self._lastResult == TestState.Success):
 				self._success = self._success + 1
@@ -331,11 +386,11 @@ class TestSuite:
 		@param	quiet: Flag, passed along to the logger
 		"""
 		logger.log("I ran {} out of {} tests in total".format(self._count, len(self._testList)))
-		logger.log("\tSuccess: {}".format(self._success))
+		logger.log(TermColor.colorText("\tSuccess: {}".format(self._success), TermColor.Green))
 		if (self._failed > 0):
-			logger.log("\tFailed: {}".format(self._failed))
+			logger.log(TermColor.colorText("\tFailed: {}".format(self._failed), TermColor.Red))
 		if (self._error > 0):
-			logger.log("\tErrors: {}".format(self._error))
+			logger.log(TermColor.colorText("\tErrors: {}".format(self._error), TermColor.Yellow))
 		if (self._error == 0) and (self._failed == 0):
 			logger.log("\tCongratulations, you passed all tests!")
 		self._rate = float(self._success) / float(self._len) * 100
@@ -367,6 +422,8 @@ class TestRunner:
 			elif (arg.startswith("-s")):
 				suite = arg[2:]
 				logger.log("\tI'm using the testsuite '{}'".format(suite))
+			elif (arg == "--no-color"):
+				TermColor.active = False
 			elif (arg.startswith("-t")):
 				test = int(arg[2:])
 				logger.log("\tI'm only running test #{}".format(test))
@@ -396,6 +453,7 @@ class TestRunner:
 		logger.flush(quiet)
 		
 if __name__ == "__main__":
+	TermColor.init()
 	TestRunner()
 
 			

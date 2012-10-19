@@ -3,21 +3,20 @@
 # An example suite
 
 test1 = {
-	"cmd":"dut.py hello", 
-	"name":"Hello", 
-	"descr":"prints hello", 
-	"expect":"hello\n", 
-	"returnCode":0
+	"cmd":"dut.py success", 
+	"name":"Example 1", 
+	"descr":"This test should be a success", 
+	"expect":"success"
 }
 test2 = {
-	"cmd":"dut.py world", 
-	"name":"World", 
-	"descr":"prints world", 
-	"expect":"World",
-	"returnCode":0
+	"cmd":"dut.py FAIL", 
+	"name":"Example 2", 
+	"descr":"This test is doomed to fail", 
+	"expect":"failed"
 }
 test3 = {
-	"name":"Test with Error"
+	"name":"Example 3",
+	"descr":"This test will produce an error"
 }
 
-suite = [test1, test3, test2]
+suite = [test1, test2, test3]

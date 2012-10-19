@@ -8,3 +8,4 @@ if __name__ == "__main__":
 	argv.pop(0)
 	for arg in argv:
 		print arg
+	exit(0)
