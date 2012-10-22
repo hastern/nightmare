@@ -16,6 +16,7 @@ import re
 import time
 import subprocess
 import Tkinter as guitk
+from Tkinter import LEFT, RIGHT, TOP, DISABLED, N, E, S, W, NE, SE, SW, NW, CENTER, X, Y, BOTH
 from threading import Thread
 import tkFileDialog as fileDiag
 try:
@@ -26,6 +27,11 @@ except:
 
 
 __package__ = "pyTest"
+
+# ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
+# Utility section                                                              #
+#                                                                              #
+# ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
 class TermColor:
 	""" Print colored text """
@@ -121,6 +127,11 @@ class logger:
 		Clears the buffer
 		"""
 		logger._buffer = []
+
+# ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
+# Test section                                                                 #
+#                                                                              #
+# ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
   
 class TestState:
@@ -428,6 +439,7 @@ class TestRunner:
 	"""Mode for the test suite"""
 	file = ""
 	"""test bench file"""
+	tests = 0
 	
 	def __init__(self):
 		"""Initialises the test runner"""
@@ -437,6 +449,7 @@ class TestRunner:
 		self.quiet = TestRunner.quiet
 		self.mode = TestRunner.mode
 		self.file = TestRunner.file
+		self._runsuite = None
 	
 	def parseArgv(self):
 		"""Parses the argument vector"""
@@ -464,156 +477,201 @@ class TestRunner:
 			else:
 				self.file = arg
 				logger.log("\tI'm using testbench '{}'".format(self.file))
-		
-	def run(self):
+	
+	def loadSuite(self):
 		logger.log("\nReading testfile ...")
 		logger.flush(self.quiet)
 		glb = {"__builtins__":None}
 		ctx = {self.suite:None}
-		runsuite = None
+		self._runsuite = None
 		execfile(self.file, glb, ctx)
 		if (self.suite in ctx):
 			if (ctx[self.suite] != None):
-				runsuite = TestSuite(ctx[self.suite], self.mode)
-				if (self.test == -1):
-					runsuite.runAll(self.quiet)
-					rate = runsuite.stats(self.quiet)
-					logger.flush(self.quiet)
-				else:
-					runsuite.runOne(self.test)
+				self._runsuite = TestSuite(ctx[self.suite], self.mode)
+				self.tests = len(self._runsuite._testList)
 			else:
 				logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
 		else:
 			logger.log("Sorry, but there was no test-suite in the file")
 		logger.flush(self.quiet)
-		return runsuite
+		return self._runsuite
+		
 	
+	def run(self, test = -1):
+		self._runsuite.setMode(self.mode)
+		if (self.test == -1 and test == -1):
+			self._runsuite.runAll(self.quiet)
+			self._runsuite.stats(self.quiet)
+			logger.flush(self.quiet)
+		elif (test >= 0):
+			self._runsuite.runOne(test)
+		else:
+			self._runsuite.runOne(self.test)
+	
+	
+# ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
+# GUI section                                                                  #
+#                                                                              #
+# ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
+
+class TestRunButton(guitk.Button):
+	def __init__(self, parent, gui, caption, n, runner):
+		guitk.Button.__init__(self, parent, text=caption, command=self.runTest, width=7)
+		self._num = n
+		self._runner = runner
+		self._gui = gui
+		
+	def runTest(self):
+		self._runner.mode = self._gui._mode.get()
+		if self._num == -1:
+			self._runner.run()
+		else:
+			self._runner.run(self._num)
+		self._gui.dataGrid.update()
+			
+class SuiteLoaderButton(guitk.Button):
+	def __init__(self, parent, gui, runner):
+		guitk.Button.__init__(self, parent, text="Load Testsuite", command=self.loadSuite)
+		self._runner = runner
+		self._gui = gui
+	
+	def loadSuite(self):
+		self._fn = fileDiag.askopenfilename(initialdir=".")
+		if self._fn != "":
+			os.chdir(os.path.dirname(self._fn))
+			print os.getcwd()
+			self._runner.suite = self._gui._suite.get()
+			self._runner.file = os.path.relpath(self._fn)
+			self._runner.mode = self._gui._mode.get()
+			self._runner.loadSuite()
+			self._gui._tests.set(self._runner.tests)
+			self._gui._filename.set(os.path.relpath(self._fn))
+			self._gui.dataGrid.update()
+
+class LabeledEntry(guitk.Frame):
+	def __init__(self, parent, gui, lbl, var, pos=LEFT, anch=NW):
+		guitk.Frame.__init__(self, parent)
+		self._gui = gui
+		self.label = guitk.Label(self, text=lbl, width=10, justify=LEFT)
+		self.entry = guitk.Entry(self, textvariable=var, justify=LEFT)
+		self.label.pack(side=pos, anchor=anch)
+		self.entry.pack(side=pos, anchor=anch, fill=X, expand=1)
+		
+class TestRow(guitk.Frame):
+	def __init__(self, parent, gui, runner, n, test):
+		guitk.Frame.__init__(self, parent)
+		self._gui = gui
+		self._runner = runner
+		self._num = n
+		bgcol = "#FFF"
+		fgcol = "#000"
+		if test.getState() == TestState.Success:
+			bgcol = "#0D0"
+		elif test.getState() == TestState.Fail:
+			bgcol = "#D00"
+			fgcol = "#FFF"
+		elif test.getState() == TestState.Error:
+			bgcol = "#DD0"
+		TestRunButton(self, self._gui, "Run", n, self._runner).pack(side=LEFT)
+		guitk.Checkbutton(self).pack(side=LEFT)
+		guitk.Label(self, text="{:02}".format(n), bg=bgcol, fg=fgcol, width=3).pack(side=LEFT)
+		guitk.Label(self, text=test.getName(), bg=bgcol, fg=fgcol, width=20).pack(side=LEFT)
+		guitk.Label(self, text=test.getDescription(), bg=bgcol, fg=fgcol, width=40).pack(side=LEFT, expand=1, fill=X)
+		
+		
+		
+class TestGrid(guitk.Frame):
+	def __init__(self, parent, gui, runner):
+		guitk.Frame.__init__(self, parent)
+		self._gui = gui
+		self._runner = runner
+		self.createHead()
+	
+	def createHead(self):
+		head = guitk.Frame(self)
+		self._runBtn = TestRunButton(head, self._gui, caption="Run All", n=-1, runner=self._runner)
+		self._runBtn.pack(side=LEFT)
+		self._toggleAll = guitk.Checkbutton(head)
+		self._toggleAll.pack(side=LEFT)
+		guitk.Label(head, text="#", width=3).pack(side=LEFT)
+		guitk.Label(head, text="Name", width=20).pack(side=LEFT)
+		guitk.Label(head, text="Description", width=40).pack(side=LEFT, expand=1, fill=X)
+		head.pack(side=TOP, expand=1, fill=BOTH, anchor=NW)
+	
+	def update(self):
+		slaves = self.pack_slaves()
+		for slave in slaves:
+			slave.pack_forget()
+			slave.destroy()
+		self.createHead()
+		i = 0
+		for t in self._runner._runsuite._testList:
+			TestRow(self, self._gui, self._runner, i, t).pack(side=TOP, expand=1, fill=BOTH, anchor=NW)
+			i = i + 1
+		
 
 class TestRunnerGui(Thread):
 	"""Graphical User Interface"""
-	_whnd = None
-	_runner = None
-	_testList = None
-	_mode = None
-	_file = None
-	_suite = None
-	
-	gui = None
-	
-	
-	@staticmethod
-	def loadTestBench():
-		fn = fileDiag.askopenfilename(initialdir=".")
-		TestRunnerGui.gui._file['text'] = os.path.relpath(fn)
 		
-	@staticmethod
-	def runAll():
-		TestRunnerGui.gui._createTestList()
-		TestRunnerGui.gui._runner.suite = TestRunnerGui.gui._suite.get()
-		TestRunnerGui.gui._runner.file = TestRunnerGui.gui._file.cget('text')
-		TestRunnerGui.gui._runner.mode = TestRunnerGui.gui._mode.get()
-		resultSuite = TestRunnerGui.gui._runner.run()
-		n = 0
-		for test in resultSuite.getTests():
-			n = n + 1
-			TestRunnerGui.gui._displayTest(n, test)
-		
-	
-	def _getFile(self, master, lbl, cmd=None):
-		"""
-		Generate a file selection 
-		
-		@type	master: Tkinter.Widget
-		@param	master: Parent widget
-		
-		@type	lbl: String
-		@param	lbl: Label text
-				
-		@type	cmd: Callback
-		@param	cmd: Callback function
-		"""
-		f = guitk.Frame(master, padx=5)
-		guitk.Button(f, text=lbl, command=cmd, width=len(lbl)+2).pack()
-		label = guitk.Label(f, text="", width=15, anchor=guitk.W)
-		label.pack()
-		f.pack()
-		return label
-	
-	def _testListHead(self):
-		f = guitk.Frame(self._testList)
-		guitk.Label(f, text="#", width=3).pack(side=guitk.LEFT)
-		guitk.Label(f, text="Name", width=15).pack(side=guitk.LEFT)
-		guitk.Label(f, text="Description", width=40).pack(side=guitk.LEFT)
-		guitk.Label(f, text="", width=5).pack(side=guitk.LEFT)
-		f.pack()
-	
-	def _displayTest(self, n, test):
-		"""
-		Displays a test		
-		"""
-		if test.getState() == TestState.Success:
-			col = "#080"
-		elif test.getState() == TestState.Fail:
-			col = "#800"
-		elif test.getState() == TestState.Error:
-			col = "#880"
-		f = guitk.Frame(self._testList)
-		guitk.Label(f, text=str(n), bg = col, width=3).grid(row=n, column=0)
-		guitk.Label(f, text=test.getName(), bg = col, width=15).grid(row=n, column=1)
-		guitk.Label(f, text=test.getDescription(), bg = col, width=40).grid(row=n, column=2)
-		guitk.Button(f, text="Run", width=5).grid(row=n, column=3)
-		f.pack()
-
-				
-	def _labelEntry(self, master, lbl, var=None):
-		""" """
-		f = guitk.Frame(master)
-		guitk.Label(f, text=lbl, width=15).pack()
-		guitk.Entry(f, textvariable=var, width=15).pack()
-		f.pack()
-		
-	def _createTestList(self):
-		if self._testList != None:
-			self._testList.pack_forget()
-			self._testList.destroy()
-		self._testList = guitk.Frame(self._whnd, padx=5, pady=5)
-		self._testList.pack()
-		self._testListHead()
-	
 	def __init__(self):
-		super(TestRunnerGui,self).__init__()
+		Thread.__init__(self)
 		self._runner = TestRunner()
 		self._whnd = guitk.Tk()
 		
-		cfgFrame = guitk.Frame(self._whnd, padx=10, pady=10)
-		self._file = self._getFile(cfgFrame, lbl="Load Testbench", cmd=TestRunnerGui.loadTestBench)
-		self._suite = guitk.StringVar(cfgFrame, self._runner.suite)
-		self._labelEntry(cfgFrame, "Testsuite", var=self._suite)
-		actionFrame = guitk.LabelFrame(cfgFrame, text="Mode", padx=1, pady=5)
+		cfgFrame = guitk.Frame(self._whnd)
+		
+		suiteFrame = guitk.LabelFrame(cfgFrame, text="Suite")
+		suiteInfoFrame = guitk.Frame(suiteFrame)
+		actionFrame = guitk.LabelFrame(cfgFrame, text="Mode")
+		
+		dataFrame = guitk.Frame(self._whnd)
+		
+		self._suite = guitk.StringVar(suiteInfoFrame, self._runner.suite)
+		self._tests = guitk.StringVar(suiteInfoFrame, self._runner.tests)
+		self._filename = guitk.StringVar(suiteInfoFrame, "")
 		self._mode = guitk.IntVar(actionFrame, TestSuiteMode.BreakOnFail)
-		guitk.Radiobutton(actionFrame, text="Continuous", variable=self._mode, value=TestSuiteMode.Continuous).grid(row=0)
-		guitk.Radiobutton(actionFrame, text="Halt on Fail", variable=self._mode, value=TestSuiteMode.BreakOnFail).grid(row=1)
-		guitk.Radiobutton(actionFrame, text="Halt on Error", variable=self._mode, value=TestSuiteMode.BreakOnError).grid(row=2)
-		actionFrame.pack()
-		btn = guitk.Button(cfgFrame, text="Run all", width=15, command=TestRunnerGui.runAll)
-		btn.pack()
-		cfgFrame.pack(side=guitk.LEFT, expand=guitk.Y, fill=guitk.Y)
 		
-		self._createTestList()
+		self._suiteFile = LabeledEntry(suiteInfoFrame, self, lbl="File", var=self._filename)
+		self._suiteFile.entry.configure(state=DISABLED)
+		self._suiteName = LabeledEntry(suiteInfoFrame, self, lbl="Name", var=self._suite)
+		self._suiteTests = LabeledEntry(suiteInfoFrame, self, lbl="Tests", var=self._tests)
+		self._suiteTests.entry.configure(state=DISABLED)
+		self._loadFile = SuiteLoaderButton(suiteFrame, self, self._runner)
 		
+		guitk.Radiobutton(actionFrame, text="Continuous", variable=self._mode, value=TestSuiteMode.Continuous).pack()
+		guitk.Radiobutton(actionFrame, text="Halt on Fail", variable=self._mode, value=TestSuiteMode.BreakOnFail).pack()
+		guitk.Radiobutton(actionFrame, text="Halt on Error", variable=self._mode, value=TestSuiteMode.BreakOnError).pack()
+		
+		self._loadFile.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
+		self._suiteFile.pack(side=TOP, expand=1, fill=X, anchor=NW)
+		self._suiteName.pack(side=TOP, expand=1, fill=X, anchor=NW)
+		self._suiteTests.pack(side=TOP, expand=1, fill=X, anchor=NW)
+		suiteInfoFrame.pack(side=LEFT, expand=1, fill=X, anchor=NW)
+		suiteFrame.pack(side=LEFT, anchor=NW)
+		actionFrame.pack(side=LEFT, anchor=NW)
+		cfgFrame.pack(side=TOP, expand=1, fill=X, anchor=N)
+	
+		self.dataGrid = TestGrid(self._whnd, self, self._runner)
+		self.dataGrid.pack(side=TOP, expand=1, fill=X, anchor=NW)
 		
 	def run(self):
 		self._whnd.mainloop()
-		
+
+# ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
+# handle script start                                                          #
+#                                                                              #
+# ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
+
 if __name__ == "__main__":
 	TermColor.init()
 	if len(sys.argv) == 1:
-		TestRunnerGui.gui = TestRunnerGui()
-		TestRunnerGui.gui.start()
+		gui = TestRunnerGui()
+		gui.start()
 	else:
 		runner = TestRunner()
 		runner.parseArgv()
-		suite = runner.run()
+		suite = runner.loadSuite()
+		runner.run()
 		print "{:2.2f}%".format(suite.getRate())
 
 			
