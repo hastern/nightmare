@@ -190,24 +190,24 @@ class TestSuiteMode:
 
 class Test:
 	"""A single test"""
-	_name = ""
+	name = ""
 	"""The name of the test"""
-	_descr = ""
+	descr = ""
 	"""The description of the game"""
-	_cmd = None
+	cmd = None
 	"""The command to be executed"""
-	_expectOutput = ""
+	expectOutput = ""
 	"""The expected output"""
-	_expectRetCode = 0
+	expectRetCode = 0
 	"""The expected return code"""
-	_output = ""
+	output = ""
 	"""The output"""
-	_retCode = 0
+	retCode = 0
 	"""The return code"""
-	_state = TestState.Waiting
+	state = TestState.Waiting
 	"""The state of the game"""
 	
-	def __init__(self, data):
+	def __init__(self, data, DUT):
 		"""
 		Initalises a test
 		
@@ -215,46 +215,23 @@ class Test:
 		@param	data: Dictionary with test definitions
 		"""
 		if 'name' in data:
-			self._name = data['name']
+			self.name = data['name']
 		if 'descr' in data:
-			self._descr = data['descr']
+			self.descr = data['descr']
 		if "cmd" in data:
-			self._cmd = data['cmd']
+			self.cmd = data['cmd']
 		else:
-			self._state = TestState.Error
+			self.state = TestState.Error
 		if 'expect' in data:
-			self._expectOutput = data['expect']
+			self.expectOutput = data['expect']
 		else:
-			self._expectOutput = ""
+			self.expectOutput = ""
 		if 'returnCode' in data:
-			self._expectRetCode = data['returnCode']
+			self.expectRetCode = data['returnCode']
 		else:
-			self._expectRetCode = 0
+			self.expectRetCode = 0
+		self.DUT = DUT
 			
-	def getName(self):
-		"""Returns the name of the test"""
-		return self._name
-		
-	def getDescription(self):
-		"""Returns the description of the test"""
-		return self._descr
-		
-	def getCommand(self):
-		"""Returns the command of the test"""
-		return self._cmd
-		
-	def getState(self):
-		"""Returns the current test state"""
-		return self._state
-		
-	def getOutput(self):
-		"""Returns the output"""
-		return self._output
-		
-	def getExpect(self):
-		"""Returns the expected output"""
-		return self._expectOutput
-				
 	def _check(self, exp, out):
 		"""
 		Test an expectation against an output
@@ -279,20 +256,21 @@ class Test:
 	
 	def run(self):
 		"""Runs the test"""
-		if self._cmd != None:
+		if self.cmd != None and self.DUT != None:
 			try:
-				self._output = subprocess.check_output(self._cmd, stderr=subprocess.STDOUT, shell=True)
-				self._retCode = 0
+				cmd_ = str(self.cmd).replace("$(DUT)", self.DUT)
+				self.output = subprocess.check_output(cmd_, stderr=subprocess.STDOUT, shell=True)
+				self.retCode = 0
 			except subprocess.CalledProcessError as e:
-				self._output = e.output
-				self._retCode = e.returncode
-			if self._check(self._expectRetCode, self._retCode) and self._check(self._expectOutput,self._output):
-				self._state = TestState.Success
+				self.output = e.output
+				self.retCode = e.returncode
+			if self._check(self.expectRetCode, self.retCode) and self._check(self.expectOutput,self.output):
+				self.state = TestState.Success
 			else:
-				self._state = TestState.Fail
+				self.state = TestState.Fail
 		else:
-			self._state = TestState.Error
-		return self._state
+			self.state = TestState.Error
+		return self.state
 
 class TestSuite:
 	"""A testsuite is a collection of tests"""
@@ -316,7 +294,7 @@ class TestSuite:
 	_mode = TestSuiteMode.BreakOnFail
 	"""The test suite mode"""
 	
-	def __init__(self, tests = [], mode=TestSuiteMode.BreakOnFail):
+	def __init__(self, DUT, tests = [], mode=TestSuiteMode.BreakOnFail):
 		"""
 		Initialises a test suite
 		
@@ -329,7 +307,7 @@ class TestSuite:
 		self.setMode(mode)
 		self._testList = []
 		for t in tests:
-			self.addTest(t)
+			self.addTest(t, DUT)
 		self._len = len(self._testList)
 		self._succes = TestSuite._success
 		self._failed = TestSuite._failed
@@ -351,14 +329,20 @@ class TestSuite:
 		"""
 		self._mode = mode
 		
-	def addTest(self, data):
+	def setDUT(self, DUT):
+		"""Define the 'Device under Test'"""
+		self.DUT = DUT
+		for t in self._testList:
+			t.DUT = DUT
+		
+	def addTest(self, data, DUT):
 		"""
 		Adds a test to the suite
 		
 		@type	data: Test
 		@param	data: Test to add
 		"""
-		self._testList.append(Test(data))
+		self._testList.append(Test(data, DUT))
 		
 	def getTests(self):
 		return self._testList
@@ -393,7 +377,7 @@ class TestSuite:
 		for t in self._testList:
 			self._count = self._count + 1 
 			self._lastResult = t.run()
-			logger.log("Test[{:02}] {} - {}: {}".format(self._count, t.getName(), t.getDescription(), TestState.toString(t.getState())))
+			logger.log("Test[{:02}] {} - {}: {}".format(self._count, t.name, t.descr, TestState.toString(t.state)))
 			logger.flush(quiet)
 			if (self._lastResult == TestState.Success):
 				self._success = self._success + 1
@@ -450,6 +434,15 @@ class TestRunner:
 		self.mode = TestRunner.mode
 		self.file = TestRunner.file
 		self._runsuite = None
+		self.DUT = None
+		
+	def setDUT(self, DUT):
+		self.DUT = DUT
+		if (self._runsuite != None):
+			self._runsuite.setDUT(DUT)
+	
+	def getSuite(self):
+		return self._runsuite
 	
 	def parseArgv(self):
 		"""Parses the argument vector"""
@@ -487,7 +480,7 @@ class TestRunner:
 		execfile(self.file, glb, ctx)
 		if (self.suite in ctx):
 			if (ctx[self.suite] != None):
-				self._runsuite = TestSuite(ctx[self.suite], self.mode)
+				self._runsuite = TestSuite(self.DUT, ctx[self.suite], self.mode)
 				self.tests = len(self._runsuite._testList)
 			else:
 				logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
@@ -529,25 +522,16 @@ class TestRunButton(guitk.Button):
 			self._runner.run(self._num)
 		self._gui.dataGrid.update()
 			
-class SuiteLoaderButton(guitk.Button):
-	def __init__(self, parent, gui, runner):
-		guitk.Button.__init__(self, parent, text="Load Testsuite", command=self.loadSuite)
-		self._runner = runner
-		self._gui = gui
+class FileLoaderButton(guitk.Button):
+	def __init__(self, parent, caption, callback):
+		guitk.Button.__init__(self, parent, text=caption, command=self.selectFile)
+		self._callback = callback
 	
-	def loadSuite(self):
-		self._fn = fileDiag.askopenfilename(initialdir=".")
-		if self._fn != "":
-			os.chdir(os.path.dirname(self._fn))
-			print os.getcwd()
-			self._runner.suite = self._gui._suite.get()
-			self._runner.file = os.path.relpath(self._fn)
-			self._runner.mode = self._gui._mode.get()
-			self._runner.loadSuite()
-			self._gui._tests.set(self._runner.tests)
-			self._gui._filename.set(os.path.relpath(self._fn))
-			self._gui.dataGrid.update()
-
+	def selectFile(self):
+		fn = fileDiag.askopenfilename(initialdir=".")
+		if fn != "":
+			self._callback(fn)
+	
 class LabeledEntry(guitk.Frame):
 	def __init__(self, parent, gui, lbl, var, pos=LEFT, anch=NW):
 		guitk.Frame.__init__(self, parent)
@@ -565,18 +549,18 @@ class TestRow(guitk.Frame):
 		self._num = n
 		bgcol = "#FFF"
 		fgcol = "#000"
-		if test.getState() == TestState.Success:
+		if test.state == TestState.Success:
 			bgcol = "#0D0"
-		elif test.getState() == TestState.Fail:
+		elif test.state == TestState.Fail:
 			bgcol = "#D00"
 			fgcol = "#FFF"
-		elif test.getState() == TestState.Error:
+		elif test.state == TestState.Error:
 			bgcol = "#DD0"
 		TestRunButton(self, self._gui, "Run", n, self._runner).pack(side=LEFT)
 		guitk.Checkbutton(self).pack(side=LEFT)
 		guitk.Label(self, text="{:02}".format(n), bg=bgcol, fg=fgcol, width=3).pack(side=LEFT)
-		guitk.Label(self, text=test.getName(), bg=bgcol, fg=fgcol, width=20).pack(side=LEFT)
-		guitk.Label(self, text=test.getDescription(), bg=bgcol, fg=fgcol, width=40).pack(side=LEFT, expand=1, fill=X)
+		guitk.Label(self, text=test.name, bg=bgcol, fg=fgcol, width=20).pack(side=LEFT)
+		guitk.Label(self, text=test.descr, bg=bgcol, fg=fgcol, width=40).pack(side=LEFT, expand=1, fill=X)
 		
 		
 		
@@ -605,7 +589,7 @@ class TestGrid(guitk.Frame):
 			slave.destroy()
 		self.createHead()
 		i = 0
-		for t in self._runner._runsuite._testList:
+		for t in self._runner.getSuite().getTests():
 			TestRow(self, self._gui, self._runner, i, t).pack(side=TOP, expand=1, fill=BOTH, anchor=NW)
 			i = i + 1
 		
@@ -613,6 +597,23 @@ class TestGrid(guitk.Frame):
 class TestRunnerGui(Thread):
 	"""Graphical User Interface"""
 		
+	def _handleSuiteLoad(self, fn):
+		dut = os.path.abspath(self._DUT.get())
+		os.chdir(os.path.dirname(fn))
+		print os.getcwd()
+		self._runner.suite = self._suite.get()
+		self._runner.file = os.path.relpath(fn)
+		self._runner.mode = self._mode.get()
+		self._runner.loadSuite()
+		self._tests.set(self._runner.tests)
+		self._filename.set(os.path.relpath(fn))
+		self._DUT.set(os.path.relpath(dut))
+		self.dataGrid.update()
+		
+	def _handleSelectDUT(self, fn):
+		self._runner.setDUT(fn)
+		self._DUT.set(os.path.relpath(fn))
+	
 	def __init__(self):
 		Thread.__init__(self)
 		self._runner = TestRunner()
@@ -629,6 +630,7 @@ class TestRunnerGui(Thread):
 		self._suite = guitk.StringVar(suiteInfoFrame, self._runner.suite)
 		self._tests = guitk.StringVar(suiteInfoFrame, self._runner.tests)
 		self._filename = guitk.StringVar(suiteInfoFrame, "")
+		self._DUT = guitk.StringVar(suiteInfoFrame, "")
 		self._mode = guitk.IntVar(actionFrame, TestSuiteMode.BreakOnFail)
 		
 		self._suiteFile = LabeledEntry(suiteInfoFrame, self, lbl="File", var=self._filename)
@@ -636,13 +638,18 @@ class TestRunnerGui(Thread):
 		self._suiteName = LabeledEntry(suiteInfoFrame, self, lbl="Name", var=self._suite)
 		self._suiteTests = LabeledEntry(suiteInfoFrame, self, lbl="Tests", var=self._tests)
 		self._suiteTests.entry.configure(state=DISABLED)
-		self._loadFile = SuiteLoaderButton(suiteFrame, self, self._runner)
+		self._DUTName = LabeledEntry(suiteInfoFrame, self, lbl="DUT", var=self._DUT)
+		self._DUTName.entry.configure(state=DISABLED) 
+		self._loadSuite = FileLoaderButton(suiteFrame, "Load Testsuite", self._handleSuiteLoad)
+		self._loadDUT = FileLoaderButton(suiteFrame, "Select DUT", self._handleSelectDUT)
 		
 		guitk.Radiobutton(actionFrame, text="Continuous", variable=self._mode, value=TestSuiteMode.Continuous).pack()
 		guitk.Radiobutton(actionFrame, text="Halt on Fail", variable=self._mode, value=TestSuiteMode.BreakOnFail).pack()
 		guitk.Radiobutton(actionFrame, text="Halt on Error", variable=self._mode, value=TestSuiteMode.BreakOnError).pack()
 		
-		self._loadFile.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
+		self._loadDUT.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
+		self._loadSuite.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
+		self._DUTName.pack(side=TOP, expand=1, fill=X, anchor=NW)
 		self._suiteFile.pack(side=TOP, expand=1, fill=X, anchor=NW)
 		self._suiteName.pack(side=TOP, expand=1, fill=X, anchor=NW)
 		self._suiteTests.pack(side=TOP, expand=1, fill=X, anchor=NW)
