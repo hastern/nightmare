@@ -200,9 +200,9 @@ class Test:
 	"""The description of the game"""
 	cmd = None
 	"""The command to be executed"""
-	expectStdout = lambda x: True
+	expectStdout = ""
 	"""The expected output on stdout"""
-	expectStderr = lambda x: True
+	expectStderr = ""
 	"""The expected output on stderr"""
 	expectRetCode = 0
 	"""The expected return code"""
@@ -233,11 +233,11 @@ class Test:
 		if 'stdout' in data:
 			self.expectStdout = data['stdout']
 		else:
-			self.expectStdout = lambda x: True
+			self.expectStdout = ""
 		if 'stderr' in data:
 			self.expectStderr = data['stderr']
 		else:
-			self.expectStderr = lambda x: True
+			self.expectStderr = ""
 		if 'returnCode' in data:
 			self.expectRetCode = data['returnCode']
 		else:
@@ -288,6 +288,10 @@ class Test:
 		else:
 			self.state = TestState.Error
 		return self.state
+		
+	def toString(self):
+		s = "\"name\":\"{0:s}\",\"descr\":\"{1:s}\",\"cmd\":\"{2:s}\",\"stdout\":\"{3:s}\",\"stderr\":\"{4:s}\",\"returnCode\":\"{5:s}\""
+		return "{"+s.format(self.name, self.descr, self.cmd, self.expectStdout, self.expectStderr, str(self.expectRetCode))+"}"
 
 class TestSuite:
 	"""A testsuite is a collection of tests"""
@@ -582,14 +586,12 @@ class TestEditForm(guitk.Toplevel):
 		self._test = test
 		self._gui = gui
 		
-	
 		self._varname = guitk.StringVar(self, self._test.name)
 		self._vardescr = guitk.StringVar(self, self._test.descr)
 		self._varcmd = guitk.StringVar(self, self._test.cmd)
 		self._varout = guitk.StringVar(self)
 		self._varret = guitk.StringVar(self, self._test.retCode)
 		self._varexpRet = guitk.StringVar(self, self._test.expectRetCode)
-		
 		
 		guitk.Label(self, text="Name").grid(row=0, column=0, columnspan=2)
 		guitk.Entry(self, width=50, textvariable=self._varname).grid(row=1, column=0, columnspan=2, sticky=N+E+S+W)
@@ -637,12 +639,16 @@ class TestEditButton(guitk.Button):
 		TestEditForm(self, self._num, self._test, self._gui._runner, self._gui)
 		
 class FileLoaderButton(guitk.Button):
-	def __init__(self, parent, caption, callback):
+	def __init__(self, parent, caption, callback, open=True):
 		guitk.Button.__init__(self, parent, text=caption, command=self.selectFile)
 		self._callback = callback
+		self._open = open
 	
 	def selectFile(self):
-		fn = fileDiag.askopenfilename(initialdir=".")
+		if self._open:
+			fn = fileDiag.askopenfilename(initialdir=".")
+		else:
+			fn = fileDiag.asksaveasfilename(initialdir=".")
 		if fn != "":
 			self._callback(fn)
 	
@@ -651,7 +657,7 @@ class LabeledEntry(guitk.Frame):
 		guitk.Frame.__init__(self, parent)
 		self._gui = gui
 		self.label = guitk.Label(self, text=lbl, width=10, justify=LEFT)
-		self.entry = guitk.Entry(self, textvariable=var, justify=LEFT)
+		self.entry = guitk.Entry(self, textvariable=var, width=20, justify=LEFT)
 		self.label.pack(side=pos, anchor=anch)
 		self.entry.pack(side=pos, anchor=anch, fill=X, expand=1)
 		
@@ -773,7 +779,7 @@ class TestRunnerGui(Thread):
 	def _handleSuiteLoad(self, fn):
 		dut = os.path.abspath(self._DUT.get())
 		os.chdir(os.path.dirname(fn))
-		print os.getcwd()
+		#print os.getcwd()
 		self._runner.suite = self._suite.get()
 		self._runner.file = os.path.relpath(fn)
 		self._runner.mode = self._mode.get()
@@ -787,6 +793,18 @@ class TestRunnerGui(Thread):
 	def _handleSelectDUT(self, fn):
 		self._runner.setDUT(fn)
 		self._DUT.set(os.path.relpath(fn))
+		
+	def _handleSuiteSave(self, fn):
+		fHnd = open(fn,"w")
+		fHnd.write("# pyTest - Testsuite\n")
+		fHnd.write("# Saved at {}\n".format(time.strftime("%H:%M:%S")))
+		fHnd.write("suite = [\n")
+		tests = []
+		for test in self._runner.getSuite().getTests():
+			tests.append(test.toString())
+		fHnd.write(",\n".join(tests))
+		fHnd.write("\n]\n")
+		fHnd.close()
 	
 	def __init__(self):
 		Thread.__init__(self)
@@ -816,6 +834,7 @@ class TestRunnerGui(Thread):
 		self._DUTName = LabeledEntry(suiteInfoFrame, self, lbl="DUT", var=self._DUT)
 		self._DUTName.entry.configure(state=DISABLED) 
 		self._loadSuite = FileLoaderButton(suiteFrame, "Load Testsuite", self._handleSuiteLoad)
+		self._saveSuite = FileLoaderButton(suiteFrame, "Save Testsuite", self._handleSuiteSave, False)
 		self._loadDUT = FileLoaderButton(suiteFrame, "Select DUT", self._handleSelectDUT)
 		
 		guitk.Radiobutton(actionFrame, text="Continuous", variable=self._mode, value=TestSuiteMode.Continuous).pack()
@@ -824,6 +843,7 @@ class TestRunnerGui(Thread):
 		
 		self._loadDUT.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
 		self._loadSuite.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
+		self._saveSuite.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
 		self._DUTName.pack(side=TOP, expand=1, fill=X, anchor=NW)
 		self._suiteFile.pack(side=TOP, expand=1, fill=X, anchor=NW)
 		self._suiteName.pack(side=TOP, expand=1, fill=X, anchor=NW)
@@ -853,10 +873,7 @@ if __name__ == "__main__":
 		runner.run()
 		if not runner.lengthOnly and runner.test == -1:
 			print "{:2.2f}%".format(suite.getRate())
-		if suite._lastResult == TestState.Success:
-			sys.exit(0)
-		else:
-			sys.exit(1)
+		sys.exit(suite._lastResult)
 	else:
 		gui = TestRunnerGui()
 		gui.start()
