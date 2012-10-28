@@ -536,13 +536,15 @@ class TestRunner(Thread):
 	def loadSuite(self):
 		logger.log("\nReading testfile ...")
 		glb = {"__builtins__":None, "Test":Test, "Suite":TestSuite}
-		ctx = {self.suite:None}
+		ctx = {self.suite:None, "DUT":None}
 		self._runsuite = None
 		execfile(self.file, glb, ctx)
 		if (self.suite in ctx):
 			if (ctx[self.suite] != None):
 				self._runsuite = TestSuite(ctx[self.suite], self.DUT, self.mode)
 				self.tests = len(self._runsuite._testList)
+				if "DUT" in ctx:
+					self.setDUT(ctx["DUT"])
 			else:
 				logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
 		else:
@@ -1005,14 +1007,16 @@ class TestRunnerGui(Thread):
 		"""
 		dut = os.path.abspath(self._DUT.get())
 		os.chdir(os.path.dirname(fn))
+		self._DUT.set(os.path.relpath(dut))
 		#print os.getcwd()
 		self._runner.suite = self._suite.get()
 		self._runner.file = os.path.relpath(fn)
 		self._runner.mode = self._mode.get()
 		self._runner.loadSuite()
+		if self._runner.DUT is not None:
+			self._DUT.set(self._runner.DUT)
 		self._tests.set(self._runner.tests)
 		self._filename.set(os.path.relpath(fn))
-		self._DUT.set(os.path.relpath(dut))
 		self.dataGrid.clear()
 		self.dataGrid.update()
 		self.dataGrid.scroll()
@@ -1038,9 +1042,11 @@ class TestRunnerGui(Thread):
 		fHnd.write("#!/usr/bin/env python\n\n")
 		fHnd.write("# pyTest - Testsuite\n")
 		fHnd.write("# Saved at {}\n".format(time.strftime("%H:%M:%S")))
-		#fHnd.write("# Author: {}\n".format())
-		fHnd.write("# DUT: {}\n".format(self._runner.DUT))
 		fHnd.write("# \n\n")
+		#fHnd.write("# Author: {}\n".format())
+		if self._runner.DUT is not None:
+			fHnd.write("# Device Under Test\n")
+			fHnd.write("DUT = \"{}\"\n\n".format(os.path.relpath(self._runner.DUT)))
 		fHnd.write("# Test definitions\n")
 		fHnd.write("{} = [\n".format(self._suite.get()))
 		tests = []
