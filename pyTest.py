@@ -303,18 +303,18 @@ class Test:
 		return self.state
 		
 	def toString(self):
-		s = "Test (\n"
-		s = s + "\t\tname = \"{:s}\",\n".format(self.name)
-		s = s + "\t\tdescription = \"{:s}\",\n".format(self.descr)
-		s = s + "\t\tcommand = \"{:s}\",\n".format(self.cmd)
+		fields = []
+		fields.append("\t\tname = \"{:s}\"".format(self.name))
+		if self.descr is not None and self.descr != "":
+			fields.append("\t\tdescription = \"{:s}\"".format(self.descr))
+		fields.append("\t\tcommand = \"{:s}\"".format(self.cmd))
 		if self.expectStdout is not None:
-			s = s + "\t\tstdout = \"{}\",\n".format(self.expectStdout)
+			fields.append("\t\tstdout = \"{}\"".format(self.expectStdout))
 		if self.expectStderr is not None:
-			s = s + "\t\tstderr = \"{}\",\n".format(self.expectStderr)
+			fields.append("\t\tstderr = \"{}\"".format(self.expectStderr))
 		if self.expectRetCode is not None:
-			s = s + "\t\treturnCode = \"{}\"\n".format(self.expectRetCode)
-		s = s + "\t)"
-		return s
+			fields.append("\t\treturnCode = \"{}\"".format(self.expectRetCode))
+		return "Test (\n{}\n\t)".format(",\n".join(fields))
 
 class TestSuite:
 	"""A testsuite is a collection of tests"""
@@ -497,6 +497,8 @@ class TestRunner(Thread):
 			self._runsuite.setDUT(DUT)
 	
 	def getSuite(self):
+		if self._runsuite is None:
+			self._runsuite = TestSuite(DUT = self.DUT, mode=self.mode)		
 		return self._runsuite
 	
 	def parseArgv(self):
@@ -737,6 +739,39 @@ class TestEditButton(guitk.Button):
 	def editTest(self):
 		TestEditForm(self, self._num, self._test, self._gui._runner, self._gui)
 		
+class TestCreateButton(guitk.Button):
+	"""Button for creating a new test"""
+	def __init__(self, parent, gui, caption, runner):
+		"""
+		Initialise the test edit button
+		
+		@type	parent: Widget
+		@param	parent: Parent widget
+		
+		@type	gui: TK
+		@param	gui: The main window
+		
+		@type	caption: String
+		@param	caption: The caption of the button
+		
+		@type	test: Test
+		@param	test: The test to be edited
+		
+		@type 	n: int
+		@param	n: The number of the test
+		"""
+		guitk.Button.__init__(self, parent, text=caption, command=self.createTest)
+		self._gui = gui
+		self._runner = runner
+		
+	def createTest(self):
+		"""Eventhandler for button click"""
+		test = Test()
+		self._runner.getSuite().getTests().append(test)
+		self._gui.dataGrid.update()
+		self._gui.dataGrid.scroll()
+		TestEditForm(self, len(self._runner.getSuite().getTests()), test, self._runner, self._gui)
+		
 class FileLoaderButton(guitk.Button):
 	"""Button for handling file selection"""
 	def __init__(self, parent, caption, callback, func=fileDiag.askopenfilename):
@@ -894,15 +929,13 @@ class TestGrid(guitk.Frame):
 	def createHead(self):
 		"""Create the head of the grid"""
 		head = guitk.Frame(self)
-		self._runBtn = TestRunButton(head, self._gui, caption="Run All", n=-1, runner=self._runner)
-		self._runBtn.pack(side=LEFT)
+		guitk.Button(head, text="+", command=self.scrollUp, width=3).pack(side=LEFT)
+		guitk.Button(head, text="-", command=self.scrollDown, width=3).pack(side=LEFT)
 		self._toggleAll = guitk.Checkbutton(head)
 		self._toggleAll.pack(side=LEFT)
 		guitk.Label(head, text="#", width=3).pack(side=LEFT)
 		guitk.Label(head, text="Name", width=20).pack(side=LEFT)
 		guitk.Label(head, text="Description", width=40).pack(side=LEFT, expand=1, fill=X)
-		guitk.Button(head, text="+", command=self.scrollUp).pack(side=RIGHT)
-		guitk.Button(head, text="-", command=self.scrollDown).pack(side=RIGHT)
 		head.pack(side=TOP, expand=1, fill=BOTH, anchor=NW)
 	
 	def scrollUp(self):
@@ -946,6 +979,8 @@ class TestGrid(guitk.Frame):
 	def scroll(self):
 		"""Scroll through the grid"""
 		lower, upper = self._visible
+		if upper > len(self._rows):
+			upper = len(self._rows)-1
 		for row in self._rows:
 			row.pack_forget()
 		for i in range(lower, upper+1):
@@ -1000,10 +1035,11 @@ class TestRunnerGui(Thread):
 		@param 	fn: The filename
 		"""
 		fHnd = open(fn,"w")
+		fHnd.write("#!/usr/bin/env python\n\n")
 		fHnd.write("# pyTest - Testsuite\n")
 		fHnd.write("# Saved at {}\n".format(time.strftime("%H:%M:%S")))
 		#fHnd.write("# Author: {}\n".format())
-		#fHnd.write("# DUT: {}\n".format())
+		fHnd.write("# DUT: {}\n".format(self._runner.DUT))
 		fHnd.write("# \n\n")
 		fHnd.write("# Test definitions\n")
 		fHnd.write("{} = [\n".format(self._suite.get()))
@@ -1044,12 +1080,13 @@ class TestRunnerGui(Thread):
 		self._loadSuite = FileLoaderButton(suiteFrame, "Load Testsuite", self._handleSuiteLoad)
 		self._saveSuite = FileLoaderButton(suiteFrame, "Save Testsuite", self._handleSuiteSave, fileDiag.asksaveasfilename)
 		self._loadDUT = FileLoaderButton(suiteFrame, "Select DUT", self._handleSelectDUT)
+		self._addTest = TestCreateButton(suiteFrame, self, "Add Test", self._runner)
+		self._runBtn = TestRunButton(suiteFrame, self, caption="Run All", n=-1, runner=self._runner)
 		# TestMode selection
 		guitk.Radiobutton(actionFrame, text="Continuous", variable=self._mode, value=TestSuiteMode.Continuous).pack()
 		guitk.Radiobutton(actionFrame, text="Halt on Fail", variable=self._mode, value=TestSuiteMode.BreakOnFail).pack()
 		guitk.Radiobutton(actionFrame, text="Halt on Error", variable=self._mode, value=TestSuiteMode.BreakOnError).pack()
 		# Pack all widgets
-		self._loadDUT.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
 		self._loadSuite.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
 		self._saveSuite.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
 		self._DUTName.pack(side=TOP, expand=1, fill=X, anchor=NW)
@@ -1057,6 +1094,9 @@ class TestRunnerGui(Thread):
 		self._suiteName.pack(side=TOP, expand=1, fill=X, anchor=NW)
 		self._suiteTests.pack(side=TOP, expand=1, fill=X, anchor=NW)
 		suiteInfoFrame.pack(side=LEFT, expand=1, fill=X, anchor=NW)
+		self._addTest.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
+		self._loadDUT.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
+		self._runBtn.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
 		suiteFrame.pack(side=LEFT, anchor=NW)
 		actionFrame.pack(side=RIGHT, anchor=NE)
 		cfgFrame.pack(side=TOP, expand=1, fill=X, anchor=N)
