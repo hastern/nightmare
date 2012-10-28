@@ -215,36 +215,45 @@ class Test:
 	state = TestState.Waiting
 	"""The state of the game"""
 	
-	def __init__(self, data, DUT):
+	def __init__(self, data=None, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None):
 		"""
 		Initalises a test
 		
 		@type	data: Dictionary
 		@param	data: Dictionary with test definitions
 		"""
-		if 'name' in data:
-			self.name = data['name']
-		if 'descr' in data:
-			self.descr = data['descr']
-		if "cmd" in data:
-			self.cmd = data['cmd']
+		if data is not None:
+			if 'name' in data:
+				self.name = data['name']
+			if 'descr' in data:
+				self.descr = data['descr']
+			if "cmd" in data:
+				self.cmd = data['cmd']
+			else:
+				self.state = TestState.Error
+			if 'stdout' in data:
+				self.expectStdout = data['stdout']
+			else:
+				self.expectStdout = None
+			if 'stderr' in data:
+				self.expectStderr = data['stderr']
+			else:
+				self.expectStderr = None
+			if 'returnCode' in data:
+				self.expectRetCode = data['returnCode']
+			else:
+				self.expectRetCode = None
 		else:
-			self.state = TestState.Error
-		if 'stdout' in data:
-			self.expectStdout = data['stdout']
-		else:
-			self.expectStdout = ""
-		if 'stderr' in data:
-			self.expectStderr = data['stderr']
-		else:
-			self.expectStderr = ""
-		if 'returnCode' in data:
-			self.expectRetCode = data['returnCode']
-		else:
-			self.expectRetCode = 0
+			self.name = name
+			self.descr = description
+			self.cmd = command
+			self.expectStdout = stdout
+			self.expectStderr = stderr
+			self.expectRetCode = returnCode
 		self.DUT = DUT
 		self.output = ""
 		self.error = ""
+		self.state = TestState.Waiting
 			
 	def _check(self, exp, out):
 		"""
@@ -267,9 +276,13 @@ class Test:
 			if exp.startswith("lambda"):
 				f = eval(exp)
 				return f(out)
+			if exp.startswith("regex:"):
+				patCode = re.compile(exp[6:].strip(), re.IGNORECASE)
+				return (patCode.match(str(out).strip()) != None)
 			else:
-				patCode = re.compile(exp, re.IGNORECASE)
-				return (patCode.match(str(out)) != None)
+				return exp == str(out).strip()
+		elif exp is None:
+			return True
 		return False
 	
 	def run(self):
@@ -277,11 +290,11 @@ class Test:
 		if self.state == TestState.Disabled:
 			return TestState.Disabled
 		if self.cmd != None and self.DUT != None:
-			cmd_ = str(self.cmd).replace("$(DUT)", self.DUT)
+			cmd_ = str(self.cmd).replace("$DUT", self.DUT)
 			proc = subprocess.Popen(cmd_, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
 			self.output, self.error = proc.communicate()
 			self.retCode = proc.wait()
-			if self._check(self.expectRetCode, self.retCode) and self._check(self.expectStdout,self.output) and self._check(self.expectStderr,self.error):
+			if self._check(self.expectRetCode, self.retCode) and self._check(self.expectStdout,self.output.strip()) and self._check(self.expectStderr,self.error.strip()):
 				self.state = TestState.Success
 			else:
 				self.state = TestState.Fail
@@ -290,14 +303,17 @@ class Test:
 		return self.state
 		
 	def toString(self):
-		s = "{"
-		s = s + "\n\t\"name\":\"{:s}\",".format(self.name)
-		s = s + "\n\t\"descr\":\"{:s}\",".format(self.descr)
-		s = s + "\n\t\"cmd\":\"{:s}\",".format(self.cmd)
-		s = s + "\n\t\"stdout\":\"{:s}\",".format(self.expectStdout)
-		s = s + "\n\t\"stderr\":\"{:s}\",".format(self.expectStderr)
-		s = s + "\n\t\"returnCode\":\"{}\"".format(self.expectRetCode)
-		s = s + "\n}"
+		s = "Test (\n"
+		s = s + "\t\tname = \"{:s}\",\n".format(self.name)
+		s = s + "\t\tdescription = \"{:s}\",\n".format(self.descr)
+		s = s + "\t\tcommand = \"{:s}\",\n".format(self.cmd)
+		if self.expectStdout is not None:
+			s = s + "\t\tstdout = \"{}\",\n".format(self.expectStdout)
+		if self.expectStderr is not None:
+			s = s + "\t\tstderr = \"{}\",\n".format(self.expectStderr)
+		if self.expectRetCode is not None:
+			s = s + "\t\treturnCode = \"{}\"\n".format(self.expectRetCode)
+		s = s + "\t)"
 		return s
 
 class TestSuite:
@@ -322,7 +338,7 @@ class TestSuite:
 	_mode = TestSuiteMode.BreakOnFail
 	"""The test suite mode"""
 	
-	def __init__(self, DUT, tests = [], mode=TestSuiteMode.BreakOnFail):
+	def __init__(self, tests = [], DUT=None, mode=TestSuiteMode.BreakOnFail):
 		"""
 		Initialises a test suite
 		
@@ -335,7 +351,11 @@ class TestSuite:
 		self.setMode(mode)
 		self._testList = []
 		for t in tests:
-			self.addTest(t, DUT)
+			if isinstance(t, Test):
+				self._testList.append(t)
+				t.DUT = DUT
+			else:
+				self.addTest(t, DUT)
 		self._len = len(self._testList)
 		self._succes = TestSuite._success
 		self._failed = TestSuite._failed
@@ -513,13 +533,13 @@ class TestRunner(Thread):
 	
 	def loadSuite(self):
 		logger.log("\nReading testfile ...")
-		glb = {"__builtins__":None}
+		glb = {"__builtins__":None, "Test":Test, "Suite":TestSuite}
 		ctx = {self.suite:None}
 		self._runsuite = None
 		execfile(self.file, glb, ctx)
 		if (self.suite in ctx):
 			if (ctx[self.suite] != None):
-				self._runsuite = TestSuite(self.DUT, ctx[self.suite], self.mode)
+				self._runsuite = TestSuite(ctx[self.suite], self.DUT, self.mode)
 				self.tests = len(self._runsuite._testList)
 			else:
 				logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
@@ -678,9 +698,9 @@ class TestEditForm(guitk.Toplevel):
 		TestRunButton(self, gui, "Run", n-1, runner).grid(row=9, column=4)
 		TestSaveButton(self, test, gui).grid(row=9, column=5)
 		# Fill data
-		if not isLambda(self._test.expectStdout):
+		if not isLambda(self._test.expectStdout) and self._test.expectStdout is not None:
 			self._expOut.insert(guitk.INSERT, str(self._test.expectStdout))
-		if not isLambda(self._test.expectStderr):
+		if not isLambda(self._test.expectStderr) and self._test.expectStderr is not None:
 			self._expErr.insert(guitk.INSERT, str(self._test.expectStderr))
 		if self._test.output != "":
 			self._out.insert(guitk.INSERT, str(self._test.output))
@@ -926,10 +946,17 @@ class TestGrid(guitk.Frame):
 	def scroll(self):
 		"""Scroll through the grid"""
 		lower, upper = self._visible
-		for i in range(0, len(self._rows)):
-			self._rows[i].pack_forget()
+		for row in self._rows:
+			row.pack_forget()
 		for i in range(lower, upper+1):
 			self._rows[i].pack(side=TOP, expand=1, fill=BOTH, anchor=NW)
+			
+	def clear(self):
+		"""remove all rows from the grid"""
+		for row in self._rows:
+			row.pack_forget()
+			row.destroy()
+		self._rows = []
 		
 class TestRunnerGui(Thread):
 	"""Graphical User Interface"""
@@ -951,6 +978,7 @@ class TestRunnerGui(Thread):
 		self._tests.set(self._runner.tests)
 		self._filename.set(os.path.relpath(fn))
 		self._DUT.set(os.path.relpath(dut))
+		self.dataGrid.clear()
 		self.dataGrid.update()
 		self.dataGrid.scroll()
 		
@@ -978,19 +1006,12 @@ class TestRunnerGui(Thread):
 		#fHnd.write("# DUT: {}\n".format())
 		fHnd.write("# \n\n")
 		fHnd.write("# Test definitions\n")
+		fHnd.write("{} = [\n".format(self._suite.get()))
 		tests = []
-		i = 0
 		for test in self._runner.getSuite().getTests():
-			i = i + 1
-			testString = "test{:02}".format(i)
-			fHnd.write("test{:02} = {}\n".format(i, test.toString()))
-			tests.append(testString)
-		fHnd.write("\n# Suite packing \n{} = [".format(self._suite.get()))
-		for i in range(0, len(tests)-1):
-			if i % 10 == 0:
-				fHnd.write("\n\t")
-			fHnd.write("{},".format(tests[i]))
-		fHnd.write("{}\n]\n".format(tests[len(tests)-1]))
+			tests.append("\t{}".format( test.toString()))
+		fHnd.write(",\n".join(tests))
+		fHnd.write("\n]\n")
 		fHnd.close()
 	
 	def __init__(self):
