@@ -303,6 +303,12 @@ class Test:
 		return self.state
 		
 	def toString(self):
+		"""
+		Creates a textual representation of the test.
+		The output can be saved to a file.
+		
+		@rtype: 	String
+		"""
 		fields = []
 		fields.append("\t\tname = \"{:s}\"".format(self.name))
 		if self.descr is not None and self.descr != "":
@@ -492,11 +498,18 @@ class TestRunner(Thread):
 		self._finished = None
 		
 	def setDUT(self, DUT):
+		"""
+		set the Device under Test
+		
+		@type	DUT: String
+		@param	DUT: Device Under Test
+		"""		
 		self.DUT = DUT
 		if (self._runsuite != None):
 			self._runsuite.setDUT(DUT)
 	
 	def getSuite(self):
+		"""Returns the suite. If none is loaded a new one will be created"""
 		if self._runsuite is None:
 			self._runsuite = TestSuite(DUT = self.DUT, mode=self.mode)		
 		return self._runsuite
@@ -534,6 +547,7 @@ class TestRunner(Thread):
 				logger.log("\tDevice under Test is: {}".format(self.DUT))
 	
 	def loadSuite(self):
+		"""Loads the suite from a file"""
 		logger.log("\nReading testfile ...")
 		glb = {"__builtins__":None, "Test":Test, "Suite":TestSuite}
 		ctx = {self.suite:None, "DUT":None}
@@ -552,11 +566,13 @@ class TestRunner(Thread):
 		return self._runsuite
 		
 	def start(self, finished = None, test = -1):
+		"""start the runner-thread"""
 		self._finished = finished
 		self.test = test
 		Thread.start(self)
 	
 	def run(self):
+		"""Thread run function"""
 		if self.lengthOnly:
 			print len(self._runsuite.getTests())
 		else:
@@ -795,11 +811,12 @@ class FileLoaderButton(guitk.Button):
 		guitk.Button.__init__(self, parent, text=caption, command=self.selectFile)
 		self._callback = callback
 		self._func = func
+		self._caption = caption
 	
 	def selectFile(self):
 		"""Eventhandler for button click"""
 		if self._func is not None:
-			fn = self._func(initialdir=".")
+			fn = self._func(initialdir=".", filetypes=[("Python Script","*.py"), ("pyTest Testbench","*.test.py")], defaultextension=".test.py", title=self._caption)
 			if fn != "":
 				self._callback(fn)
 	
@@ -1040,7 +1057,7 @@ class TestRunnerGui(Thread):
 		"""
 		fHnd = open(fn,"w")
 		fHnd.write("#!/usr/bin/env python\n\n")
-		fHnd.write("# pyTest - Testsuite\n")
+		fHnd.write("# pyTest - Testbench\n")
 		fHnd.write("# Saved at {}\n".format(time.strftime("%H:%M:%S")))
 		fHnd.write("# \n\n")
 		#fHnd.write("# Author: {}\n".format())
@@ -1119,9 +1136,46 @@ class TestRunnerGui(Thread):
 #                                                                              #
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
+def printHelp():
+	"""Print usage information for this tool"""
+	print "pyTest"
+	print ""
+	print "A test tool for non-interactive commandline programms"
+	print ""
+	print "Usage: {} [OPTIONS]".format(os.path.relpath(sys.argv[0]))
+	print "  OPTIONS:"
+	print "    -bench:TESTBENCH"
+	print "        Load the testbench form the file TESTBENCH."
+	print "    -suite:SUITE"
+	print "        Use the testsuite SUITE from the testbench."
+	print "    -test:TEST"
+	print "        Only run test number TEST."
+	print "    -dut:DUT"
+	print "        Set the device under test to the file DUT."
+	print "    -c"
+	print "        Continuous mode (Don't halt on failed tests)."
+	print "    -e"
+	print "        Same as '-c', but will halt if an error occurs."
+	print "    -l"
+	print "        Print only the number of tests in the suite."
+	print "    --no-color"
+	print "        Don't use any colored output."
+	print "    --no-gui"
+	print "        Don't use the GUI."
+	print "    -q"
+	print "        Quiet mode. There will be no output except results."
+	print "    -v"
+	print "        Verbose mode. The program gets chatty."
+	print "    -h, --help, -?"
+	print "        Print this help"
+	exit(0)
+	
+
 if __name__ == "__main__":
 	TermColor.init()
-	if "-nogui" in sys.argv:
+	if "-h" in sys.argv or "--help" in sys.argv or "-?" in sys.argv:
+		printHelp()
+	if "--no-gui" in sys.argv:
 		# Capt. Obvious: We're running in console mode
 		runner = TestRunner()
 		runner.parseArgv()
