@@ -290,8 +290,15 @@ class Test:
 		return self.state
 		
 	def toString(self):
-		s = "\"name\":\"{0:s}\",\"descr\":\"{1:s}\",\"cmd\":\"{2:s}\",\"stdout\":\"{3:s}\",\"stderr\":\"{4:s}\",\"returnCode\":\"{5:s}\""
-		return "{"+s.format(self.name, self.descr, self.cmd, self.expectStdout, self.expectStderr, str(self.expectRetCode))+"}"
+		s = "{"
+		s = s + "\n\t\"name\":\"{:s}\",".format(self.name)
+		s = s + "\n\t\"descr\":\"{:s}\",".format(self.descr)
+		s = s + "\n\t\"cmd\":\"{:s}\",".format(self.cmd)
+		s = s + "\n\t\"stdout\":\"{:s}\",".format(self.expectStdout)
+		s = s + "\n\t\"stderr\":\"{:s}\",".format(self.expectStderr)
+		s = s + "\n\t\"returnCode\":\"{}\"".format(self.expectRetCode)
+		s = s + "\n}"
+		return s
 
 class TestSuite:
 	"""A testsuite is a collection of tests"""
@@ -475,7 +482,6 @@ class TestRunner(Thread):
 	def parseArgv(self):
 		"""Parses the argument vector"""
 		argv = sys.argv
-		argv.pop(0) # remove program name
 		for arg in argv:
 			if arg == "-c":
 				logger.log("\tI'm running in continuous mode now")
@@ -549,13 +555,33 @@ class TestRunner(Thread):
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
 class TestRunButton(guitk.Button):
+	"""Button to start one test run"""
 	def __init__(self, parent, gui, caption, n, runner):
+		"""
+		Initialise the button
+		
+		@type	parent: Widget
+		@param	parent: Parent widget
+		
+		@type	gui: TK
+		@param	gui: The main window
+		
+		@type	n: int 
+		@param	n: Number of the test
+		
+		@type	caption: String
+		@param 	caption: Caption of the button
+		
+		@type	runner: TestRunner
+		@param	runner: The test runner
+		"""
 		guitk.Button.__init__(self, parent, text=caption, command=self.runTest, width=7)
 		self._num = n
 		self._runner = runner
 		self._gui = gui
 		
 	def runTest(self):
+		"""Run the test(s)"""
 		self._runner.mode = self._gui._mode.get()
 		if self._num == -1:
 			self._runner.start(self.finishHandler)
@@ -563,36 +589,70 @@ class TestRunButton(guitk.Button):
 			self._runner.start(self.finishHandler, self._num)
 
 	def finishHandler(self):
+		"""Handler for updating the datagrid after the test run"""
 		self._gui.dataGrid.update()
 		
 		
 class TestSaveButton(guitk.Button):
+	"""Button to the save the test data"""
 	def __init__(self, parent, test, gui):
+		"""
+		Initialise the button
+		
+		@type	parent: Widget
+		@param	parent: Parent widget
+		
+		@type	gui: TK
+		@param	gui: The main window
+		
+		@type	test: Test
+		@param	test: The test data
+		"""
 		guitk.Button.__init__(self, parent, text="Save", command=self.saveTest, width=7)
 		self._test = test
 		self._parentForm = parent
 		self._gui = gui
 		
 	def saveTest(self):
+		"""Save the test"""
 		self._test.name = self._parentForm._varname.get()
 		self._test.descr = self._parentForm._vardescr.get()
 		self._test.cmd = self._parentForm._varcmd.get()
 		self._gui.dataGrid.update()
 		
 class TestEditForm(guitk.Toplevel):
+	"""Form for editing one test"""
 	def __init__(self, parent, n, test, runner, gui):
+		"""
+		Initialises the form
+		
+		@type	parent: Widget
+		@param	parent: Parent widget
+		
+		@type	gui: TK
+		@param	gui: The main window
+		
+		@type	n: int 
+		@param	n: Number of the test
+		
+		@type	test: Test
+		@param 	test: The test to be edited
+		
+		@type	runner: TestRunner
+		@param	runner: The test runner
+		"""
 		guitk.Toplevel.__init__(self, parent)
 		self.title("Edit test {}".format(n))
 		self._test = test
 		self._gui = gui
-		
+		# Variables
 		self._varname = guitk.StringVar(self, self._test.name)
 		self._vardescr = guitk.StringVar(self, self._test.descr)
 		self._varcmd = guitk.StringVar(self, self._test.cmd)
 		self._varout = guitk.StringVar(self)
 		self._varret = guitk.StringVar(self, self._test.retCode)
 		self._varexpRet = guitk.StringVar(self, self._test.expectRetCode)
-		
+		# Widgets
 		guitk.Label(self, text="Name").grid(row=0, column=0, columnspan=2)
 		guitk.Entry(self, width=50, textvariable=self._varname).grid(row=1, column=0, columnspan=2, sticky=N+E+S+W)
 		guitk.Label(self, text="Description").grid(row=0, column=2, columnspan=4)
@@ -617,7 +677,7 @@ class TestEditForm(guitk.Toplevel):
 		guitk.Entry(self, width=30, textvariable=self._varret).grid(row=9, column=2, columnspan=2, sticky=N+E+S+W)
 		TestRunButton(self, gui, "Run", n-1, runner).grid(row=9, column=4)
 		TestSaveButton(self, test, gui).grid(row=9, column=5)
-		
+		# Fill data
 		if not isLambda(self._test.expectStdout):
 			self._expOut.insert(guitk.INSERT, str(self._test.expectStdout))
 		if not isLambda(self._test.expectStderr):
@@ -629,7 +689,26 @@ class TestEditForm(guitk.Toplevel):
 
 		
 class TestEditButton(guitk.Button):
+	"""Button for editing a test"""
 	def __init__(self, parent, gui, caption, test, n):
+		"""
+		Initialise the test edit button
+		
+		@type	parent: Widget
+		@param	parent: Parent widget
+		
+		@type	gui: TK
+		@param	gui: The main window
+		
+		@type	caption: String
+		@param	caption: The caption of the button
+		
+		@type	test: Test
+		@param	test: The test to be edited
+		
+		@type 	n: int
+		@param	n: The number of the test
+		"""
 		guitk.Button.__init__(self, parent, text=caption, command=self.editTest, width=7)
 		self._test = test
 		self._gui = gui
@@ -639,21 +718,54 @@ class TestEditButton(guitk.Button):
 		TestEditForm(self, self._num, self._test, self._gui._runner, self._gui)
 		
 class FileLoaderButton(guitk.Button):
-	def __init__(self, parent, caption, callback, open=True):
+	"""Button for handling file selection"""
+	def __init__(self, parent, caption, callback, func=fileDiag.askopenfilename):
+		"""
+		Initialises the button
+		
+		@type 	parent: Widget
+		@param	parent: Parent widget
+		
+		@type	caption: String
+		@param	caption: Caption for the button
+		
+		@type	callback: Function
+		@param 	callback: Callback function, called after successfull selection
+		
+		@type	func: Function
+		@param	func: Function to be called for file selection
+		"""
 		guitk.Button.__init__(self, parent, text=caption, command=self.selectFile)
 		self._callback = callback
-		self._open = open
+		self._func = func
 	
 	def selectFile(self):
-		if self._open:
-			fn = fileDiag.askopenfilename(initialdir=".")
-		else:
-			fn = fileDiag.asksaveasfilename(initialdir=".")
-		if fn != "":
-			self._callback(fn)
+		"""Eventhandler for button click"""
+		if self._func is not None:
+			fn = self._func(initialdir=".")
+			if fn != "":
+				self._callback(fn)
 	
 class LabeledEntry(guitk.Frame):
 	def __init__(self, parent, gui, lbl, var, pos=LEFT, anch=NW):
+		"""
+		Initialise the labeled entry
+		
+		@type	parent: Widget
+		@param	parent: Parent widget
+		
+		@type	gui: TK
+		@param	gui: The main window
+		
+		@type	lbl: String
+		@param	lbl: The caption for the label
+		
+		@type	var: StringVar
+		@param	var: The variable holding the content in the entry field
+		
+		@param	pos: Packing position for both widgets
+		@param	anch: Packing anchor for both widgets
+		"""
 		guitk.Frame.__init__(self, parent)
 		self._gui = gui
 		self.label = guitk.Label(self, text=lbl, width=10, justify=LEFT)
@@ -662,7 +774,26 @@ class LabeledEntry(guitk.Frame):
 		self.entry.pack(side=pos, anchor=anch, fill=X, expand=1)
 		
 class TestRow(guitk.Frame):
+	"""The TestRow represents a single row inside the Testgrid"""
 	def __init__(self, parent, gui, runner, n, test):
+		"""
+		Initialise the row
+		
+		@type	parent: Widget
+		@param	parent: Parent widget
+		
+		@type	gui: TK
+		@param	gui: The main window
+		
+		@type	runner: TestRunner
+		@param	runner: The testrunner holding the test data
+		
+		@type 	n: int
+		@param	n: Number of the test
+		
+		@type	test: Test
+		@param	test: The testdata
+		"""
 		guitk.Frame.__init__(self, parent)
 		self._gui = gui
 		self._runner = runner
@@ -684,6 +815,7 @@ class TestRow(guitk.Frame):
 		self._lblDescr.pack(side=LEFT, expand=1, fill=X)
 		
 	def setColor(self):
+		"""Set colors based on TestState"""
 		if self._test.state == TestState.Success:
 			self._bgcol = "#0D0"
 			self._fgcol = "#000"
@@ -701,12 +833,14 @@ class TestRow(guitk.Frame):
 			self._fgcol = "#888"
 	
 	def update(self):
+		"""Updates the widgets"""
 		self.setColor()
 		self._lblNum.config(fg=self._fgcol, bg=self._bgcol)
 		self._lblName.config(fg=self._fgcol, bg=self._bgcol, text=self._test.name)
 		self._lblDescr.config(fg=self._fgcol, bg=self._bgcol, text=self._test.descr)
 		
 	def clickCheck(self):
+		"""Eventhandler for checkbutton click"""
 		if self._test.state == TestState.Disabled:
 			self._test.state = TestState.Waiting
 			self._checkBtn.select()
@@ -716,7 +850,20 @@ class TestRow(guitk.Frame):
 		
 		
 class TestGrid(guitk.Frame):
+	"""A TestGrid displays all tests and their result."""
 	def __init__(self, parent, gui, runner):
+		"""
+		Initialise the grid
+		
+		@type	parent: Widget
+		@param	parent: Parent widget
+		
+		@type	gui: TK
+		@param	gui: The main window
+		
+		@type	runner: TestRunner
+		@param	runner: The testrunner holding the test data
+		"""
 		guitk.Frame.__init__(self, parent)
 		self._gui = gui
 		self._runner = runner
@@ -725,6 +872,7 @@ class TestGrid(guitk.Frame):
 		self._visible = (0,9)
 	
 	def createHead(self):
+		"""Create the head of the grid"""
 		head = guitk.Frame(self)
 		self._runBtn = TestRunButton(head, self._gui, caption="Run All", n=-1, runner=self._runner)
 		self._runBtn.pack(side=LEFT)
@@ -738,6 +886,7 @@ class TestGrid(guitk.Frame):
 		head.pack(side=TOP, expand=1, fill=BOTH, anchor=NW)
 	
 	def scrollUp(self):
+		"""Scroll the grid one row up"""
 		lower, upper = self._visible
 		if upper < len(self._rows)-1:
 			lower = lower + 1
@@ -746,6 +895,7 @@ class TestGrid(guitk.Frame):
 			self.scroll()
 	
 	def scrollDown(self):
+		"""Scroll the grid one row down"""
 		lower, upper = self._visible
 		if lower > 0:
 			lower = lower - 1
@@ -754,10 +904,17 @@ class TestGrid(guitk.Frame):
 			self.scroll()
 	
 	def addRow(self, test):
+		"""
+		Add a row to the gridd
+		
+		@type 	test: Test
+		@param	test: Test with data for the row
+		"""
 		row = TestRow(self, self._gui, self._runner, len(self._rows)+1, test)
 		self._rows.append(row)
 	
 	def update(self):
+		"""Update the grid"""
 		i = 0
 		for t in self._runner.getSuite().getTests():
 			if i >= len(self._rows):
@@ -767,6 +924,7 @@ class TestGrid(guitk.Frame):
 			i = i + 1
 			
 	def scroll(self):
+		"""Scroll through the grid"""
 		lower, upper = self._visible
 		for i in range(0, len(self._rows)):
 			self._rows[i].pack_forget()
@@ -777,6 +935,12 @@ class TestRunnerGui(Thread):
 	"""Graphical User Interface"""
 	
 	def _handleSuiteLoad(self, fn):
+		"""
+		Load a testsuite
+		
+		@type	fn: String
+		@param 	fn: The filename
+		"""
 		dut = os.path.abspath(self._DUT.get())
 		os.chdir(os.path.dirname(fn))
 		#print os.getcwd()
@@ -791,41 +955,64 @@ class TestRunnerGui(Thread):
 		self.dataGrid.scroll()
 		
 	def _handleSelectDUT(self, fn):
+		"""
+		Select a device under test
+		
+		@type	fn: String
+		@param 	fn: The device under test (DUT)
+		"""
 		self._runner.setDUT(fn)
 		self._DUT.set(os.path.relpath(fn))
 		
 	def _handleSuiteSave(self, fn):
+		"""
+		Save the testsuite into a file
+		
+		@type	fn: String
+		@param 	fn: The filename
+		"""
 		fHnd = open(fn,"w")
 		fHnd.write("# pyTest - Testsuite\n")
 		fHnd.write("# Saved at {}\n".format(time.strftime("%H:%M:%S")))
-		fHnd.write("suite = [\n")
+		#fHnd.write("# Author: {}\n".format())
+		#fHnd.write("# DUT: {}\n".format())
+		fHnd.write("# \n\n")
+		fHnd.write("# Test definitions\n")
 		tests = []
+		i = 0
 		for test in self._runner.getSuite().getTests():
-			tests.append(test.toString())
-		fHnd.write(",\n".join(tests))
-		fHnd.write("\n]\n")
+			i = i + 1
+			testString = "test{:02}".format(i)
+			fHnd.write("test{:02} = {}\n".format(i, test.toString()))
+			tests.append(testString)
+		fHnd.write("\n# Suite packing \n{} = [".format(self._suite.get()))
+		for i in range(0, len(tests)-1):
+			if i % 10 == 0:
+				fHnd.write("\n\t")
+			fHnd.write("{},".format(tests[i]))
+		fHnd.write("{}\n]\n".format(tests[len(tests)-1]))
 		fHnd.close()
 	
 	def __init__(self):
+		"""Initialise the gui"""
 		Thread.__init__(self)
 		self._runner = TestRunner()
+		self._runner.parseArgv()
 		self._whnd = guitk.Tk()
 		self._whnd.title("pyTest GUI")
 		
+		# Frames
 		cfgFrame = guitk.Frame(self._whnd)
-		
 		suiteFrame = guitk.LabelFrame(cfgFrame, text="Suite")
 		suiteInfoFrame = guitk.Frame(suiteFrame)
 		actionFrame = guitk.LabelFrame(cfgFrame, text="Mode")
-		
-		dataFrame = guitk.Frame(self._whnd)
-		
+		# Variables
 		self._suite = guitk.StringVar(suiteInfoFrame, self._runner.suite)
 		self._tests = guitk.StringVar(suiteInfoFrame, self._runner.tests)
 		self._filename = guitk.StringVar(suiteInfoFrame, "")
 		self._DUT = guitk.StringVar(suiteInfoFrame, "")
 		self._mode = guitk.IntVar(actionFrame, TestSuiteMode.BreakOnFail)
-		
+		# Suite info
 		self._suiteFile = LabeledEntry(suiteInfoFrame, self, lbl="File", var=self._filename)
 		self._suiteFile.entry.configure(state=DISABLED)
 		self._suiteName = LabeledEntry(suiteInfoFrame, self, lbl="Name", var=self._suite)
@@ -834,13 +1021,13 @@ class TestRunnerGui(Thread):
 		self._DUTName = LabeledEntry(suiteInfoFrame, self, lbl="DUT", var=self._DUT)
 		self._DUTName.entry.configure(state=DISABLED) 
 		self._loadSuite = FileLoaderButton(suiteFrame, "Load Testsuite", self._handleSuiteLoad)
-		self._saveSuite = FileLoaderButton(suiteFrame, "Save Testsuite", self._handleSuiteSave, False)
+		self._saveSuite = FileLoaderButton(suiteFrame, "Save Testsuite", self._handleSuiteSave, fileDiag.asksaveasfilename)
 		self._loadDUT = FileLoaderButton(suiteFrame, "Select DUT", self._handleSelectDUT)
-		
+		# TestMode selection
 		guitk.Radiobutton(actionFrame, text="Continuous", variable=self._mode, value=TestSuiteMode.Continuous).pack()
 		guitk.Radiobutton(actionFrame, text="Halt on Fail", variable=self._mode, value=TestSuiteMode.BreakOnFail).pack()
 		guitk.Radiobutton(actionFrame, text="Halt on Error", variable=self._mode, value=TestSuiteMode.BreakOnError).pack()
-		
+		# Pack all widgets
 		self._loadDUT.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
 		self._loadSuite.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
 		self._saveSuite.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
@@ -852,11 +1039,12 @@ class TestRunnerGui(Thread):
 		suiteFrame.pack(side=LEFT, anchor=NW)
 		actionFrame.pack(side=RIGHT, anchor=NE)
 		cfgFrame.pack(side=TOP, expand=1, fill=X, anchor=N)
-	
+		# create and pack datagrid
 		self.dataGrid = TestGrid(self._whnd, self, self._runner)
 		self.dataGrid.pack(side=TOP, expand=1, fill=X, anchor=NW)
 		
 	def run(self):
+		"""Run function for the gui thread"""
 		self._whnd.mainloop()
 
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
@@ -867,6 +1055,7 @@ class TestRunnerGui(Thread):
 if __name__ == "__main__":
 	TermColor.init()
 	if "-nogui" in sys.argv:
+		# Capt. Obvious: We're running in console mode
 		runner = TestRunner()
 		runner.parseArgv()
 		suite = runner.loadSuite()
