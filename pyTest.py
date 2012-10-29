@@ -146,6 +146,8 @@ class TestState:
 	"""The test has producsed an error"""
 	Disabled = 4
 	"""Disables the test"""
+	InfoOnly = 5
+	"""Display only the test information"""
 	
 	@staticmethod
 	def toString(state):
@@ -165,6 +167,8 @@ class TestState:
 			return TermColor.colorText("ERROR", TermColor.Red)
 		if state == TestState.Disabled:
 			return TermColor.colorText("DISABLED", TermColor.Blue)
+		if state == TestState.InfoOnly:
+			return TermColor.colorText("INFO", TermColor.White)
 		return TermColor.colorText("UNKNOWN", TermColor.Yellow)
 	
 class TestSuiteMode:
@@ -289,6 +293,9 @@ class Test:
 		"""Runs the test"""
 		if self.state == TestState.Disabled:
 			return TestState.Disabled
+		if self.state == TestState.InfoOnly:
+			print "{} - {}".format(self.name, self.descr)
+			return TestState.InfoOnly
 		if self.cmd != None and self.DUT != None:
 			cmd_ = str(self.cmd).replace("$DUT", self.DUT)
 			proc = subprocess.Popen(cmd_, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
@@ -401,6 +408,13 @@ class TestSuite:
 	def getTests(self):
 		return self._testList
 		
+	def setAll(self, infoOnly=False, disabled=False): 
+		for t in self._testList:
+			if disabled:
+				t.state = TestState.Disabled
+			elif infoOnly:
+				t.state = TestState.InfoOnly
+		
 	def runOne(self, n):
 		"""
 		Run one single test
@@ -410,7 +424,8 @@ class TestSuite:
 		"""
 		if (n < self._len):
 			result = self._testList[n].run()
-			print TestState.toString(result)
+			if result is not TestState.InfoOnly:
+				print TestState.toString(result)
 			return result
 		logger.log("\tSorry but there is no test #{}".format(n))
 		print TestState.toString(TestState.Error)
@@ -482,6 +497,8 @@ class TestRunner(Thread):
 	"""Specific test selection"""
 	lengthOnly = False
 	"""print only number of test"""
+	infoOnly = False
+	"""Print only the test information"""
 	
 	def __init__(self):
 		"""Initialises the test runner"""
@@ -545,6 +562,10 @@ class TestRunner(Thread):
 			elif arg.startswith("-dut:") or arg.startswith("-DUT:"):
 				self.setDUT(arg[5:])
 				logger.log("\tDevice under Test is: {}".format(self.DUT))
+			elif arg.startswith("--info-only"):
+				self.infoOnly = True
+				self.mode = TestSuiteMode.Continuous
+				logger.log("\tI will only print the test information.")
 	
 	def loadSuite(self):
 		"""Loads the suite from a file"""
@@ -556,6 +577,7 @@ class TestRunner(Thread):
 		if (self.suite in ctx):
 			if (ctx[self.suite] != None):
 				self._runsuite = TestSuite(ctx[self.suite], self.DUT, self.mode)
+				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False)
 				self.tests = len(self._runsuite._testList)
 				if "DUT" in ctx:
 					self.setDUT(ctx["DUT"])
@@ -792,7 +814,7 @@ class TestCreateButton(guitk.Button):
 		
 class FileLoaderButton(guitk.Button):
 	"""Button for handling file selection"""
-	def __init__(self, parent, caption, callback, func=fileDiag.askopenfilename):
+	def __init__(self, parent, caption, callback, func=fileDiag.askopenfilename, filetypes=[("All files","*")], defaultExt=""):
 		"""
 		Initialises the button
 		
@@ -812,11 +834,13 @@ class FileLoaderButton(guitk.Button):
 		self._callback = callback
 		self._func = func
 		self._caption = caption
+		self._filetypes = filetypes
+		self._defaultExt = defaultExt
 	
 	def selectFile(self):
 		"""Eventhandler for button click"""
 		if self._func is not None:
-			fn = self._func(initialdir=".", filetypes=[("Python Script","*.py"), ("pyTest Testbench","*.test.py")], defaultextension=".test.py", title=self._caption)
+			fn = self._func(initialdir=".", filetypes=self._filetypes, defaultextension=self._defaultExt, title=self._caption)
 			if fn != "":
 				self._callback(fn)
 	
@@ -1100,16 +1124,19 @@ class TestRunnerGui(Thread):
 		self._suiteTests.entry.configure(state=DISABLED)
 		self._DUTName = LabeledEntry(suiteInfoFrame, self, lbl="DUT", var=self._DUT)
 		self._DUTName.entry.configure(state=DISABLED) 
-		self._loadSuite = FileLoaderButton(suiteFrame, "Load Testsuite", self._handleSuiteLoad)
-		self._saveSuite = FileLoaderButton(suiteFrame, "Save Testsuite", self._handleSuiteSave, fileDiag.asksaveasfilename)
-		self._loadDUT = FileLoaderButton(suiteFrame, "Select DUT", self._handleSelectDUT)
+		self._loadSuite = FileLoaderButton(suiteFrame, "Load Testsuite", self._handleSuiteLoad, filetypes=[("Python Script","*.py"), ("pyTest Testbench","*.test.py")], defaultExt=".test.py")
+		self._saveSuite = FileLoaderButton(suiteFrame, "Save Testsuite", self._handleSuiteSave, fileDiag.asksaveasfilename, filetypes=[("Python Script","*.py"), ("pyTest Testbench","*.test.py")], defaultExt=".test.py")
 		self._addTest = TestCreateButton(suiteFrame, self, "Add Test", self._runner)
-		self._runBtn = TestRunButton(suiteFrame, self, caption="Run All", n=-1, runner=self._runner)
-		# TestMode selection
+		self._loadDUT = FileLoaderButton(actionFrame, "Select DUT", self._handleSelectDUT)
+		self._runBtn = TestRunButton(actionFrame, self, caption="Run All", n=-1, runner=self._runner)
+		# Pack all widgets
+		
+		self._loadDUT.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
+		self._runBtn.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
 		guitk.Radiobutton(actionFrame, text="Continuous", variable=self._mode, value=TestSuiteMode.Continuous).pack()
 		guitk.Radiobutton(actionFrame, text="Halt on Fail", variable=self._mode, value=TestSuiteMode.BreakOnFail).pack()
 		guitk.Radiobutton(actionFrame, text="Halt on Error", variable=self._mode, value=TestSuiteMode.BreakOnError).pack()
-		# Pack all widgets
+		
 		self._loadSuite.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
 		self._saveSuite.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
 		self._DUTName.pack(side=TOP, expand=1, fill=X, anchor=NW)
@@ -1118,8 +1145,6 @@ class TestRunnerGui(Thread):
 		self._suiteTests.pack(side=TOP, expand=1, fill=X, anchor=NW)
 		suiteInfoFrame.pack(side=LEFT, expand=1, fill=X, anchor=NW)
 		self._addTest.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
-		self._loadDUT.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
-		self._runBtn.pack(side=LEFT, expand=1, fill=Y, anchor=NW)
 		suiteFrame.pack(side=LEFT, anchor=NW)
 		actionFrame.pack(side=RIGHT, anchor=NE)
 		cfgFrame.pack(side=TOP, expand=1, fill=X, anchor=N)
@@ -1162,6 +1187,8 @@ def printHelp():
 	print "        Don't use any colored output."
 	print "    --no-gui"
 	print "        Don't use the GUI."
+	print "    --info-only"
+	print "        Display only test information, but don't run them."
 	print "    -q"
 	print "        Quiet mode. There will be no output except results."
 	print "    -v"
@@ -1181,7 +1208,7 @@ if __name__ == "__main__":
 		runner.parseArgv()
 		suite = runner.loadSuite()
 		runner.run()
-		if not runner.lengthOnly and runner.test == -1:
+		if not runner.lengthOnly and not runner.infoOnly and runner.test == -1:
 			print "{:2.2f}%".format(suite.getRate())
 		sys.exit(suite._lastResult)
 	else:

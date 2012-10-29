@@ -27,6 +27,8 @@ applications.
 			Don't use any colored output.
 		--no-gui
 			Don't use the GUI.
+		--info-only
+			Display only test information, but don't run them.
 		-q
 			Quiet mode. There will be no output except results.
 		-v
