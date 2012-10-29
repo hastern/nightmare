@@ -77,7 +77,7 @@ Here is a example for a minimal testbench.
 		Test (
 			name = "Test 2",
 			description = "Testing output on stderr",
-			command = "$DUT pyTest 1>2",
+			command = "$DUT pyTest 1>&2",
 			stderr = "pyTest"
 		)
 	]
