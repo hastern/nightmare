@@ -318,7 +318,7 @@ class Test:
 		if self.state == TestState.InfoOnly:
 			print "{} - {}".format(self.name, self.descr)
 			return TestState.InfoOnly
-		if self.cmd != None and self.DUT != None:
+		if self.cmd is not None and self.DUT is not None:
 			cmd_ = str(self.cmd).replace("$DUT", self.DUT)
 			proc = subprocess.Popen(cmd_, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
 			self.output, self.error = proc.communicate()
@@ -388,7 +388,7 @@ class TestSuite:
 		for t in tests:
 			if isinstance(t, Test):
 				self._testList.append(t)
-				t.DUT = DUT
+				t.DUT = str(DUT)
 			else:
 				self.addTest(t, DUT)
 		self._len = len(self._testList)
@@ -544,7 +544,7 @@ class TestRunner(Thread):
 		@param	DUT: Device Under Test
 		"""		
 		self.DUT = DUT
-		if (self._runsuite != None):
+		if self._runsuite is not None:
 			self._runsuite.setDUT(DUT)
 	
 	def getSuite(self):
@@ -598,10 +598,10 @@ class TestRunner(Thread):
 		execfile(self.file, glb, ctx)
 		if (self.suite in ctx):
 			if (ctx[self.suite] != None):
-				self._runsuite = TestSuite(ctx[self.suite], self.DUT, self.mode)
+				self._runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
 				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False)
 				self.tests = len(self._runsuite._testList)
-				if "DUT" in ctx:
+				if "DUT" in ctx and ctx['DUT'] is not None:
 					self.setDUT(ctx["DUT"])
 			else:
 				logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
