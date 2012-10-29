@@ -702,6 +702,13 @@ class TestSaveButton(guitk.Button):
 		self._test.name = self._parentForm._varname.get()
 		self._test.descr = self._parentForm._vardescr.get()
 		self._test.cmd = self._parentForm._varcmd.get()
+		out = self._parentForm._expOut.get(1.0, 'end').strip()
+		err = self._parentForm._expErr.get(1.0, 'end').strip()
+		if out != "":
+			self._test.expectStdout = out
+		if err != "":
+			self._test.expectStderr = err
+		self._test.expectRetCode = self._parentForm._varexpRet.get()
 		self._gui.dataGrid.update()
 		
 class TestEditForm(guitk.Toplevel):
@@ -733,7 +740,6 @@ class TestEditForm(guitk.Toplevel):
 		self._varname = guitk.StringVar(self, self._test.name)
 		self._vardescr = guitk.StringVar(self, self._test.descr)
 		self._varcmd = guitk.StringVar(self, self._test.cmd)
-		self._varout = guitk.StringVar(self)
 		self._varret = guitk.StringVar(self, self._test.retCode)
 		self._varexpRet = guitk.StringVar(self, self._test.expectRetCode)
 		# Widgets
@@ -747,18 +753,18 @@ class TestEditForm(guitk.Toplevel):
 		self._expOut = guitk.Text(self, width=50, height=5)
 		self._expOut.grid(row=5, column=0, columnspan=3, sticky=N+E+S+W)
 		guitk.Label(self, text="stdout").grid(row=4, column=3, columnspan=3)
-		self._out = guitk.Text(self, width=50, height=5)
+		self._out = guitk.Text(self, width=50, height=5, state=DISABLED)
 		self._out.grid(row=5, column=3, columnspan=3, sticky=N+E+S+W)
 		guitk.Label(self, text="Expected Stderr").grid(row=6, column=0, columnspan=3)
 		self._expErr = guitk.Text(self, width=50, height=5)
 		self._expErr.grid(row=7, column=0, columnspan=3, sticky=N+E+S+W)
 		guitk.Label(self, text="stderr").grid(row=6, column=3, columnspan=3)
-		self._err = guitk.Text(self, width=50, height=5)
+		self._err = guitk.Text(self, width=50, height=5, state=DISABLED)
 		self._err.grid(row=7, column=3, columnspan=3, sticky=N+E+S+W)
 		guitk.Label(self, text="Expected Returncode").grid(row=8, column=0, columnspan=2)
 		guitk.Entry(self, width=30, textvariable=self._varexpRet).grid(row=9, column=0, columnspan=2, sticky=N+E+S+W)
-		guitk.Label(self, text="Returncode").grid(row=8, column=2, columnspan=2,)
-		guitk.Entry(self, width=30, textvariable=self._varret).grid(row=9, column=2, columnspan=2, sticky=N+E+S+W)
+		guitk.Label(self, text="Returncode").grid(row=8, column=2, columnspan=2)
+		guitk.Entry(self, width=30, textvariable=self._varret, state=DISABLED).grid(row=9, column=2, columnspan=2, sticky=N+E+S+W)
 		TestRunButton(self, gui, "Run", n-1, runner).grid(row=9, column=4)
 		TestSaveButton(self, test, gui).grid(row=9, column=5)
 		# Fill data
