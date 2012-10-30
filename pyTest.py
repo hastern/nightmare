@@ -170,6 +170,8 @@ class TestState:
 	"""Disables the test"""
 	InfoOnly = 5
 	"""Display only the test information"""
+	Timeout = 6
+	"""The test has timed out"""
 	
 	@staticmethod
 	def toString(state):
@@ -190,7 +192,9 @@ class TestState:
 		if state == TestState.Disabled:
 			return TermColor.colorText("DISABLED", TermColor.Blue)
 		if state == TestState.InfoOnly:
-			return TermColor.colorText("INFO", TermColor.White)
+			return TermColor.colorText("INFO", TermColor.White)		
+		if state == TestState.Timeout:
+			return TermColor.colorText("TIMEOUT", TermColor.Purple)
 		return TermColor.colorText("UNKNOWN", TermColor.Yellow)
 	
 class TestSuiteMode:
@@ -218,6 +222,46 @@ class TestSuiteMode:
 			return "Break on Error"
 		return "Unknown mode"
 
+class Command():
+	"""Command execution"""
+	def __init__(self, cmd):
+		"""
+		Initialises the command
+		
+		@type	cmd: str
+		@param	cmd: Command
+		"""
+		self._cmd = cmd
+		self._process = None
+		self._thread = None
+		self.out = ""
+		self.err = ""
+		self.ret = 0
+		self.killed = False
+
+	def commandFunc(self):
+		"""command to be run in the thread"""
+		self._process = subprocess.Popen(self._cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
+		self.out, self.err = self._process.communicate()
+		self.ret = self._process.wait()
+		
+	def execute(self, timeout):
+		"""
+		executes the command
+				
+		@type	timeout: float
+		@param	timeout: Timeout in seconds
+		"""
+		self._thread = Thread(target=self.commandFunc)
+		self._thread.start()
+		self._thread.join(timeout)
+		if self._thread.isAlive():
+			self._process.terminate()
+			self._thread.join()
+			return False
+		else:
+			return True
+	
 class Test:
 	"""A single test"""
 	name = ""
@@ -242,8 +286,10 @@ class Test:
 	"""The state of the game"""
 	pipe = False
 	"""Flag, set if the output streams should be piped"""
+	timeout = 60.0
+	"""Timeout after the DUT gets killed"""
 	
-	def __init__(self, data=None, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None):
+	def __init__(self, data=None, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None, timeout=60.0):
 		"""
 		Initalises a test
 		
@@ -278,6 +324,7 @@ class Test:
 			self.expectStdout = stdout
 			self.expectStderr = stderr
 			self.expectRetCode = returnCode
+			self.timeout = timeout
 		self.DUT = DUT
 		self.output = ""
 		self.error = ""
@@ -322,17 +369,20 @@ class Test:
 			print "{} - {}".format(self.name, self.descr)
 			return TestState.InfoOnly
 		if self.cmd is not None and self.DUT is not None:
-			cmd_ = str(self.cmd).replace("$DUT", self.DUT)
-			proc = subprocess.Popen(cmd_, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
-			self.output, self.error = proc.communicate()
-			self.retCode = proc.wait()
-			if (self.pipe):
-				print >> sys.stdout, self.output.strip()
-				print >> sys.stderr, self.error.strip()
-			if self._check(self.expectRetCode, self.retCode) and self._check(self.expectStdout,self.output.strip()) and self._check(self.expectStderr,self.error.strip()):
-				self.state = TestState.Success
+			cmd_ = Command(cmd=str(self.cmd).replace("$DUT", self.DUT))
+			if cmd_.execute(self.timeout):
+				self.output = cmd_.out
+				self.error = cmd_.err
+				self.retsCode = cmd_.ret
+				if (self.pipe):
+					print >> sys.stdout, self.output.strip()
+					print >> sys.stderr, self.error.strip()
+				if self._check(self.expectRetCode, self.retCode) and self._check(self.expectStdout,self.output.strip()) and self._check(self.expectStderr,self.error.strip()):
+					self.state = TestState.Success
+				else:
+					self.state = TestState.Fail
 			else:
-				self.state = TestState.Fail
+				self.state = TestState.Timeout
 		else:
 			self.state = TestState.Error
 		return self.state
@@ -367,6 +417,8 @@ class TestSuite:
 	"""A counter for the executed tests"""
 	_error = 0
 	"""The number of errors occured during the testrun"""
+	_timedout = 0
+	"""The total number of timed out tests"""
 	_lastResult = TestState.Waiting
 	"""The result of the last test"""
 	_rate = 0
@@ -402,6 +454,7 @@ class TestSuite:
 		self._failed = TestSuite._failed
 		self._count = TestSuite._count
 		self._error = TestSuite._error
+		self._timedout = TestSuite._timedout
 		self._lastResult = TestSuite._lastResult
 		self._rate = TestSuite._rate
 	
@@ -476,12 +529,14 @@ class TestSuite:
 			self._lastResult = t.run()
 			logger.log("Test[{:02}] {} - {}: {}".format(self._count, t.name, t.descr, TestState.toString(t.state)))
 			logger.flush(quiet)
-			if (self._lastResult == TestState.Success):
+			if self._lastResult == TestState.Success:
 				self._success = self._success + 1
-			elif (self._lastResult == TestState.Fail):
+			elif self._lastResult == TestState.Fail:
 				self._failed = self._failed + 1
-			elif (self._lastResult == TestState.Error):
+			elif self._lastResult == TestState.Error:
 				self._error = self._error + 1
+			elif self._lastResult == TestState.Timeout:
+				self._timedout = self._timedout + 1
 			if self._lastResult != TestState.Disabled:
 				if (self._mode == TestSuiteMode.BreakOnFail) and (self._lastResult != TestState.Success):
 					break
@@ -505,7 +560,9 @@ class TestSuite:
 			logger.log(TermColor.colorText("\tFailed: {}".format(self._failed), TermColor.Red))
 		if (self._error > 0):
 			logger.log(TermColor.colorText("\tErrors: {}".format(self._error), TermColor.Yellow))
-		if (self._error == 0) and (self._failed == 0):
+		if (self._timedout > 0):
+			logger.log(TermColor.colorText("\tTimeouts: {}".format(self._timedout), TermColor.Purple))
+		if (self._error == 0) and (self._failed == 0) and (self._timedout == 0):
 			logger.log("\tCongratulations, you passed all tests!")
 		return self.calcRate()
 		
@@ -763,13 +820,13 @@ class TestEditForm(guitk.Toplevel):
 		self._expOut = guitk.Text(self, width=50, height=5)
 		self._expOut.grid(row=5, column=0, columnspan=3, sticky=N+E+S+W)
 		guitk.Label(self, text="stdout").grid(row=4, column=3, columnspan=3)
-		self._out = guitk.Text(self, width=50, height=5, state=DISABLED)
+		self._out = guitk.Text(self, width=50, height=5)
 		self._out.grid(row=5, column=3, columnspan=3, sticky=N+E+S+W)
 		guitk.Label(self, text="Expected Stderr").grid(row=6, column=0, columnspan=3)
 		self._expErr = guitk.Text(self, width=50, height=5)
 		self._expErr.grid(row=7, column=0, columnspan=3, sticky=N+E+S+W)
 		guitk.Label(self, text="stderr").grid(row=6, column=3, columnspan=3)
-		self._err = guitk.Text(self, width=50, height=5, state=DISABLED)
+		self._err = guitk.Text(self, width=50, height=5)
 		self._err.grid(row=7, column=3, columnspan=3, sticky=N+E+S+W)
 		guitk.Label(self, text="Expected Returncode").grid(row=8, column=0, columnspan=2)
 		guitk.Entry(self, width=30, textvariable=self._varexpRet).grid(row=9, column=0, columnspan=2, sticky=N+E+S+W)

@@ -33,5 +33,11 @@ suite = [
 		description = "Lambda expression success",
 		command = "$DUT Some more text",
 		stdout = "lambda x: x.find('text') > 0"
+	),
+	Test (
+		name = "Example 6",
+		description = "Timeout",
+		command = "sleep 5",
+		timeout = 1
 	)
 ]
