@@ -23,6 +23,8 @@ applications.
 			Same as '-c', but will halt if an error occurs.
 		-l
 			Print only the number of tests in the suite.
+		-p
+			Redirect DUT output to their respective streams.
 		--no-color
 			Don't use any colored output.
 		--no-gui

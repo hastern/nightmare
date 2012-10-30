@@ -157,14 +157,14 @@ class logger:
 
   
 class TestState:
-	"""Enumeration of test states"""
-	Waiting = 0
 	"""The test ist waiting for execution"""
-	Success = 1
+	Success = 0
 	"""The test was successful"""
-	Fail = 2
+	Fail = 1
 	"""The test has failed"""
-	Error = 3
+	Error = 2
+	"""Enumeration of test states"""
+	Waiting = 3
 	"""The test has producsed an error"""
 	Disabled = 4
 	"""Disables the test"""
@@ -240,6 +240,8 @@ class Test:
 	"""The return code"""
 	state = TestState.Waiting
 	"""The state of the game"""
+	pipe = False
+	"""Flag, set if the output streams should be piped"""
 	
 	def __init__(self, data=None, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None):
 		"""
@@ -280,6 +282,7 @@ class Test:
 		self.output = ""
 		self.error = ""
 		self.state = TestState.Waiting
+		self.pipe = False
 			
 	def _check(self, exp, out):
 		"""
@@ -323,6 +326,9 @@ class Test:
 			proc = subprocess.Popen(cmd_, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
 			self.output, self.error = proc.communicate()
 			self.retCode = proc.wait()
+			if (self.pipe):
+				print >> sys.stdout, self.output.strip()
+				print >> sys.stderr, self.error.strip()
 			if self._check(self.expectRetCode, self.retCode) and self._check(self.expectStdout,self.output.strip()) and self._check(self.expectStderr,self.error.strip()):
 				self.state = TestState.Success
 			else:
@@ -430,12 +436,13 @@ class TestSuite:
 	def getTests(self):
 		return self._testList
 		
-	def setAll(self, infoOnly=False, disabled=False): 
+	def setAll(self, infoOnly=False, disabled=False, pipe=False): 
 		for t in self._testList:
 			if disabled:
 				t.state = TestState.Disabled
 			elif infoOnly:
 				t.state = TestState.InfoOnly
+			t.pipe = pipe
 		
 	def runOne(self, n):
 		"""
@@ -446,11 +453,10 @@ class TestSuite:
 		"""
 		if (n < self._len):
 			result = self._testList[n].run()
-			if result is not TestState.InfoOnly:
-				print TestState.toString(result)
+			self._lastResult = result
 			return result
 		logger.log("\tSorry but there is no test #{}".format(n))
-		print TestState.toString(TestState.Error)
+		self._lastResult = TestState.Error
 		return TestState.Error
 		
 	def runAll(self, quiet = False):
@@ -535,6 +541,7 @@ class TestRunner(Thread):
 		self._runsuite = None
 		self.DUT = None
 		self._finished = None
+		self._pipe = False
 		
 	def setDUT(self, DUT):
 		"""
@@ -588,6 +595,9 @@ class TestRunner(Thread):
 				self.infoOnly = True
 				self.mode = TestSuiteMode.Continuous
 				logger.log("\tI will only print the test information.")
+			elif arg == "-p":
+				self._pipe = True
+				logger.log("\tI will pipe all tests outputs to their respective streams")
 	
 	def loadSuite(self):
 		"""Loads the suite from a file"""
@@ -599,7 +609,7 @@ class TestRunner(Thread):
 		if (self.suite in ctx):
 			if (ctx[self.suite] != None):
 				self._runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
-				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False)
+				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self._pipe)
 				self.tests = len(self._runsuite._testList)
 				if "DUT" in ctx and ctx['DUT'] is not None:
 					self.setDUT(ctx["DUT"])
@@ -1211,6 +1221,8 @@ def printHelp():
 	print "        Same as '-c', but will halt if an error occurs."
 	print "    -l"
 	print "        Print only the number of tests in the suite."
+	print "    -p"
+	print "        Redirect DUT output to their respective streams."
 	print "    --no-color"
 	print "        Don't use any colored output."
 	print "    --no-gui"
