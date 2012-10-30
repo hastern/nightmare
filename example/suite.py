@@ -37,7 +37,7 @@ suite = [
 	Test (
 		name = "Example 6",
 		description = "Timeout",
-		command = "sleep 5",
+		command = "$DUT sleep",
 		timeout = 1
 	)
 ]

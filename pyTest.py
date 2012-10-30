@@ -256,11 +256,13 @@ class Command():
 		self._thread.start()
 		self._thread.join(timeout)
 		if self._thread.isAlive():
-			self._process.terminate()
+			if sys.platform == "win32":
+				subprocess.Popen(['taskkill', '/F', '/T', '/PID', str(self._process.pid)]).communicate()
+			else:
+				os.killgp(self._process.pid)
 			self._thread.join()
 			return False
-		else:
-			return True
+		return True
 	
 class Test:
 	"""A single test"""
