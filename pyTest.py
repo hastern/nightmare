@@ -375,7 +375,7 @@ class Test:
 			if cmd_.execute(self.timeout):
 				self.output = cmd_.out
 				self.error = cmd_.err
-				self.retsCode = cmd_.ret
+				self.retCode = cmd_.ret
 				if (self.pipe):
 					print >> sys.stdout, self.output.strip()
 					print >> sys.stderr, self.error.strip()
