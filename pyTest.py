@@ -389,7 +389,7 @@ class Test:
 			self.state = TestState.Error
 		return self.state
 		
-	def toString(self):
+	def toString(self, prefix="\t"):
 		"""
 		Creates a textual representation of the test.
 		The output can be saved to a file.
@@ -397,17 +397,17 @@ class Test:
 		@rtype: 	String
 		"""
 		fields = []
-		fields.append("\t\tname = \"{:s}\"".format(self.name))
+		fields.append("{}\tname = \"{:s}\"".format(prefix, self.name))
 		if self.descr is not None and self.descr != "":
-			fields.append("\t\tdescription = \"{:s}\"".format(self.descr))
-		fields.append("\t\tcommand = \"{:s}\"".format(self.cmd))
+			fields.append("\t\tdescription = \"{:s}\"".format(prefix, self.descr))
+		fields.append("\t\tcommand = \"{:s}\"".format(prefix, self.cmd))
 		if self.expectStdout is not None:
-			fields.append("\t\tstdout = \"{}\"".format(self.expectStdout))
+			fields.append("\t\tstdout = \"{}\"".format(prefix, self.expectStdout))
 		if self.expectStderr is not None:
-			fields.append("\t\tstderr = \"{}\"".format(self.expectStderr))
+			fields.append("\t\tstderr = \"{}\"".format(prefix, self.expectStderr))
 		if self.expectRetCode is not None:
-			fields.append("\t\treturnCode = \"{}\"".format(self.expectRetCode))
-		return "Test (\n{}\n\t)".format(",\n".join(fields))
+			fields.append("\t\treturnCode = \"{}\"".format(prefix, self.expectRetCode))
+		return "Test (\n{}\n{})".format(",\n".join(fields), prefix)
 
 class TestSuite:
 	"""A testsuite is a collection of tests"""
@@ -507,9 +507,10 @@ class TestSuite:
 		@param	n: Number of the test
 		"""
 		if (n < self._len):
-			result = self._testList[n].run()
-			self._lastResult = result
-			return result
+			t = self._testList[n]
+			self._lastResult = t.run()
+			logger.log("Test[{:02}] {} - {}: {}".format(n, t.name, t.descr, TestState.toString(t.state)))
+			return self._lastResult
 		logger.log("\tSorry but there is no test #{}".format(n))
 		self._lastResult = TestState.Error
 		return TestState.Error
