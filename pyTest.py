@@ -358,7 +358,7 @@ class Test:
 				patCode = re.compile(exp[6:].strip(), re.IGNORECASE)
 				return (patCode.match(str(out).strip()) != None)
 			else:
-				return exp == str(out).strip()
+				return exp == str(out).rstrip()
 		elif exp is None:
 			return True
 		return False
@@ -377,9 +377,9 @@ class Test:
 				self.error = cmd_.err
 				self.retCode = cmd_.ret
 				if (self.pipe):
-					print >> sys.stdout, self.output.strip()
-					print >> sys.stderr, self.error.strip()
-				if self._check(self.expectRetCode, self.retCode) and self._check(self.expectStdout,self.output.strip()) and self._check(self.expectStderr,self.error.strip()):
+					print >> sys.stdout, self.output.rstrip()
+					print >> sys.stderr, self.error.rstrip()
+				if self._check(self.expectRetCode, self.retCode) and self._check(self.expectStdout,self.output.rstrip()) and self._check(self.expectStderr,self.error.rstrip()):
 					self.state = TestState.Success
 				else:
 					self.state = TestState.Fail
@@ -772,8 +772,8 @@ class TestSaveButton(guitk.Button):
 		self._test.name = self._parentForm._varname.get()
 		self._test.descr = self._parentForm._vardescr.get()
 		self._test.cmd = self._parentForm._varcmd.get()
-		out = self._parentForm._expOut.get(1.0, 'end').strip()
-		err = self._parentForm._expErr.get(1.0, 'end').strip()
+		out = self._parentForm._expOut.get(1.0, 'end').rstrip()
+		err = self._parentForm._expErr.get(1.0, 'end').rstrip()
 		if out != "":
 			self._test.expectStdout = out
 		if err != "":
