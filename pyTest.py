@@ -378,8 +378,8 @@ class Test:
 				self.error = cmd_.err
 				self.retCode = cmd_.ret
 				if (self.pipe):
-					print >> sys.stdout, self.output.rstrip()
-					print >> sys.stderr, self.error.rstrip()
+					sys.stdout.write( self.output.rstrip() )
+					sys.stderr.write( self.error.rstrip() )
 				if self._check(self.expectRetCode, self.retCode) and self._check(self.expectStdout,self.output.rstrip()) and self._check(self.expectStderr,self.error.rstrip()):
 					self.state = TestState.Success
 				else:
