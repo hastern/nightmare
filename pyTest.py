@@ -327,7 +327,8 @@ class Test:
 			self.expectStderr = stderr
 			self.expectRetCode = returnCode
 			self.timeout = timeout
-		self.DUT = DUT
+		if DUT is not None:
+			self.DUT = DUT
 		self.output = ""
 		self.error = ""
 		self.state = TestState.Waiting
@@ -475,9 +476,10 @@ class TestSuite:
 		
 	def setDUT(self, DUT):
 		"""Define the 'Device under Test'"""
-		self.DUT = DUT
-		for t in self._testList:
-			t.DUT = DUT
+		if DUT is not None:
+			self.DUT = DUT
+			for t in self._testList:
+				t.DUT = DUT
 		
 	def addTest(self, data, DUT):
 		"""
@@ -671,7 +673,7 @@ class TestRunner(Thread):
 				self._runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
 				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self._pipe)
 				self.tests = len(self._runsuite._testList)
-				if "DUT" in ctx and ctx['DUT'] is not None:
+				if "DUT" in ctx and ctx['DUT'] is not None and self.DUT is None:
 					self.setDUT(ctx["DUT"])
 			else:
 				logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
