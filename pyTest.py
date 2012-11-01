@@ -400,14 +400,14 @@ class Test:
 		fields = []
 		fields.append("{}\tname = \"{:s}\"".format(prefix, self.name))
 		if self.descr is not None and self.descr != "":
-			fields.append("\t\tdescription = \"{:s}\"".format(prefix, self.descr))
-		fields.append("\t\tcommand = \"{:s}\"".format(prefix, self.cmd))
+			fields.append("{}\tdescription = \"{:s}\"".format(prefix, self.descr))
+		fields.append("{}\tcommand = \"{:s}\"".format(prefix, self.cmd))
 		if self.expectStdout is not None:
-			fields.append("\t\tstdout = \"{}\"".format(prefix, self.expectStdout))
+			fields.append("{}\tstdout = \"{}\"".format(prefix, self.expectStdout))
 		if self.expectStderr is not None:
-			fields.append("\t\tstderr = \"{}\"".format(prefix, self.expectStderr))
+			fields.append("{}\tstderr = \"{}\"".format(prefix, self.expectStderr))
 		if self.expectRetCode is not None:
-			fields.append("\t\treturnCode = \"{}\"".format(prefix, self.expectRetCode))
+			fields.append("{}\treturnCode = \"{}\"".format(prefix, self.expectRetCode))
 		return "Test (\n{}\n{})".format(",\n".join(fields), prefix)
 
 class TestSuite:
@@ -703,6 +703,7 @@ class TestRunner(Thread):
 		if self._finished != None:
 			self._finished()
 		Thread.__init__(self) # This looks like a real dirty hack :/
+		
 	
 	
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
@@ -771,16 +772,27 @@ class TestSaveButton(guitk.Button):
 		
 	def saveTest(self):
 		"""Save the test"""
-		self._test.name = self._parentForm._varname.get()
-		self._test.descr = self._parentForm._vardescr.get()
-		self._test.cmd = self._parentForm._varcmd.get()
-		out = self._parentForm._expOut.get(1.0, 'end').rstrip()
-		err = self._parentForm._expErr.get(1.0, 'end').rstrip()
+		name = str(self._parentForm._varname.get())
+		descr = str(self._parentForm._vardescr.get())
+		cmd = str(self._parentForm._varcmd.get())
+		out = str(self._parentForm._expOut.get(1.0, 'end')).strip()
+		err = str(self._parentForm._expErr.get(1.0, 'end')).strip()
+		ret = str(self._parentForm._varexpRet.get()).strip()
+		self._test.name = name
+		self._test.descr = descr
+		self._test.cmd = cmd
 		if out != "":
 			self._test.expectStdout = out
+		else:
+			self._test.expectStdout = None
 		if err != "":
 			self._test.expectStderr = err
-		self._test.expectRetCode = self._parentForm._varexpRet.get()
+		else:
+			self._test.expectStderr = None
+		if ret != "":
+			self._test.expectRetCode = ret
+		else:
+			self._test.expectRetCode = None
 		self._gui.dataGrid.update()
 		
 class TestEditForm(guitk.Toplevel):
