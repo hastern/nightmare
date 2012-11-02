@@ -261,8 +261,8 @@ class Command():
 			else:
 				os.killgp(self._process.pid)
 			self._thread.join()
-			return False
-		return True
+			return TestState.Success
+		return TestState.Timeout
 	
 class Test:
 	"""A single test"""
@@ -373,7 +373,8 @@ class Test:
 			return TestState.InfoOnly
 		if self.cmd is not None and self.DUT is not None:
 			cmd_ = Command(cmd=str(self.cmd).replace("$DUT", self.DUT))
-			if cmd_.execute(self.timeout):
+			cmdRet = cmd_.execute(self.timeout)
+			if cmdRet = TestState.Success:
 				self.output = cmd_.out
 				self.error = cmd_.err
 				self.retCode = cmd_.ret
@@ -387,7 +388,7 @@ class Test:
 				else:
 					self.state = TestState.Fail
 			else:
-				self.state = TestState.Timeout
+				self.state = cmdRet
 		else:
 			self.state = TestState.Error
 		return self.state
