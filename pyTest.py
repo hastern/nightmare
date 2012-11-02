@@ -290,6 +290,7 @@ class Test:
 	"""Flag, set if the output streams should be piped"""
 	timeout = 60.0
 	"""Timeout after the DUT gets killed"""
+	linesep = os.linesep
 	
 	def __init__(self, data=None, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None, timeout=60.0):
 		"""
@@ -333,6 +334,7 @@ class Test:
 		self.error = ""
 		self.state = TestState.Waiting
 		self.pipe = False
+		self.linesep = os.linesep
 			
 	def _check(self, exp, out):
 		"""
@@ -359,7 +361,7 @@ class Test:
 				patCode = re.compile(exp[6:], re.IGNORECASE)
 				return (patCode.match(str(out)) != None)
 			else:
-				return exp.replace("$n",os.linesep) == str(out)
+				return exp.replace("$n", self.linesep) == str(out)
 		elif exp is None:
 			return True
 		return False
@@ -496,7 +498,7 @@ class TestSuite:
 	def getTests(self):
 		return self._testList
 		
-	def setAll(self, infoOnly=False, disabled=False, pipe=False, timeout=None): 
+	def setAll(self, infoOnly=False, disabled=False, pipe=False, timeout=None, linesep=None): 
 		for t in self._testList:
 			if disabled:
 				t.state = TestState.Disabled
@@ -508,6 +510,8 @@ class TestSuite:
 			t.pipe = pipe
 			if timeout is not None:
 				t.timeout = timeout
+			if linesep is not None:
+				t.linesep = linesep
 		
 	def runOne(self, n):
 		"""
@@ -613,6 +617,7 @@ class TestRunner(Thread):
 		self._finished = None
 		self._pipe = False
 		self._timeout = None
+		self._linesep = os.linesep
 		
 	def setDUT(self, DUT):
 		"""
@@ -669,6 +674,12 @@ class TestRunner(Thread):
 				self.infoOnly = True
 				self.mode = TestSuiteMode.Continuous
 				logger.log("\tI will only print the test information.")
+			elif arg.startswith("--crln"):
+				self._linesep = "\r\n"
+			elif arg.startswith("--ln"):
+				self._linesep = "\n"
+			elif arg.startswith("--cr"):
+				self._linesep = "\r"
 			elif arg == "-p":
 				self._pipe = True
 				logger.log("\tI will pipe all tests outputs to their respective streams")
@@ -683,7 +694,7 @@ class TestRunner(Thread):
 		if (self.suite in ctx):
 			if (ctx[self.suite] != None):
 				self._runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
-				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self._pipe, timeout = self._timeout)
+				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self._pipe, timeout = self._timeout, linesep = self._linesep)
 				self.tests = len(self._runsuite._testList)
 				if "DUT" in ctx and ctx['DUT'] is not None and self.DUT is None:
 					self.setDUT(ctx["DUT"])
