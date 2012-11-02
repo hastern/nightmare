@@ -356,10 +356,10 @@ class Test:
 				f = eval(exp)
 				return f(out)
 			if exp.startswith("regex:"):
-				patCode = re.compile(exp[6:].strip(), re.IGNORECASE)
-				return (patCode.match(str(out).strip()) != None)
+				patCode = re.compile(exp[6:], re.IGNORECASE)
+				return (patCode.match(str(out)) != None)
 			else:
-				return exp == str(out).rstrip()
+				return exp.replace("$n",os.linesep) == str(out)
 		elif exp is None:
 			return True
 		return False
@@ -378,9 +378,11 @@ class Test:
 				self.error = cmd_.err
 				self.retCode = cmd_.ret
 				if (self.pipe):
-					sys.stdout.write( self.output.rstrip() )
-					sys.stderr.write( self.error.rstrip() )
-				if self._check(self.expectRetCode, self.retCode) and self._check(self.expectStdout,self.output) and self._check(self.expectStderr,self.error):
+					sys.stdout.write( self.output )
+					sys.stderr.write( self.error )
+				if self._check(self.expectRetCode, self.retCode) \
+					and self._check(self.expectStdout,self.output) \
+					and self._check(self.expectStderr,self.error):
 					self.state = TestState.Success
 				else:
 					self.state = TestState.Fail
