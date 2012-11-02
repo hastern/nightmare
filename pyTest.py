@@ -380,7 +380,7 @@ class Test:
 				if (self.pipe):
 					sys.stdout.write( self.output.rstrip() )
 					sys.stderr.write( self.error.rstrip() )
-				if self._check(self.expectRetCode, self.retCode) and self._check(self.expectStdout,self.output.rstrip()) and self._check(self.expectStderr,self.error.rstrip()):
+				if self._check(self.expectRetCode, self.retCode) and self._check(self.expectStdout,self.output) and self._check(self.expectStderr,self.error):
 					self.state = TestState.Success
 				else:
 					self.state = TestState.Fail
@@ -493,13 +493,15 @@ class TestSuite:
 	def getTests(self):
 		return self._testList
 		
-	def setAll(self, infoOnly=False, disabled=False, pipe=False): 
+	def setAll(self, infoOnly=False, disabled=False, pipe=False, timeout=None): 
 		for t in self._testList:
 			if disabled:
 				t.state = TestState.Disabled
 			elif infoOnly:
 				t.state = TestState.InfoOnly
 			t.pipe = pipe
+			if timeout is not None:
+				t.timeout = timeout
 		
 	def runOne(self, n):
 		"""
@@ -604,6 +606,7 @@ class TestRunner(Thread):
 		self.DUT = None
 		self._finished = None
 		self._pipe = False
+		self._timeout = None
 		
 	def setDUT(self, DUT):
 		"""
@@ -650,6 +653,9 @@ class TestRunner(Thread):
 			elif arg.startswith("-bench:"):
 				self.file = str(arg[7:])
 				logger.log("\tI'm using testbench '{}'".format(self.file))
+			elif arg.startswith("-timeout:"):
+				self._timeout = int(arg[9:])
+				logger.log("\tSetting global timeout to {}".format(self.timeout))
 			elif arg.startswith("-dut:") or arg.startswith("-DUT:"):
 				self.setDUT(arg[5:])
 				logger.log("\tDevice under Test is: {}".format(self.DUT))
@@ -671,7 +677,7 @@ class TestRunner(Thread):
 		if (self.suite in ctx):
 			if (ctx[self.suite] != None):
 				self._runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
-				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self._pipe)
+				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self._pipe, timeout = self._timeout)
 				self.tests = len(self._runsuite._testList)
 				if "DUT" in ctx and ctx['DUT'] is not None and self.DUT is None:
 					self.setDUT(ctx["DUT"])
