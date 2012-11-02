@@ -500,7 +500,10 @@ class TestSuite:
 		for t in self._testList:
 			if disabled:
 				t.state = TestState.Disabled
-			elif infoOnly:
+			else:
+				t.state = TestState.Waiting
+			
+			if infoOnly:
 				t.state = TestState.InfoOnly
 			t.pipe = pipe
 			if timeout is not None:
@@ -1057,6 +1060,10 @@ class TestRow(guitk.Frame):
 		self._lblNum.config(fg=self._fgcol, bg=self._bgcol)
 		self._lblName.config(fg=self._fgcol, bg=self._bgcol, text=self._test.name)
 		self._lblDescr.config(fg=self._fgcol, bg=self._bgcol, text=self._test.descr)
+		if self._test.state == TestState.Disabled:
+			self._checkBtn.deselect()
+		else:
+			self._checkBtn.select()
 		
 	def clickCheck(self):
 		"""Eventhandler for checkbutton click"""
@@ -1066,6 +1073,7 @@ class TestRow(guitk.Frame):
 		else:
 			self._test.state = TestState.Disabled
 			self._checkBtn.deselect()
+		self.update()
 		
 		
 class TestGrid(guitk.Frame):
@@ -1090,12 +1098,19 @@ class TestGrid(guitk.Frame):
 		self.createHead()
 		self._visible = (0,9)
 	
+	def toggleAll(self):
+		"""Eventhandler for header checkbutton"""
+		self._runner.getSuite().setAll(disabled=self._toggleAllVar.get())
+		self._gui.dataGrid.update()
+	
 	def createHead(self):
 		"""Create the head of the grid"""
 		head = guitk.Frame(self)
 		guitk.Button(head, text="+", command=self.scrollUp, width=3).pack(side=LEFT)
 		guitk.Button(head, text="-", command=self.scrollDown, width=3).pack(side=LEFT)
-		self._toggleAll = guitk.Checkbutton(head)
+		self._toggleAllVar = guitk.IntVar(head)
+		self._toggleAll = guitk.Checkbutton(head, onvalue=False, offvalue=True, command=self.toggleAll, variable=self._toggleAllVar)
+		self._toggleAll.select()
 		self._toggleAll.pack(side=LEFT)
 		guitk.Label(head, text="#", width=3).pack(side=LEFT)
 		guitk.Label(head, text="Name", width=20).pack(side=LEFT)
