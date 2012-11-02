@@ -10,7 +10,7 @@ suite = [
 		name = "Example 1",
 		description= "This test should be a success", 
 		command = "$DUT success", 
-		stdout = "success"
+		stdout = "success$n"
 	),
 	Test (
 		name = "Example 2", 
