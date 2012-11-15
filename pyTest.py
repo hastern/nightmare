@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
-#@file pyTest                                                                  #
+# @file pyTest                                                                 #
 # pyTest is a tool for testing commandline applications.                       #
 #                                                                              #
+# It can be run from the commandline or by using the integrated graphical user #
+# interface written with tkinter.                                              #
 #                                                                              #
-#@author Hanno Sternberg <hanno@almostintelligent.de>                          #
-#@date 29.10.2012                                                              #
+#                                                                              #
+# @author Hanno Sternberg <hanno@almostintelligent.de>                         #
 #                                                                              #
 # This software is licensed under the MIT License                              #
 #                                                                              #
@@ -266,74 +268,43 @@ class Command():
 	
 class Test:
 	"""A single test"""
-	name = ""
-	"""The name of the test"""
-	descr = ""
-	"""The description of the game"""
-	cmd = None
-	"""The command to be executed"""
-	expectStdout = ""
-	"""The expected output on stdout"""
-	expectStderr = ""
-	"""The expected output on stderr"""
-	expectRetCode = 0
-	"""The expected return code"""
-	output = ""
-	"""The stdout"""
-	error = ""
-	"""The stderr"""
-	retCode = 0
-	"""The return code"""
-	state = TestState.Waiting
-	"""The state of the game"""
-	pipe = False
-	"""Flag, set if the output streams should be piped"""
-	timeout = 60.0
-	"""Timeout after the DUT gets killed"""
-	linesep = os.linesep
 	
-	def __init__(self, data=None, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None, timeout=60.0):
+	def __init__(self, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None, timeout=10.0):
 		"""
 		Initalises a test
 		
 		@type	data: Dictionary
 		@param	data: Dictionary with test definitions
 		"""
-		if data is not None:
-			if 'name' in data:
-				self.name = data['name']
-			if 'descr' in data:
-				self.descr = data['descr']
-			if "cmd" in data:
-				self.cmd = data['cmd']
-			else:
-				self.state = TestState.Error
-			if 'stdout' in data:
-				self.expectStdout = data['stdout']
-			else:
-				self.expectStdout = None
-			if 'stderr' in data:
-				self.expectStderr = data['stderr']
-			else:
-				self.expectStderr = None
-			if 'returnCode' in data:
-				self.expectRetCode = data['returnCode']
-			else:
-				self.expectRetCode = None
-		else:
-			self.name = name
-			self.descr = description
-			self.cmd = command
-			self.expectStdout = stdout
-			self.expectStderr = stderr
-			self.expectRetCode = returnCode
-			self.timeout = timeout
+		self.name = name
+		"""The name of the test"""
+		self.descr = description
+		"""The description of the test"""
+		self.cmd = command
+		"""The description of the game"""
+		self.expectStdout = stdout
+		"""The description of the game"""
+		self.expectStderr = stderr
+		"""The expected output on stderr"""
+		self.expectRetCode = returnCode
+		self.timeout = timeout
+		"""The expected return code"""
 		if DUT is not None:
 			self.DUT = DUT
 		self.output = ""
+		"""The stdout"""
 		self.error = ""
+		"""The stderr"""
+		self.retCode = 0
+		"""The return code"""
 		self.state = TestState.Waiting
+		"""The state of the game"""
 		self.pipe = False
+		"""Flag, set if the output streams should be piped"""
+		self.outputOnFail = False
+		"""Flag, set if the output streams should be piped on failed test"""
+		self.timeout = timeout
+		"""Timeout after the DUT gets killed"""
 		self.linesep = os.linesep
 			
 	def _check(self, exp, out):
@@ -353,12 +324,14 @@ class Test:
 			return exp(out)
 		elif (isinstance(exp, int) and isinstance(out, int)):
 			return exp == out
+		elif isinstance(exp, list):
+			return self._checkList(exp, out)
 		elif isinstance(exp, str):
 			if exp.startswith("lambda"):
 				f = eval(exp)
 				return f(out)
 			if exp.startswith("regex:"):
-				patCode = re.compile(exp[6:], re.IGNORECASE)
+				patCode = re.compile(exp[6:].replace("$n", self.linesep), re.IGNORECASE)
 				return (patCode.match(str(out)) != None)
 			else:
 				return exp.replace("$n", self.linesep) == str(out)
@@ -366,6 +339,44 @@ class Test:
 			return True
 		return False
 	
+	def _checkList(self, lst, out):
+		"""
+		Tests a list of expectations against an output
+		@type	lst: List
+		@param	lst: List with expectation
+		@type 	out: String, Int
+		@param	out: output The output
+		@rtype:	Boolean
+		@return: Result of the comparison
+		"""
+		if isinstance(lst, list):
+			for exp in lst:
+				if not self._check(exp, out):
+					return False
+			return True
+		else:
+			return self._check(lst, out)
+	
+	def runCmd(self, command):
+		_cmd = Command(cmd=str(command).replace("$DUT", self.DUT))
+		cmdRet = _cmd.execute(self.timeout)
+		if cmdRet == TestState.Success:
+			self.output = _cmd.out
+			self.error = _cmd.err
+			self.retCode = _cmd.ret
+			if self._check(self.expectRetCode, self.retCode) \
+				and self._check(self.expectStdout,self.output) \
+				and self._check(self.expectStderr,self.error):
+				self.state = TestState.Success
+			else:
+				self.state = TestState.Fail
+			if (self.pipe) or (self.outputOnFail and self.state is TestState.Fail):
+				sys.stdout.write( "{} ".format(self.retCode) )
+				sys.stdout.write( self.output )
+				sys.stderr.write( self.error )
+		else:
+			self.state = cmdRet
+			
 	def run(self):
 		"""Runs the test"""
 		if self.state == TestState.Disabled:
@@ -374,23 +385,11 @@ class Test:
 			print "{} - {}".format(self.name, self.descr)
 			return TestState.InfoOnly
 		if self.cmd is not None and self.DUT is not None:
-			cmd_ = Command(cmd=str(self.cmd).replace("$DUT", self.DUT))
-			cmdRet = cmd_.execute(self.timeout)
-			if cmdRet == TestState.Success:
-				self.output = cmd_.out
-				self.error = cmd_.err
-				self.retCode = cmd_.ret
-				if (self.pipe):
-					sys.stdout.write( self.output )
-					sys.stderr.write( self.error )
-				if self._check(self.expectRetCode, self.retCode) \
-					and self._check(self.expectStdout,self.output) \
-					and self._check(self.expectStderr,self.error):
-					self.state = TestState.Success
-				else:
-					self.state = TestState.Fail
+			if isinstance(self.cmd, list):
+				for cmd_ in self.cmd:
+					self.runCmd(cmd_)
 			else:
-				self.state = cmdRet
+				self.runCmd(self.cmd)
 		else:
 			self.state = TestState.Error
 		return self.state
@@ -413,32 +412,13 @@ class Test:
 			fields.append("{}\tstderr = \"{}\"".format(prefix, self.expectStderr))
 		if self.expectRetCode is not None:
 			fields.append("{}\treturnCode = \"{}\"".format(prefix, self.expectRetCode))
+		if self.timeout is not None:
+			fields.append("{}\ttimeout = {:.1f}".format(prefix, self.timeout))
 		return "Test (\n{}\n{})".format(",\n".join(fields), prefix)
 
 class TestSuite:
 	"""A testsuite is a collection of tests"""
-	_success = 0
-	"""The number of successful tests"""
-	_failed = 0
-	"""The number of failed tests"""
-	_count = 0
-	"""A counter for the executed tests"""
-	_error = 0
-	"""The number of errors occured during the testrun"""
-	_timedout = 0
-	"""The total number of timed out tests"""
-	_lastResult = TestState.Waiting
-	"""The result of the last test"""
-	_rate = 0
-	"""The successrate of the testrun"""
-	_len = 0
-	"""The total number of tests in the suite"""
-	
-	_testList = []
-	"""The collection of tests"""
-	_mode = TestSuiteMode.BreakOnFail
-	"""The test suite mode"""
-	
+		
 	def __init__(self, tests = [], DUT=None, mode=TestSuiteMode.BreakOnFail):
 		"""
 		Initialises a test suite
@@ -450,22 +430,32 @@ class TestSuite:
 		@param	mode: The initial mode of the testsuite
 		"""
 		self.setMode(mode)
+		"""The test suite mode"""
 		self._testList = []
+		"""The collection of tests"""
 		for t in tests:
 			if isinstance(t, Test):
 				self._testList.append(t)
 				t.DUT = str(DUT)
 			else:
 				self.addTest(t, DUT)
-		self._len = len(self._testList)
-		self._succes = TestSuite._success
-		self._failed = TestSuite._failed
-		self._count = TestSuite._count
-		self._error = TestSuite._error
-		self._timedout = TestSuite._timedout
-		self._lastResult = TestSuite._lastResult
-		self._rate = TestSuite._rate
-	
+		self._success = 0
+		"""The number of successful tests"""
+		self._failed = 0
+		"""The number of failed tests"""
+		self._count = 0
+		"""A counter for the executed tests"""
+		self._error = 0
+		"""The number of errors occured during the testrun"""
+		self._timedout = 0
+		"""The total number of timed out tests"""
+		self._lastResult = TestState.Waiting
+		"""The result of the last test"""
+		self._rate = 0
+		"""The successrate of the testrun"""
+		self._len = 0
+		"""The total number of tests in the suite"""
+
 	def getRate(self):
 		"""Returns the success rate"""
 		return self._rate
@@ -498,7 +488,7 @@ class TestSuite:
 	def getTests(self):
 		return self._testList
 		
-	def setAll(self, infoOnly=False, disabled=False, pipe=False, timeout=None, linesep=None): 
+	def setAll(self, infoOnly=False, disabled=False, pipe=False, out=False, timeout=None, linesep=None): 
 		for t in self._testList:
 			if disabled:
 				t.state = TestState.Disabled
@@ -508,6 +498,7 @@ class TestSuite:
 			if infoOnly:
 				t.state = TestState.InfoOnly
 			t.pipe = pipe
+			t.outputOnFail = out
 			if timeout is not None:
 				t.timeout = timeout
 			if linesep is not None:
@@ -585,35 +576,28 @@ class TestSuite:
 		
 class TestRunner(Thread):
 	"""Testrunner. Reads a testbench file and executes the testrun"""
-	suite = "suite"
-	"""Test suite selector"""
-	test = -1
-	"""single test selector"""
-	quiet = False
-	"""Definition of the programs verbosity"""
-	mode = TestSuiteMode.BreakOnFail
-	"""Mode for the test suite"""
-	file = ""
-	"""test bench file"""
-	tests = 0
-	"""Specific test selection"""
-	lengthOnly = False
-	"""print only number of test"""
-	infoOnly = False
-	"""Print only the test information"""
 	
 	def __init__(self):
 		"""Initialises the test runner"""
 		Thread.__init__(self)
 		logger.log("Welcome to pyTest Version 1")
-		self.suite = TestRunner.suite
-		self.test = TestRunner.test
-		self.quiet = TestRunner.quiet
-		self.mode = TestRunner.mode
-		self.file = TestRunner.file
+		self.suite = "suite"
+		"""Test suite selector"""
+		self.test = -1
+		"""single test selector"""
+		self.quiet = False
+		"""Definition of the programs verbosity"""
+		self.mode = TestSuiteMode.BreakOnFail
+		"""Mode for the test suite"""
+		self.file = ""
+		"""test bench file"""
 		self.lengthOnly = False
-		self._runsuite = None
+		"""print only number of test"""
+		self.infoOnly = False
+		"""Print only the test information"""
 		self.DUT = None
+		self.testCount = 0
+		self._runsuite = None
 		self._finished = None
 		self._pipe = False
 		self._timeout = None
@@ -695,7 +679,7 @@ class TestRunner(Thread):
 			if (ctx[self.suite] != None):
 				self._runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
 				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self._pipe, timeout = self._timeout, linesep = self._linesep)
-				self.tests = len(self._runsuite._testList)
+				self.testCount = len(self._runsuite._testList)
 				if "DUT" in ctx and ctx['DUT'] is not None and self.DUT is None:
 					self.setDUT(ctx["DUT"])
 			else:
@@ -1183,7 +1167,7 @@ class TestGrid(guitk.Frame):
 			row.destroy()
 		self._rows = []
 		
-class TestRunnerGui(Thread):
+class TestRunnerGui():
 	"""Graphical User Interface"""
 	
 	def _handleSuiteLoad(self, fn):
@@ -1246,7 +1230,6 @@ class TestRunnerGui(Thread):
 	
 	def __init__(self):
 		"""Initialise the gui"""
-		Thread.__init__(self)
 		self._runner = TestRunner()
 		self._runner.parseArgv()
 		self._whnd = guitk.Tk()
@@ -1259,7 +1242,7 @@ class TestRunnerGui(Thread):
 		actionFrame = guitk.LabelFrame(cfgFrame, text="Mode")
 		# Variables
 		self._suite = guitk.StringVar(suiteInfoFrame, self._runner.suite)
-		self._tests = guitk.StringVar(suiteInfoFrame, self._runner.tests)
+		self._tests = guitk.StringVar(suiteInfoFrame, self._runner.testCount)
 		self._filename = guitk.StringVar(suiteInfoFrame, "")
 		self._DUT = guitk.StringVar(suiteInfoFrame, "")
 		self._mode = guitk.IntVar(actionFrame, TestSuiteMode.BreakOnFail)
@@ -1299,8 +1282,6 @@ class TestRunnerGui(Thread):
 		self.dataGrid = TestGrid(self._whnd, self, self._runner)
 		self.dataGrid.pack(side=TOP, expand=1, fill=X, anchor=NW)
 		
-	def run(self):
-		"""Run function for the gui thread"""
 		self._whnd.mainloop()
 
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
@@ -1362,6 +1343,5 @@ if __name__ == "__main__":
 		sys.exit(suite._lastResult)
 	else:
 		gui = TestRunnerGui()
-		gui.start()
 	
 			

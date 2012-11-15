@@ -91,12 +91,13 @@ The Pattern $DUT is a substitute for the application that gets tested.
 
 Here's a list of all possible fields in a test definition:
 
--name: The (brief) name of the test.
--description: A longer description, about the purpose of this test.
--command: The command to be executed.
--stdout: The expected result on stdout.
--stderr: The expected result on stderr.
--returnCode: The expected returncode.
+- *name:* The (brief) name of the test.
+- *description:* A longer description, about the purpose of this test.
+- *command:* The command to be executed.
+- *stdout:* The expected result on stdout.
+- *stderr:* The expected result on stderr.
+- *returnCode:* The expected returncode.
+- *timeout:* Time in seconds before the process gets automatically killed.
 
 Almost every field in the test is optional expect the command. The reason 
 should be obvious.
