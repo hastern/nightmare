@@ -600,6 +600,7 @@ class TestRunner(Thread):
 		self._runsuite = None
 		self._finished = None
 		self._pipe = False
+		self._out = False
 		self._timeout = None
 		self._linesep = os.linesep
 		
@@ -667,6 +668,10 @@ class TestRunner(Thread):
 			elif arg == "-p":
 				self._pipe = True
 				logger.log("\tI will pipe all tests outputs to their respective streams")
+			elif arg == "-o":
+				self._out = True
+				logger.log("\tI will pipe failed tests outputs to their respective streams")
+			
 	
 	def loadSuite(self):
 		"""Loads the suite from a file"""
@@ -678,7 +683,7 @@ class TestRunner(Thread):
 		if (self.suite in ctx):
 			if (ctx[self.suite] != None):
 				self._runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
-				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self._pipe, timeout = self._timeout, linesep = self._linesep)
+				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self._pipe, out=self._out, timeout = self._timeout, linesep = self._linesep)
 				self.testCount = len(self._runsuite._testList)
 				if "DUT" in ctx and ctx['DUT'] is not None and self.DUT is None:
 					self.setDUT(ctx["DUT"])
@@ -1313,6 +1318,8 @@ def printHelp():
 	print "        Print only the number of tests in the suite."
 	print "    -p"
 	print "        Redirect DUT output to their respective streams."
+	print "    -o"
+	print "        Redirect DUT output from failed tests to their respective streams."
 	print "    --no-color"
 	print "        Don't use any colored output."
 	print "    --no-gui"
