@@ -25,6 +25,8 @@ applications.
 			Print only the number of tests in the suite.
 		-p
 			Redirect DUT output to their respective streams.
+		-o
+			Redirect DUT output from failed tests to their respective streams.
 		--no-color
 			Don't use any colored output.
 		--no-gui
