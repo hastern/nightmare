@@ -38,7 +38,8 @@ import sys
 from pyTestCore.testSuite import TestSuite
 from pyTestCore.testRunner import TestRunner
 from pyTestCore.utils import TermColor
-from pyTestGui import TestRunnerGui
+
+from pyTestGui.testRunnerGui import TestRunnerGui
 
 def printHelp():
 	"""Print usage information for this tool"""

@@ -14,8 +14,8 @@ setup(
 	author='Hanno Sternberg',
 	author_email='hanno@almostintelligent.de',
 	url='https://github.com/drakehutner/pyTest',
-	packages=['pyTestCore'],
-	py_modules=['pyTest','TestGui','__main__'],
+	packages=['pyTestCore','pyTestGui'],
+	py_modules=['pyTest','__main__'],
 	license=read('LICENSE'),
 	long_description=read('README.md'),
 	entry_points={
