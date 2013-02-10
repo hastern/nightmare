@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def read(fname):
@@ -14,13 +14,13 @@ setup(
 	author='Hanno Sternberg',
 	author_email='hanno@almostintelligent.de',
 	url='https://github.com/drakehutner/pyTest',
-	packages=['test'],
-	scripts=['pyTest.py','TestGui.py','__main__.py'],
+	packages=find_packages(),
+	py_modules=['pyTest','TestGui','__main__'],
 	license=read('LICENSE'),
 	long_description=read('README.md'),
-	ntry_points = {
-        'setuptools.installation': [
-            'eggsecutable = __main__:main_func',
-        ]
-    }
+	entry_points={
+		'setuptools.installation':[
+			"eggsecutable = pyTest:main"
+		]
+	}
 )
