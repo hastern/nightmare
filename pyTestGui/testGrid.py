@@ -70,18 +70,18 @@ class TestRow(Frame):
 		self._lblName.config(fg=self._fgcol, bg=self._bgcol, text=self._test.name)
 		self._lblDescr.config(fg=self._fgcol, bg=self._bgcol, text=self._test.descr)
 		if self._test.state == TestState.Disabled:
-			self._checkBtn._state.set(False)
+			self._state.set(False)
 		else:
-			self._checkBtn._state.set(True)
+			self._state.set(True)
 		
 	def clickCheck(self):
 		"""Eventhandler for checkbutton click"""
 		if self._test.state == TestState.Disabled:
 			self._test.state = TestState.Waiting
-			self._checkBtn._state.set(False)
+			self._state.set(False)
 		else:
 			self._test.state = TestState.Disabled
-			self._checkBtn._state.set(True)
+			self._state.set(True)
 		self.update()
 		
 		
