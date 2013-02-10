@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 def read(fname):
@@ -10,7 +10,7 @@ def read(fname):
 setup(
 	name='pyTest',
 	version='1.0',
-	description='A simple test programm for command line programms.',
+	description='A simple test tool for command line programms.',
 	author='Hanno Sternberg',
 	author_email='hanno@almostintelligent.de',
 	url='https://github.com/drakehutner/pyTest',
