@@ -3,29 +3,41 @@
 # 
 
 PY	=python
-SETUP	=setup.py
+SETUP	=$(PY) setup.py
+DOC	=$(PY) epydoc.py
 
-SRC_EGG	=pyTest-1.0-py2.7.egg
-TARGET	=pyTest.egg
+SRC_EGG	=$(shell $(SETUP) --fullname)-py2.7.egg
+TARGET	=$(shell $(SETUP) --name).egg
 
 default: all
 
 all: build dist egg
 
 build:
-	$(PY) $(SETUP) build
+	$(SETUP) build
 
-egg:
-	$(PY) $(SETUP) bdist_egg
+egg: 
+	$(SETUP) bdist_egg
 	cp dist/$(SRC_EGG) $(TARGET)
 	
 dist:
-	$(PY) $(SETUP) sdist
+	$(SETUP) sdist
 
+doc:
+	$(DOC) --config=epydocfile
+	
+license:
+	@$(SETUP) --license
+	
+description:
+	@$(SETUP) --long-description
+	
+info: license description
+	
 clean:
-	$(PY) $(SETUP) clean
-	rm -rf build dist pyTest.egg-info
-	rm -f pyTestCore/*.py pyTestGui/*.py *.pyc $(TARGET)
+	$(SETUP) clean
+	rm -rf build dist pyTest.egg-info doc
+	rm -f pyTestCore/*.pyc pyTestGui/*.pyc *.pyc $(TARGET)
 	
 	
 
