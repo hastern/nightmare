@@ -14,7 +14,7 @@ setup(
 	author='Hanno Sternberg',
 	author_email='hanno@almostintelligent.de',
 	url='https://github.com/drakehutner/pyTest',
-	packages=find_packages(),
+	packages=['pyTestCore'],
 	py_modules=['pyTest','TestGui','__main__'],
 	license=read('LICENSE'),
 	long_description=read('README.md'),
@@ -22,5 +22,6 @@ setup(
 		'setuptools.installation':[
 			"eggsecutable = pyTest:main"
 		]
-	}
+	},
+	zip_safe=True,
 )

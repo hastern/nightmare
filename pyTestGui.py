@@ -8,12 +8,12 @@ from Tkinter import LEFT, RIGHT, TOP, DISABLED, N, E, S, W, NE, SE, SW, NW, CENT
 import tkFileDialog as fileDiag
 
 # pyTest classes
-from test.testState import TestState
-from test.testMode import TestSuiteMode
-from test.test import Test
-from test.testSuite import TestSuite
-from test.testRunner import TestRunner
-from test.utils import isLambda
+from pyTestCore.testState import TestState
+from pyTestCore.testMode import TestSuiteMode
+from pyTestCore.test import Test
+from pyTestCore.testSuite import TestSuite
+from pyTestCore.testRunner import TestRunner
+from pyTestCore.utils import isLambda
 
 
 class LabeledEntry(guitk.Frame):

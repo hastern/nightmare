@@ -12,7 +12,7 @@
 #                                                                              #
 # This software is licensed under the MIT License                              #
 #                                                                              #
-# Copyright (c) 2012 Hanno Sternberg                                           #
+# Copyright (c) 2012-2013 Hanno Sternberg                                      #
 #                                                                              #
 # Permission is hereby granted, free of charge, to any person obtaining a copy #
 # of this software and associated documentation files (the "Software"), to     #
@@ -35,10 +35,10 @@
 
 import sys
 
-from test.testSuite import TestSuite
-from test.testRunner import TestRunner
-from test.utils import TermColor
-from TestGui import TestRunnerGui
+from pyTestCore.testSuite import TestSuite
+from pyTestCore.testRunner import TestRunner
+from pyTestCore.utils import TermColor
+from pyTestGui import TestRunnerGui
 
 def printHelp():
 	"""Print usage information for this tool"""
