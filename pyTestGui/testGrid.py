@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from Tkinter import *
-#from ttk import *
+from ttk import *
 
 from pyTestCore.testState import TestState
 
@@ -29,46 +29,47 @@ class TestRow(Frame):
 		self._runner = runner
 		self._num = n
 		self._test = test
-		self._bgcol = "#FFF"
-		self._fgcol = "#000"
 		self._state = IntVar(self)
 		self._state.set(False)
-		self.setColor()
+		Style().configure("Success.TLabel", foreground = "#000", background = "#0D0");
+		Style().configure("Fail.TLabel", foreground = "#FFF", background = "#D00");
+		Style().configure("Error.TLabel", foreground = "#000", background = "#DD0");
+		Style().configure("Waiting.TLabel", foreground = "#000", background = "#FFF");
+		Style().configure("Disabled.TLabel", foreground = "#888", background = "#000");
 		self._edtBtn = TestEditButton(self, runner, "Edit", test, self._num)
 		self._edtBtn.pack(side=LEFT)
 		self._checkBtn = Checkbutton(self, command=self.clickCheck, variable=self._state)
 		self._checkBtn.pack(side=LEFT)
-		self._lblNum = Label(self, text="{:02}".format(n), bg=self._bgcol, fg=self._fgcol, width=3)
+		self._lblNum = Label(self, text="{:02}".format(n), width=3)
 		self._lblNum.pack(side=LEFT)
-		self._lblName = Label(self, text=test.name, bg=self._bgcol, fg=self._fgcol, width=20)
+		self._lblName = Label(self, text=test.name, width=20)
 		self._lblName.pack(side=LEFT)
-		self._lblDescr = Label(self, text=test.descr, bg=self._bgcol, fg=self._fgcol, width=40)
+		self._lblDescr = Label(self, text=test.descr, width=40)
 		self._lblDescr.pack(side=LEFT, expand=1, fill=X)
 		
-	def setColor(self):
-		"""Set colors based on TestState"""
-		if self._test.state == TestState.Success:
-			self._bgcol = "#0D0"
-			self._fgcol = "#000"
-		elif self._test.state == TestState.Fail:
-			self._bgcol = "#D00"
-			self._fgcol = "#FFF"
-		elif self._test.state == TestState.Error:
-			self._bgcol = "#DD0"
-			self._fgcol = "#000"
-		elif self._test.state == TestState.Waiting:
-			self._bgcol = "#FFF"
-			self._fgcol = "#000"
-		elif self._test.state == TestState.Disabled:
-			self._bgcol = "#FFF"
-			self._fgcol = "#888"
-	
 	def update(self):
 		"""Updates the widgets"""
-		self.setColor()
-		self._lblNum.config(fg=self._fgcol, bg=self._bgcol)
-		self._lblName.config(fg=self._fgcol, bg=self._bgcol, text=self._test.name)
-		self._lblDescr.config(fg=self._fgcol, bg=self._bgcol, text=self._test.descr)
+		if self._test.state == TestState.Success:
+			self._lblNum.config(style="Success.TLabel")
+			self._lblName.config(style="Success.TLabel")
+			self._lblDescr.config(style="Success.TLabel")
+		elif self._test.state == TestState.Fail:
+			self._lblNum.config(style="Fail.TLabel")
+			self._lblName.config(style="Fail.TLabel")
+			self._lblDescr.config(style="Fail.TLabel")
+		elif self._test.state == TestState.Error:
+			self._lblNum.config(style="Error.TLabel")
+			self._lblName.config(style="Error.TLabel")
+			self._lblDescr.config(style="Error.TLabel")
+		elif self._test.state == TestState.Waiting:
+			self._lblNum.config(style="Waiting.TLabel")
+			self._lblName.config(style="Waiting.TLabel")
+			self._lblDescr.config(style="Waiting.TLabel")
+		elif self._test.state == TestState.Disabled:
+			self._lblNum.config(style="Disabled.TLabel")
+			self._lblName.config(style="Disabled.TLabel")
+			self._lblDescr.config(style="Disabled.TLabel")
+	
 		if self._test.state == TestState.Disabled:
 			self._state.set(False)
 		else:

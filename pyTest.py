@@ -33,6 +33,7 @@
 # IN THE SOFTWARE.                                                             #
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
+import os
 import sys
 
 from pyTestCore.testSuite import TestSuite

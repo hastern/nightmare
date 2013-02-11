@@ -9,6 +9,8 @@ DOC	=$(PY) epydoc.py
 SRC_EGG	=$(shell $(SETUP) --fullname)-py2.7.egg
 TARGET	=$(shell $(SETUP) --name).egg
 
+.PHONY: build egg dist clean doc license description info
+
 default: all
 
 all: build dist egg
