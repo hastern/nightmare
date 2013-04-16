@@ -182,6 +182,9 @@ class Test:
 			self.state = TestState.Error
 		return self.state
 		
+	def __str__(self):
+		return self.toString(prefix="")
+		
 	def toString(self, prefix="\t"):
 		"""
 		Creates a textual representation of the test.

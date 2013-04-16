@@ -66,14 +66,14 @@ class TestSuite:
 			for t in self._testList:
 				t.DUT = DUT
 		
-	def addTest(self, data, DUT):
+	def addTest(self, test):
 		"""
 		Adds a test to the suite
 		
-		@type	data: Test
-		@param	data: Test to add
+		@type	test: Test
+		@param	test: Test to add
 		"""
-		self._testList.append(Test(data, DUT))
+		self._testList.append(test)
 		self._len = len(self._testList)
 		
 	def getTests(self):
@@ -105,7 +105,10 @@ class TestSuite:
 		if (n < self._len):
 			t = self._testList[n]
 			self._lastResult = t.run()
-			logger.log("Test[{:02}] {} - {}: {}".format(n, t.name, t.descr, TestState.toString(t.state)))
+			if t.descr is not None:
+				logger.log("Test[{:02}] {} - {}: {}".format(n, t.name, t.descr, TestState.toString(t.state)))
+			else:
+				logger.log("Test[{:02}] {}: {}".format(n, t.name, TestState.toString(t.state)))
 			return self._lastResult
 		else:
 			logger.log("\tSorry but there is no test #{}".format(n))
@@ -127,7 +130,10 @@ class TestSuite:
 		for t in self._testList:
 			self._count = self._count + 1 
 			self._lastResult = t.run()
-			logger.log("Test[{:02}] {} - {}: {}".format(self._count, t.name, t.descr, TestState.toString(t.state)))
+			if t.descr is not None:
+				logger.log("Test[{:02}] {} - {}: {}".format(self._count, t.name, t.descr, TestState.toString(t.state)))
+			else:
+				logger.log("Test[{:02}] {}: {}".format(self._count, t.name, TestState.toString(t.state)))
 			logger.flush(quiet)
 			if self._lastResult == TestState.Success:
 				self._success = self._success + 1

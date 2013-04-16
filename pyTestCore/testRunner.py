@@ -2,6 +2,7 @@
 
 import sys
 import os
+import subprocess
 
 from threading import Thread
 
@@ -17,7 +18,7 @@ class TestRunner(Thread):
 	def __init__(self):
 		"""Initialises the test runner"""
 		Thread.__init__(self)
-		logger.log("Welcome to pyTest Version 1")
+		logger.log("Welcome to pyTest Version 2")
 		self.suite = "suite"
 		"""Test suite selector"""
 		self.test = -1
@@ -40,6 +41,7 @@ class TestRunner(Thread):
 		self._out = False
 		self._timeout = None
 		self._linesep = os.linesep
+		self._classpath = "."
 		
 	def setDUT(self, DUT):
 		"""
@@ -108,10 +110,23 @@ class TestRunner(Thread):
 			elif arg == "-o":
 				self._out = True
 				logger.log("\tI will pipe failed tests outputs to their respective streams")
-			
 	
-	def loadSuite(self):
-		"""Loads the suite from a file"""
+	def loadJUnitSuite(self):
+		logger.log("\nReading JUnit file using wrapper ...")
+		testList = []
+		cmd = "java -cp {} PyTestJUnitWrapper".format(self._classpath)
+		tests,err = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
+		testCases = tests.strip().split(self._linesep)
+		self._runsuite = TestSuite(mode= self.mode)
+		logger.log("\tI found {} JUnit tests".format(len(testCases)))
+		i = 0
+		for t in testCases:
+			self._runsuite.addTest(Test(name="{}".format(t), command="{} {}".format(cmd, i), DUT="", returnCode=0))
+			i += 1
+		return self._runsuite
+	
+	def loadPythonSuite(self):
+		"""Loads a python based suite from a file"""
 		logger.log("\nReading testfile ...")
 		glb = {"__builtins__":None, "Test":Test, "Suite":TestSuite}
 		ctx = {self.suite:None, "DUT":None}
@@ -129,6 +144,17 @@ class TestRunner(Thread):
 		else:
 			logger.log("Sorry, but there was no test-suite in the file")
 		return self._runsuite
+		
+	def loadSuite(self):
+		"""Loads a testsuite from a file"""
+		if self.file is not None and self.file.endswith(".py"):
+			return self.loadPythonSuite()
+		elif self.file is not None and self.file.startswith("java:"):
+			self._classpath = self.file[5:]
+			return self.loadJUnitSuite()
+		elif self.DUT is not None and self.DUT.startswith("java:"):
+			self._classpath = self.DUT[5:]
+			return self.loadJUnitSuite()
 		
 	def start(self, finished = None, test = -1):
 		"""start the runner-thread"""
@@ -149,6 +175,7 @@ class TestRunner(Thread):
 				logger.flush(self.quiet)
 			else:
 				self._runsuite.runOne(self.test)
+			logger.flush(self.quiet)
 		if self._finished != None:
 			self._finished()
 		Thread.__init__(self) # This looks like a real dirty hack :/
