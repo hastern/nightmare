@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
 	name='pyTest',
-	version='1.0',
+	version='2.0',
 	description='A simple test tool for command line programms.',
 	author='Hanno Sternberg',
 	author_email='hanno@almostintelligent.de',
