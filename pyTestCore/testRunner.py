@@ -114,14 +114,17 @@ class TestRunner(Thread):
 	def loadJUnitSuite(self):
 		logger.log("\nReading JUnit file using wrapper ...")
 		testList = []
-		cmd = "java -cp {} PyTestJUnitWrapper".format(self._classpath)
-		tests,err = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
+		cmdStr = "java -ea -cp {} PyTestJUnitWrapper".format(self._classpath)
+		cmd = cmdStr.split(" ")
+		tests,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 		testCases = tests.strip().split(self._linesep)
 		self._runsuite = TestSuite(mode= self.mode)
 		logger.log("\tI found {} JUnit tests".format(len(testCases)))
 		i = 0
 		for t in testCases:
-			self._runsuite.addTest(Test(name="{}".format(t), command="{} {}".format(cmd, i), DUT="", returnCode=0))
+			self._runsuite.addTest(Test(name="{}".format(t), command="{} {}".format(cmdStr, i), DUT="", returnCode=0))
+			self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self._pipe, out=self._out, timeout = self._timeout, linesep = self._linesep)
+			self.testCount = len(self._runsuite._testList)
 			i += 1
 		return self._runsuite
 	

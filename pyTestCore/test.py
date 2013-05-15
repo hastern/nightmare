@@ -3,6 +3,7 @@
 import os
 import re
 import sys
+import signal
 import subprocess
 
 from threading import Thread
@@ -22,7 +23,7 @@ class Command():
 		@param	cmd: Command
 		"""
 		self._cmd = cmd
-		self._process = None
+		self._proc = None
 		self._thread = None
 		self.out = ""
 		self.err = ""
@@ -31,9 +32,14 @@ class Command():
 
 	def commandFunc(self):
 		"""command to be run in the thread"""
-		self._process = subprocess.Popen(self._cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
-		self.out, self.err = self._process.communicate()
-		self.ret = self._process.wait()
+		self._proc = subprocess.Popen(self._cmd.split(" "), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+		self.out, self.err = self._proc.communicate()
+		self.ret = self._proc.wait()
+	
+	def handleTermination(self, signum, frame):
+		print "Caught signal: {}".format(signum)
+		self._proc.kill()
+		sys.exit(7)
 		
 	def execute(self, timeout):
 		"""
@@ -43,21 +49,28 @@ class Command():
 		@param	timeout: Timeout in seconds
 		"""
 		self._thread = Thread(target=self.commandFunc)
+		signal.signal(signal.SIGTERM, self.handleTermination)
+		signal.signal(signal.SIGINT, self.handleTermination)
 		self._thread.start()
 		self._thread.join(timeout)
-		if self._thread.isAlive():
-			if sys.platform == "win32":
-				subprocess.Popen(['taskkill', '/F', '/T', '/PID', str(self._process.pid)]).communicate()
-			else:
-				os.killgp(self._process.pid)
-			self._thread.join()
+		signal.signal(signal.SIGTERM, signal.SIG_DFL)
+		signal.signal(signal.SIGINT, signal.SIG_DFL)
+		if self._proc is not None and self._proc.poll() is None:
+			#if sys.platform == "win32":
+			#	subprocess.Popen(['taskkill', '/F', '/T', '/PID', str(self._proc.pid)], stdout=subprocess.PIPE).communicate()
+			#else:
+			#	childProc = int(subprocess.check_output("pgrep -P {}".format(self._proc.pid), shell=True, universal_newlines=True).strip())
+			#	os.kill(childProc, signal.SIGKILL)
+			#	if self._proc.poll() is None:
+			#		os.kill(self._proc.pid, signal.SIGTERM)
+			self._proc.kill()
 			return TestState.Timeout
 		return TestState.Success
 	
 class Test:
 	"""A single test"""
 	
-	def __init__(self, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None, timeout=10.0):
+	def __init__(self, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None, timeout=5.0):
 		"""
 		Initalises a test
 		
@@ -170,7 +183,10 @@ class Test:
 		if self.state == TestState.Disabled:
 			return TestState.Disabled
 		if self.state == TestState.InfoOnly:
-			print "{} - {}".format(self.name, self.descr)
+			if self.descr is None:
+				print "{}".format(self.name)
+			else:
+				print "{} - {}".format(self.name, self.descr)
 			return TestState.InfoOnly
 		if self.cmd is not None and self.DUT is not None:
 			if isinstance(self.cmd, list):
