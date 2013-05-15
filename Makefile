@@ -20,7 +20,7 @@ build:
 
 egg: 
 	$(SETUP) bdist_egg
-	cp dist/$(SRC_EGG) $(TARGET)
+	cp dist/$(SRC_EGG) $(SRC_EGG)
 	
 dist:
 	$(SETUP) sdist

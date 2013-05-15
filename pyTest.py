@@ -40,8 +40,6 @@ from pyTestCore.testSuite import TestSuite
 from pyTestCore.testRunner import TestRunner
 from pyTestCore.utils import TermColor
 
-from pyTestGui.testRunnerGui import TestRunnerGui
-
 def printHelp():
 	"""Print usage information for this tool"""
 	print "pyTest"
@@ -96,6 +94,7 @@ def main():
 			print "{:2.2f}%".format(suite.getRate())
 		sys.exit(suite._lastResult)
 	else:
+		from pyTestGui.testRunnerGui import TestRunnerGui
 		gui = TestRunnerGui()	
 
 if __name__ == "__main__":
