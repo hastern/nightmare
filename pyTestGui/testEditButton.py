@@ -7,7 +7,7 @@ from testEditForm import TestEditForm
 
 class TestEditButton(Button):
 	"""Button for editing a test"""
-	def __init__(self, parent, runner, caption, test, n):
+	def __init__(self, parent, runner, gui, caption, test, n):
 		"""
 		Initialise the test edit button
 		
@@ -29,7 +29,9 @@ class TestEditButton(Button):
 		Button.__init__(self, parent, text=caption, command=self.editTest, width=7)
 		self._test = test
 		self._num = n
+		self._runner = runner
+		self._gui = gui
 		
 	def editTest(self):
-		TestEditForm(self, self._num, self._test, self._runner)
+		TestEditForm(self, self._num, self._test, self._runner, self._gui)
 

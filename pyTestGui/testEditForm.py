@@ -6,10 +6,12 @@ from ttk import *
 
 from pyTestCore.test import Test
 from pyTestCore.testRunner import TestRunner
+from testRunButton import TestRunButton
+from testSaveButton import TestSaveButton
 
 class TestEditForm(Toplevel):
 	"""Form for editing one test"""
-	def __init__(self, parent, n, test, runner):
+	def __init__(self, parent, n, test, runner, gui):
 		"""
 		Initialises the form
 		

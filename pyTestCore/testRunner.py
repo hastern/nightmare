@@ -111,27 +111,10 @@ class TestRunner(Thread):
 				self._out = True
 				logger.log("\tI will pipe failed tests outputs to their respective streams")
 	
-	def loadJUnitSuite(self):
-		logger.log("\nReading JUnit file using wrapper ...")
-		testList = []
-		cmdStr = "java -ea -cp {} PyTestJUnitWrapper".format(self._classpath)
-		cmd = cmdStr.split(" ")
-		tests,err = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-		testCases = tests.strip().split(self._linesep)
-		self._runsuite = TestSuite(mode= self.mode)
-		logger.log("\tI found {} JUnit tests".format(len(testCases)))
-		i = 0
-		for t in testCases:
-			self._runsuite.addTest(Test(name="{}".format(t), command="{} {}".format(cmdStr, i), DUT="", returnCode=0))
-			self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self._pipe, out=self._out, timeout = self._timeout, linesep = self._linesep)
-			self.testCount = len(self._runsuite._testList)
-			i += 1
-		return self._runsuite
-	
-	def loadPythonSuite(self):
+	def loadSuite(self):
 		"""Loads a python based suite from a file"""
 		logger.log("\nReading testfile ...")
-		glb = {"__builtins__":None, "Test":Test, "Suite":TestSuite}
+		glb = {"__builtins__":__builtins__, "Test":Test, "Suite":TestSuite}
 		ctx = {self.suite:None, "DUT":None}
 		self._runsuite = None
 		execfile(self.file, glb, ctx)
@@ -147,17 +130,6 @@ class TestRunner(Thread):
 		else:
 			logger.log("Sorry, but there was no test-suite in the file")
 		return self._runsuite
-		
-	def loadSuite(self):
-		"""Loads a testsuite from a file"""
-		if self.file is not None and self.file.endswith(".py"):
-			return self.loadPythonSuite()
-		elif self.file is not None and self.file.startswith("java:"):
-			self._classpath = self.file[5:]
-			return self.loadJUnitSuite()
-		elif self.DUT is not None and self.DUT.startswith("java:"):
-			self._classpath = self.DUT[5:]
-			return self.loadJUnitSuite()
 		
 	def start(self, finished = None, test = -1):
 		"""start the runner-thread"""

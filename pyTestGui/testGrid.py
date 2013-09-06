@@ -9,7 +9,7 @@ from testEditButton import TestEditButton
 
 class TestRow(Frame):
 	"""The TestRow represents a single row inside the Testgrid"""
-	def __init__(self, parent, runner, n, test):
+	def __init__(self, parent, runner, gui, n, test):
 		"""
 		Initialise the row
 		
@@ -36,7 +36,7 @@ class TestRow(Frame):
 		Style().configure("Error.TLabel", foreground = "#000", background = "#DD0");
 		Style().configure("Waiting.TLabel", foreground = "#000", background = "#FFF");
 		Style().configure("Disabled.TLabel", foreground = "#888", background = "#000");
-		self._edtBtn = TestEditButton(self, runner, "Edit", test, self._num)
+		self._edtBtn = TestEditButton(self, runner, gui, "Edit", test, self._num)
 		self._edtBtn.pack(side=LEFT)
 		self._checkBtn = Checkbutton(self, command=self.clickCheck, variable=self._state)
 		self._checkBtn.pack(side=LEFT)
@@ -88,7 +88,7 @@ class TestRow(Frame):
 		
 class TestGrid(Frame):
 	"""A TestGrid displays all tests and their result."""
-	def __init__(self, parent, runner):
+	def __init__(self, parent, runner, gui):
 		"""
 		Initialise the grid
 		
@@ -100,6 +100,7 @@ class TestGrid(Frame):
 		"""
 		Frame.__init__(self, parent)
 		self._runner = runner
+		self._gui = gui
 		self._rows = []
 		self.createHead()
 		self._visible = (0,9)
@@ -148,7 +149,7 @@ class TestGrid(Frame):
 		@type 	test: Test
 		@param	test: Test with data for the row
 		"""
-		row = TestRow(self, self._runner, len(self._rows)+1, test)
+		row = TestRow(self, self._runner, self._gui, len(self._rows)+1, test)
 		self._rows.append(row)
 	
 	def update(self):

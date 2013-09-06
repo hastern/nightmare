@@ -97,7 +97,7 @@ class TestRunnerGui():
 		self._mode = IntVar(actionFrame, TestSuiteMode.BreakOnFail)
 		
 		# Components
-		self.dataGrid = TestGrid(self._whnd, self._runner)
+		self.dataGrid = TestGrid(self._whnd, self._runner, self)
 		self._suiteFile = LabeledEntry(suiteInfoFrame, lbl="File", var=self._filename)
 		self._suiteFile.entry.configure(state=DISABLED)
 		self._suiteName = LabeledEntry(suiteInfoFrame, lbl="Name", var=self._suite)

@@ -32,14 +32,9 @@ class Command():
 
 	def commandFunc(self):
 		"""command to be run in the thread"""
-		self._proc = subprocess.Popen(self._cmd.split(" "), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+		self._proc = subprocess.Popen(self._cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
 		self.out, self.err = self._proc.communicate()
 		self.ret = self._proc.wait()
-	
-	def handleTermination(self, signum, frame):
-		print "Caught signal: {}".format(signum)
-		self._proc.kill()
-		sys.exit(7)
 		
 	def execute(self, timeout):
 		"""
@@ -49,21 +44,16 @@ class Command():
 		@param	timeout: Timeout in seconds
 		"""
 		self._thread = Thread(target=self.commandFunc)
-		signal.signal(signal.SIGTERM, self.handleTermination)
-		signal.signal(signal.SIGINT, self.handleTermination)
 		self._thread.start()
 		self._thread.join(timeout)
-		signal.signal(signal.SIGTERM, signal.SIG_DFL)
-		signal.signal(signal.SIGINT, signal.SIG_DFL)
 		if self._proc is not None and self._proc.poll() is None:
-			#if sys.platform == "win32":
-			#	subprocess.Popen(['taskkill', '/F', '/T', '/PID', str(self._proc.pid)], stdout=subprocess.PIPE).communicate()
-			#else:
-			#	childProc = int(subprocess.check_output("pgrep -P {}".format(self._proc.pid), shell=True, universal_newlines=True).strip())
-			#	os.kill(childProc, signal.SIGKILL)
-			#	if self._proc.poll() is None:
-			#		os.kill(self._proc.pid, signal.SIGTERM)
-			self._proc.kill()
+			if sys.platform == "win32":
+				subprocess.Popen(['taskkill', '/F', '/T', '/PID', str(self._proc.pid)], stdout=subprocess.PIPE).communicate()
+			else:
+				childProc = int(subprocess.check_output("pgrep -P {}".format(self._proc.pid), shell=True, universal_newlines=True).strip())
+				os.kill(childProc, signal.SIGKILL)
+				if self._proc.poll() is None:
+					os.kill(self._proc.pid, signal.SIGTERM)
 			return TestState.Timeout
 		return TestState.Success
 	
