@@ -19,10 +19,10 @@ class TestEditForm(wx.Frame):
 		@type	test: pyTestcore.test.Test
 		@param 	test: The test to be edited
 		
-		@type	runner: pyTestCore.testRunner.TestRunner
+		@type	runner: pyTestRunner.TestRunner
 		@param	runner: The test runner
 		
-		@type	gui: pyTestgui.testRunnerGui.TestRunnerGui
+		@type	gui: pyTestGui.TestRunnerGui
 		@param	gui: The gui
 		"""
 		wx.Frame.__init__(self, parent, size=(600,400))

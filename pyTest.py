@@ -1,4 +1,5 @@
-#!/usr/bin/evn python
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
 
 import os
 import re
@@ -8,8 +9,51 @@ import subprocess
 
 from threading import Thread
 
-from testState import TestState
-from utils import isLambda
+from pyTestUtils import isLambda, TermColor
+
+
+class TestState:
+	#__slots__ = ["Success", "Fail", "Error", "Waiting", "Disabled", "InfoOnly", "Timeout"]
+
+	"""The test is waiting for execution"""
+	Success = 0
+	"""The test was successful"""
+	Fail = 1
+	"""The test has failed"""
+	Error = 2
+	"""Enumeration of test states"""
+	Waiting = 3
+	"""The test has produced an error"""
+	Disabled = 4
+	"""Disables the test"""
+	InfoOnly = 5
+	"""Display only the test information"""
+	Timeout = 6
+	"""The test has timed out"""
+	
+	@staticmethod
+	def toString(state):
+		"""
+		Converts the enumeration value into a string
+		
+		@type	state: int
+		@param	state: Enumeration value
+		"""
+		if state == TestState.Waiting:
+			return TermColor.colorText("WAITING", TermColor.White)
+		if state == TestState.Success:
+			return TermColor.colorText("SUCCESS", TermColor.Green, TermColor.Background)
+		if state == TestState.Fail:
+			return TermColor.colorText("FAIL", TermColor.Red, TermColor.Background)
+		if state == TestState.Error:
+			return TermColor.colorText("ERROR", TermColor.Red)
+		if state == TestState.Disabled:
+			return TermColor.colorText("DISABLED", TermColor.Blue)
+		if state == TestState.InfoOnly:
+			return TermColor.colorText("INFO", TermColor.White)		
+		if state == TestState.Timeout:
+			return TermColor.colorText("TIMEOUT", TermColor.Purple)
+		return TermColor.colorText("UNKNOWN", TermColor.Yellow)
 
 
 class Command():
@@ -125,8 +169,6 @@ class Test(object):
 				patCode = re.compile(exp[6:].replace("$n", self.linesep), re.IGNORECASE)
 				return (patCode.match(str(out)) != None)
 			else:
-				print exp
-				print out
 				return exp.replace("$n", self.linesep) == str(out).rstrip()
 		elif exp is None:
 			return True

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding:utf-8 -*-
 
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 # @file pyTest                                                                 #
@@ -36,9 +37,9 @@
 import os
 import sys
 
-from pyTestCore.testSuite import TestSuite
-from pyTestCore.testRunner import TestRunner
-from pyTestCore.utils import TermColor
+from pyTestSuite import TestSuite
+from pyTestRunner import TestRunner
+from pyTestUtils import TermColor
 
 def printHelp():
 	"""Print usage information for this tool"""
@@ -96,7 +97,7 @@ def main():
 			print "{:2.2f}%".format(suite.getRate())
 		sys.exit(suite._lastResult)
 	else:
-		from pyTestGui.testRunnerGui import TestRunnerGui
+		from pyTestGui import TestRunnerGui
 		gui = TestRunnerGui()	
 		gui.buildWindow()
 		gui.show()

@@ -22,6 +22,9 @@ egg:
 	$(SETUP) bdist_egg
 	cp dist/$(SRC_EGG) $(SRC_EGG)
 	
+exe:
+	$(SETUP) py2exe
+	
 dist:
 	$(SETUP) sdist
 
@@ -39,7 +42,7 @@ info: license description
 clean:
 	$(SETUP) clean
 	rm -rf build dist pyTest.egg-info doc
-	rm -f pyTestCore/*.pyc pyTestGui/*.pyc *.pyc $(TARGET)
+	rm -f *.pyc
 	
 	
 
