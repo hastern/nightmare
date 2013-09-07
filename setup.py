@@ -29,7 +29,7 @@ setup(
 			"optimize": 0,
 			"bundle_files": 1,
 			"includes": ['pyTestCore','pyTestGui','pyTest','__main__'],
-			"excludes": ['pyreadline','pyreadline.console', 'pyreadline.rlmain','unittest','email', 'email.Utils','_ssl'],
+			"excludes": ['pyreadline','pyreadline.console', 'pyreadline.rlmain','unittest','email', 'email.Utils','_ssl','Tkinter',"Tkconstants", "tcl"],
 			"packages": [],
 			"dll_excludes": ['w9xpopen.exe',"MSVCP90.dll"],
 			"dist_dir": "dist",

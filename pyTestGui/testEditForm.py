@@ -1,72 +1,138 @@
 #!/usr/bin/env python
 
 
-from Tkinter import *
-from ttk import *
-
 from pyTestCore.test import Test
 from pyTestCore.testRunner import TestRunner
-from testRunButton import TestRunButton
-from testSaveButton import TestSaveButton
 
-class TestEditForm(Toplevel):
+import wx
+
+class TestEditForm(wx.Frame):
 	"""Form for editing one test"""
-	def __init__(self, parent, n, test, runner, gui):
+	def __init__(self, parent, idx, test, runner, gui):
 		"""
 		Initialises the form
 		
-		@type	parent: Widget
-		@param	parent: Parent widget
+		@type	idx: int 
+		@param	idx: Number of the test
 		
-		@type	n: int 
-		@param	n: Number of the test
-		
-		@type	test: Test
+		@type	test: pyTestcore.test.Test
 		@param 	test: The test to be edited
 		
-		@type	runner: TestRunner
+		@type	runner: pyTestCore.testRunner.TestRunner
 		@param	runner: The test runner
+		
+		@type	gui: pyTestgui.testRunnerGui.TestRunnerGui
+		@param	gui: The gui
 		"""
-		Toplevel.__init__(self, parent)
-		self.title("Edit test {}".format(n))
-		self._test = test
-		# Variables
-		self._varname = StringVar(self, self._test.name)
-		self._vardescr = StringVar(self, self._test.descr)
-		self._varcmd = StringVar(self, self._test.cmd)
-		self._varret = StringVar(self, self._test.retCode)
-		self._varexpRet = StringVar(self, self._test.expectRetCode)
-		# Widgets
-		Label(self, text="Name").grid(row=0, column=0, columnspan=2)
-		Entry(self, width=50, textvariable=self._varname).grid(row=1, column=0, columnspan=2, sticky=N+E+S+W)
-		Label(self, text="Description").grid(row=0, column=2, columnspan=4)
-		Entry(self, width=70, textvariable=self._vardescr).grid(row=1, column=2, columnspan=4, sticky=N+E+S+W)
-		Label(self, text="Command").grid(row=2, column=0, columnspan=6)
-		Entry(self, width=120, textvariable=self._varcmd).grid(row=3, column=0, columnspan=6, sticky=N+E+S+W)
-		Label(self, text="Expected stdout").grid(row=4, column=0, columnspan=3)
-		self._expOut = Text(self, width=50, height=5)
-		self._expOut.grid(row=5, column=0, columnspan=3, sticky=N+E+S+W)
-		Label(self, text="stdout").grid(row=4, column=3, columnspan=3)
-		self._out = Text(self, width=50, height=5)
-		self._out.grid(row=5, column=3, columnspan=3, sticky=N+E+S+W)
-		Label(self, text="Expected Stderr").grid(row=6, column=0, columnspan=3)
-		self._expErr = Text(self, width=50, height=5)
-		self._expErr.grid(row=7, column=0, columnspan=3, sticky=N+E+S+W)
-		Label(self, text="stderr").grid(row=6, column=3, columnspan=3)
-		self._err = Text(self, width=50, height=5)
-		self._err.grid(row=7, column=3, columnspan=3, sticky=N+E+S+W)
-		Label(self, text="Expected Returncode").grid(row=8, column=0, columnspan=2)
-		Entry(self, width=30, textvariable=self._varexpRet).grid(row=9, column=0, columnspan=2, sticky=N+E+S+W)
-		Label(self, text="Returncode").grid(row=8, column=2, columnspan=2)
-		Entry(self, width=30, textvariable=self._varret, state=DISABLED).grid(row=9, column=2, columnspan=2, sticky=N+E+S+W)
-		TestRunButton(self, gui, "Run", n-1, runner).grid(row=9, column=4)
-		TestSaveButton(self, test, gui).grid(row=9, column=5)
-		# Fill data
-		if not isLambda(self._test.expectStdout) and self._test.expectStdout is not None:
-			self._expOut.insert(INSERT, str(self._test.expectStdout))
-		if not isLambda(self._test.expectStderr) and self._test.expectStderr is not None:
-			self._expErr.insert(INSERT, str(self._test.expectStderr))
-		if self._test.output != "":
-			self._out.insert(INSERT, str(self._test.output))
-		if self._test.error != "":
-			self._err.insert(INSERT, str(self._test.error))
+		wx.Frame.__init__(self, parent, size=(600,400))
+		#self.title("Edit test {}".format(test.name))
+		self.test = test
+		self.runner = runner
+		self.gui = gui
+		self.idx = idx
+		
+		self.panel = wx.Panel(self)
+		self.sizer = wx.GridBagSizer(3,3)
+		# Create components
+		self.lblName       = wx.StaticText(self.panel, label="Name")
+		self.edtName       = wx.TextCtrl(self.panel)
+		self.lblDescr      = wx.StaticText(self.panel, label="Description")
+		self.edtDescr      = wx.TextCtrl(self.panel)
+		self.lblCommand    = wx.StaticText(self.panel, label="Command")
+		self.edtCommand    = wx.TextCtrl(self.panel)
+		self.lblTimeout    = wx.StaticText(self.panel, label="Timeout")
+		self.edtTimeout    = wx.TextCtrl(self.panel)
+		self.line1         = wx.StaticLine(self.panel)
+		# Expectations Box
+		self.boxExpect     = wx.StaticBox(self.panel, label="Expectations")
+		self.szrExpect     = wx.StaticBoxSizer(self.boxExpect, wx.VERTICAL) 
+		self.lblExpOut     = wx.StaticText(self.panel, label="Stdout")
+		self.edtExpOut     = wx.TextCtrl(self.panel, style = wx.TE_MULTILINE)
+		self.lblExpErr     = wx.StaticText(self.panel, label="Stderr")
+		self.edtExpErr     = wx.TextCtrl(self.panel, style = wx.TE_MULTILINE)
+		self.lblExpCode    = wx.StaticText(self.panel, label="Returncode")
+		self.edtExpCode    = wx.TextCtrl(self.panel)
+		# Results Box
+		self.boxResult     = wx.StaticBox(self.panel, label="Results")
+		self.szrResult     = wx.StaticBoxSizer(self.boxResult, wx.VERTICAL)
+		self.lblResOut     = wx.StaticText(self.panel, label="Stdout")
+		self.edtResOut     = wx.TextCtrl(self.panel, style = wx.TE_MULTILINE|wx.TE_READONLY)
+		self.lblResErr     = wx.StaticText(self.panel, label="Stderr")
+		self.edtResErr     = wx.TextCtrl(self.panel, style = wx.TE_MULTILINE|wx.TE_READONLY)
+		self.lblResCode    = wx.StaticText(self.panel, label="Returncode")
+		self.edtResCode    = wx.TextCtrl(self.panel, style = wx.TE_READONLY)
+		# Buttons
+		self.line2         = wx.StaticLine(self.panel)
+		self.btnCancel     = wx.Button(self.panel, label="Cancel", id=wx.ID_CANCEL)
+		self.btnRun        = wx.Button(self.panel, label="Run")
+		self.btnSave       = wx.Button(self.panel, label="Save", id=wx.ID_SAVE)
+		# Layout - Main Components
+		self.sizer.Add(self.lblName,       pos=(0,0),  span=(1,1), border=5, flag=wx.TOP | wx.LEFT                                    )
+		self.sizer.Add(self.edtName,       pos=(0,1),  span=(1,1), border=5, flag=wx.TOP |           wx.RIGHT |             wx.EXPAND )
+		self.sizer.Add(self.lblDescr,      pos=(0,2),  span=(1,1), border=5, flag=wx.TOP | wx.LEFT                                    )
+		self.sizer.Add(self.edtDescr,      pos=(0,3),  span=(1,5), border=5, flag=wx.TOP |           wx.RIGHT |             wx.EXPAND )
+		self.sizer.Add(self.lblCommand,    pos=(1,0),  span=(1,1), border=5, flag=         wx.LEFT                                    )
+		self.sizer.Add(self.edtCommand,    pos=(1,1),  span=(1,5), border=5, flag=                   wx.RIGHT |             wx.EXPAND )
+		self.sizer.Add(self.lblTimeout,    pos=(1,6),  span=(1,1), border=5, flag=         wx.LEFT |                        wx.EXPAND )
+		self.sizer.Add(self.edtTimeout,    pos=(1,7),  span=(1,1), border=5, flag=                   wx.RIGHT |             wx.EXPAND )
+		self.sizer.Add(self.line1,         pos=(2,0),  span=(1,8), border=5, flag=wx.TOP | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND )
+		self.sizer.Add(self.szrExpect,     pos=(3,0),  span=(1,4), border=5, flag=         wx.LEFT |                        wx.EXPAND )
+		self.sizer.Add(self.szrResult,     pos=(3,4),  span=(1,4), border=5, flag=                   wx.RIGHT |             wx.EXPAND )
+		self.sizer.Add(self.line2,         pos=(4,0),  span=(1,8), border=5, flag=wx.TOP | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND )
+		self.sizer.Add(self.btnCancel,     pos=(5,0),  span=(1,1), border=5, flag=         wx.LEFT |            wx.BOTTOM | wx.EXPAND )
+		self.sizer.Add(self.btnRun,        pos=(5,6),  span=(1,1), border=5, flag=                              wx.BOTTOM | wx.EXPAND )
+		self.sizer.Add(self.btnSave,       pos=(5,7),  span=(1,1), border=5, flag=                   wx.RIGHT | wx.BOTTOM | wx.EXPAND )
+		# Layout - Expectations and Result Boxes
+		self.szrExpect.Add(self.lblExpOut,  0, border=5, flag=wx.TOP | wx.LEFT                                    )
+		self.szrExpect.Add(self.edtExpOut,  1, border=5, flag=wx.TOP | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND )
+		self.szrExpect.Add(self.lblExpErr,  0, border=5, flag=         wx.LEFT                                    )
+		self.szrExpect.Add(self.edtExpErr,  1, border=5, flag=wx.TOP | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND )
+		self.szrExpect.Add(self.lblExpCode, 0, border=5, flag=         wx.LEFT                                    )
+		self.szrExpect.Add(self.edtExpCode, 0, border=5, flag=         wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND )
+		self.szrResult.Add(self.lblResOut,  0, border=5, flag=wx.TOP | wx.LEFT                                    )
+		self.szrResult.Add(self.edtResOut,  1, border=5, flag=wx.TOP | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND )
+		self.szrResult.Add(self.lblResErr,  0, border=5, flag=         wx.LEFT                                    )
+		self.szrResult.Add(self.edtResErr,  1, border=5, flag=wx.TOP | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND )
+		self.szrResult.Add(self.lblResCode, 0, border=5, flag=         wx.LEFT                                    )
+		self.szrResult.Add(self.edtResCode, 0, border=5, flag=         wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND )
+		# 
+		self.sizer.AddGrowableCol(1)
+		self.sizer.AddGrowableCol(3)
+		self.sizer.AddGrowableCol(4)
+		self.sizer.AddGrowableCol(5)
+		self.sizer.AddGrowableRow(3)
+		self.panel.SetSizer(self.sizer)
+		# Event handling
+		self.Bind(wx.EVT_BUTTON, lambda e: self.Destroy(), id = self.btnCancel.GetId())
+		self.Bind(wx.EVT_BUTTON, lambda e: self.save() or self.gui.run(self.idx) or self.updateValues, id = self.btnRun.GetId())
+		self.Bind(wx.EVT_BUTTON, lambda e: self.save(), id = self.btnSave.GetId())
+		#
+		self.updateValues()
+	
+	def updateValues(self):
+		self.edtName.SetValue(self.test.name)
+		self.edtDescr.SetValue(self.test.descr if self.test.descr is not None else "")
+		self.edtCommand.SetValue(str(self.test.cmd) if self.test.cmd is not None else "")
+		self.edtTimeout.SetValue(str(self.test.timeout))
+		self.edtExpOut.SetValue(self.test.expectStdout if self.test.expectStdout is not None else "")
+		self.edtExpErr.SetValue(self.test.expectStderr if self.test.expectStderr is not None else "")
+		self.edtExpCode.SetValue(elf.test.expectRetCode if self.test.expectRetCode is not None else "")
+		self.edtResOut.SetValue(self.test.output)
+		self.edtResErr.SetValue(self.test.error)
+		self.edtResCode.SetValue(str(self.test.retCode))
+	
+	def save(self):
+		self.test.name = self.edtName.GetValue()
+		self.test.descr = self.edtDescr.GetValue()
+		self.test.command = self.edtCommand.GetValue()
+		self.test.timeout = float(self.edtTimeout.GetValue())
+		self.test.expectStdout = self.edtExpOut.GetValue() if self.edtExpOut.GetValue() != "" else None
+		self.test.expectStderr = self.edtExpErr.GetValue() if self.edtExpErr.GetValue() != "" else None
+		self.test.expectRetCode = self.edtExpCode.GetValue() if self.edtExpCode.GetValue() != "" else None
+		self.gui.updateTest(self.idx, self.test)
+		
+	def show(self):
+		self.Center()
+		self.Show()
+		
+		

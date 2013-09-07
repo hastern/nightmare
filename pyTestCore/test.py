@@ -22,9 +22,9 @@ class Command():
 		@type	cmd: str
 		@param	cmd: Command
 		"""
-		self._cmd = cmd
-		self._proc = None
-		self._thread = None
+		self.cmd = cmd
+		self.proc = None
+		self.thread = None
 		self.out = ""
 		self.err = ""
 		self.ret = 0
@@ -32,9 +32,9 @@ class Command():
 
 	def commandFunc(self):
 		"""command to be run in the thread"""
-		self._proc = subprocess.Popen(self._cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
-		self.out, self.err = self._proc.communicate()
-		self.ret = self._proc.wait()
+		self.proc = subprocess.Popen(self.cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
+		self.out, self.err = self.proc.communicate()
+		self.ret = self.proc.wait()
 		
 	def execute(self, timeout):
 		"""
@@ -43,21 +43,21 @@ class Command():
 		@type	timeout: float
 		@param	timeout: Timeout in seconds
 		"""
-		self._thread = Thread(target=self.commandFunc)
-		self._thread.start()
-		self._thread.join(timeout)
-		if self._proc is not None and self._proc.poll() is None:
+		self.thread = Thread(target=self.commandFunc)
+		self.thread.start()
+		self.thread.join(timeout)
+		if self.proc is not None and self.proc.poll() is None:
 			if sys.platform == "win32":
-				subprocess.Popen(['taskkill', '/F', '/T', '/PID', str(self._proc.pid)], stdout=subprocess.PIPE).communicate()
+				subprocess.Popen(['taskkill', '/F', '/T', '/PID', str(self.proc.pid)], stdout=subprocess.PIPE).communicate()
 			else:
-				childProc = int(subprocess.check_output("pgrep -P {}".format(self._proc.pid), shell=True, universal_newlines=True).strip())
+				childProc = int(subprocess.check_output("pgrep -P {}".format(self.proc.pid), shell=True, universal_newlines=True).strip())
 				os.kill(childProc, signal.SIGKILL)
-				if self._proc.poll() is None:
-					os.kill(self._proc.pid, signal.SIGTERM)
+				if self.proc.poll() is None:
+					os.kill(self.proc.pid, signal.SIGTERM)
 			return TestState.Timeout
 		return TestState.Success
 	
-class Test:
+class Test(object):
 	"""A single test"""
 	
 	def __init__(self, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None, timeout=5.0):
@@ -98,7 +98,7 @@ class Test:
 		"""Timeout after the DUT gets killed"""
 		self.linesep = os.linesep
 			
-	def _check(self, exp, out):
+	def check(self, exp, out):
 		"""
 		Test an expectation against an output
 		If it's a lambda function, it will be executed with the output
@@ -116,7 +116,7 @@ class Test:
 		elif (isinstance(exp, int) and isinstance(out, int)):
 			return exp == out
 		elif isinstance(exp, list):
-			return self._checkList(exp, out)
+			return self.checkList(exp, out)
 		elif isinstance(exp, str):
 			if exp.startswith("lambda"):
 				f = eval(exp)
@@ -125,12 +125,14 @@ class Test:
 				patCode = re.compile(exp[6:].replace("$n", self.linesep), re.IGNORECASE)
 				return (patCode.match(str(out)) != None)
 			else:
-				return exp.replace("$n", self.linesep) == str(out)
+				print exp
+				print out
+				return exp.replace("$n", self.linesep) == str(out).rstrip()
 		elif exp is None:
 			return True
 		return False
 	
-	def _checkList(self, lst, out):
+	def checkList(self, lst, out):
 		"""
 		Tests a list of expectations against an output
 		@type	lst: List
@@ -142,11 +144,11 @@ class Test:
 		"""
 		if isinstance(lst, list):
 			for exp in lst:
-				if not self._check(exp, out):
+				if not self.check(exp, out):
 					return False
 			return True
 		else:
-			return self._check(lst, out)
+			return self.check(lst, out)
 	
 	def runCmd(self, command):
 		_cmd = Command(cmd=str(command).replace("$DUT", self.DUT))
@@ -155,9 +157,9 @@ class Test:
 			self.output = _cmd.out
 			self.error = _cmd.err
 			self.retCode = _cmd.ret
-			if self._check(self.expectRetCode, self.retCode) \
-				and self._check(self.expectStdout,self.output) \
-				and self._check(self.expectStderr,self.error):
+			if self.check(self.expectRetCode, self.retCode) \
+				and self.check(self.expectStdout,self.output) \
+				and self.check(self.expectStderr,self.error):
 				self.state = TestState.Success
 			else:
 				self.state = TestState.Fail

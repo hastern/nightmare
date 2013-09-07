@@ -52,7 +52,7 @@ class TermColor:
 	"""Change text color"""
 	
 	active = True
-	"""activate colorfull output"""
+	"""activate colourful output"""
 	
 	
 	@staticmethod

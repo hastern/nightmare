@@ -7,39 +7,41 @@ You must really, really love to test!
 pyTest is a tool for automatic testing of non-interactive commandline 
 applications.
 
-	Usage: pyTest.py [OPTIONS]
+	Usage: pyTest [OPTIONS]
 	  OPTIONS:
-		-bench:TESTBENCH
-			Load the testbench form the file TESTBENCH.
-		-suite:SUITE
-			Use the testsuite SUITE from the testbench.
-		-test:TEST
-			Only run test number TEST.
-		-dut:DUT
-			Set the device under test to the file DUT.
-		-c
-			Continuous mode (Don't halt on failed tests).
-		-e
-			Same as '-c', but will halt if an error occurs.
-		-l
-			Print only the number of tests in the suite.
-		-p
-			Redirect DUT output to their respective streams.
-		-o
-			Redirect DUT output from failed tests to their respective streams.
-		--no-color
-			Don't use any colored output.
-		--no-gui
-			Don't use the GUI.
-		--info-only
-			Display only test information, but don't run them.
-		-q
-			Quiet mode. There will be no output except results.
-		-v
-			Verbose mode. The program gets chatty.
-		-h, --help, -?
-			Print this help
-			
+	    --bench=TESTBENCH
+	        Load the testbench form the file TESTBENCH.
+	    --suite=SUITE
+	        Use the testsuite SUITE from the testbench.
+	    --test=TEST
+	        Only run test number TEST.
+	    --dut=DUT
+	        Set the device under test to the file DUT.
+	    --timeout=SEC
+	        Set a global timeout for all tests.
+	    -c
+	        Continuous mode (Don't halt on failed tests).
+	    -e
+	        Same as '-c', but will halt if an error occurs.
+	    -l
+	        Print only the number of tests in the suite.
+	    -p
+	        Redirect DUT output to their respective streams.
+	    -o
+	        Redirect DUT output from failed tests to their respective streams.
+	    --no-color
+	        Don't use any colored output.
+	    --no-gui
+	        Don't use the GUI.
+	    --info-only
+	        Display only test information, but don't run them.
+	    -q
+	        Quiet mode. There will be no output except results.
+	    -v
+	        Verbose mode. The program gets chatty (default).
+	    -h, --help, -?
+	        Print this help
+
 Additional to the commandline interface there is a GUI using the 
 tkinter-package. The GUI is limited in its capabilities compared to the CLI,
 especially when it comes to testbench editing.

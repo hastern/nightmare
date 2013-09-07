@@ -48,14 +48,16 @@ def printHelp():
 	print ""
 	print "Usage: {} [OPTIONS]".format(os.path.relpath(sys.argv[0]))
 	print "  OPTIONS:"
-	print "    -bench:TESTBENCH"
+	print "    --bench=TESTBENCH"
 	print "        Load the testbench form the file TESTBENCH."
-	print "    -suite:SUITE"
+	print "    --suite=SUITE"
 	print "        Use the testsuite SUITE from the testbench."
-	print "    -test:TEST"
+	print "    --test=TEST"
 	print "        Only run test number TEST."
-	print "    -dut:DUT"
+	print "    --dut=DUT"
 	print "        Set the device under test to the file DUT."
+	print "    --timeout=SEC"
+	print "        Set a global timeout for all tests."
 	print "    -c"
 	print "        Continuous mode (Don't halt on failed tests)."
 	print "    -e"
@@ -75,7 +77,7 @@ def printHelp():
 	print "    -q"
 	print "        Quiet mode. There will be no output except results."
 	print "    -v"
-	print "        Verbose mode. The program gets chatty."
+	print "        Verbose mode. The program gets chatty (default)."
 	print "    -h, --help, -?"
 	print "        Print this help"
 	exit(0)
@@ -96,6 +98,8 @@ def main():
 	else:
 		from pyTestGui.testRunnerGui import TestRunnerGui
 		gui = TestRunnerGui()	
+		gui.buildWindow()
+		gui.show()
 
 if __name__ == "__main__":
 	main()

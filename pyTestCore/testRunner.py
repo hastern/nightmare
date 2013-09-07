@@ -35,13 +35,13 @@ class TestRunner(Thread):
 		"""Print only the test information"""
 		self.DUT = None
 		self.testCount = 0
-		self._runsuite = None
-		self._finished = None
-		self._pipe = False
-		self._out = False
-		self._timeout = None
-		self._linesep = os.linesep
-		self._classpath = "."
+		self.runsuite = None
+		self.finished = None
+		self.pipe = False
+		self.out = False
+		self.timeout = None
+		self.linesep = os.linesep
+		self.classpath = "."
 		
 	def setDUT(self, DUT):
 		"""
@@ -51,14 +51,14 @@ class TestRunner(Thread):
 		@param	DUT: Device Under Test
 		"""		
 		self.DUT = DUT
-		if self._runsuite is not None:
-			self._runsuite.setDUT(DUT)
+		if self.runsuite is not None:
+			self.runsuite.setDUT(DUT)
 	
 	def getSuite(self):
 		"""Returns the suite. If none is loaded a new one will be created"""
-		if self._runsuite is None:
-			self._runsuite = TestSuite(DUT = self.DUT, mode=self.mode)		
-		return self._runsuite
+		if self.runsuite is None:
+			self.runsuite = TestSuite(DUT = self.DUT, mode=self.mode)		
+		return self.runsuite
 	
 	def parseArgv(self):
 		"""Parses the argument vector"""
@@ -74,87 +74,102 @@ class TestRunner(Thread):
 				self.quiet = True
 			elif arg == "-v":
 				self.quiet = False
-			elif arg.startswith("-suite:"):
-				self.suite = arg[7:]
-				logger.log("\tI'm using the testsuite '{}'".format(suite))
+			elif arg.startswith("--suite="):
+				self.suite = arg[8:]
+				logger.log("\tI'm using the testsuite '{}'".format(self.suite))
 			elif arg == "--no-color":
 				TermColor.active = False
-			elif arg.startswith("-test:"):
-				self.test = int(arg[6:])
+			elif arg.startswith("--test="):
+				self.test = int(arg[7:])
 				logger.log("\tI'm only running test #{}".format(self.test))
 			elif arg == "-l":
 				self.lengthOnly = True
 				logger.log("\tI will only print the number of tests");
-			elif arg.startswith("-bench:"):
-				self.file = str(arg[7:])
+			elif arg.startswith("--bench="):
+				self.file = str(arg[8:])
 				logger.log("\tI'm using testbench '{}'".format(self.file))
-			elif arg.startswith("-timeout:"):
-				self._timeout = int(arg[9:])
-				logger.log("\tSetting global timeout to {}".format(self._timeout))
-			elif arg.startswith("-dut:") or arg.startswith("-DUT:"):
-				self.setDUT(arg[5:])
+			elif arg.startswith("--timeout="):
+				self.timeout = int(arg[10:])
+				logger.log("\tSetting global timeout to {}".format(self.timeout))
+			elif arg.startswith("--dut=") or arg.startswith("--DUT="):
+				self.setDUT(arg[6:])
 				logger.log("\tDevice under Test is: {}".format(self.DUT))
 			elif arg.startswith("--info-only"):
 				self.infoOnly = True
 				self.mode = TestSuiteMode.Continuous
 				logger.log("\tI will only print the test information.")
 			elif arg.startswith("--crln"):
-				self._linesep = "\r\n"
+				self.linesep = "\r\n"
 			elif arg.startswith("--ln"):
-				self._linesep = "\n"
+				self.linesep = "\n"
 			elif arg.startswith("--cr"):
-				self._linesep = "\r"
+				self.linesep = "\r"
 			elif arg == "-p":
-				self._pipe = True
+				self.pipe = True
 				logger.log("\tI will pipe all tests outputs to their respective streams")
 			elif arg == "-o":
-				self._out = True
+				self.out = True
 				logger.log("\tI will pipe failed tests outputs to their respective streams")
+				
+	def addTest(self):
+		test = Test(name = "New Test", description = "Add a description", DUT = self.DUT)
+		test.pipe = self.pipe
+		test.outputOnFail = self.out
+		test.linesep = self.linesep
+		self.getSuite().addTest(test) 
+		return test
 	
-	def loadSuite(self):
+	def loadSuite(self, fname = None):
 		"""Loads a python based suite from a file"""
 		logger.log("\nReading testfile ...")
+		if fname is not None:
+			self.file = fname
 		glb = {"__builtins__":__builtins__, "Test":Test, "Suite":TestSuite}
 		ctx = {self.suite:None, "DUT":None}
-		self._runsuite = None
+		self.runsuite = None
 		execfile(self.file, glb, ctx)
 		if (self.suite in ctx):
 			if (ctx[self.suite] != None):
-				self._runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
-				self._runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self._pipe, out=self._out, timeout = self._timeout, linesep = self._linesep)
-				self.testCount = len(self._runsuite._testList)
+				self.runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
+				self.runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self.pipe, out=self.out, timeout = self.timeout, linesep = self.linesep)
+				self.testCount = len(self.runsuite.testList)
 				if "DUT" in ctx and ctx['DUT'] is not None and self.DUT is None:
 					self.setDUT(ctx["DUT"])
 			else:
 				logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
 		else:
 			logger.log("Sorry, but there was no test-suite in the file")
-		return self._runsuite
+		return self.runsuite
 		
 	def start(self, finished = None, test = -1):
 		"""start the runner-thread"""
-		self._finished = finished
+		self.finished = finished
 		self.test = test
 		Thread.start(self)
 	
-	def run(self):
+	def run(self, doYield = False):
 		"""Thread run function"""
 		if self.lengthOnly:
-			print len(self._runsuite.getTests())
+			print len(self.runsuite.getTests())
 		else:
 			logger.flush(self.quiet)
-			self._runsuite.setMode(self.mode)
+			self.runsuite.setMode(self.mode)
 			if (self.test == -1):
-				self._runsuite.runAll(self.quiet)
-				self._runsuite.stats(self.quiet)
+				if doYield:
+					for test in self.runsuite.runAll(self.quiet, doYield):
+						yield test
+					raise StopIteration()
+				else:
+					self.runsuite.runAll(self.quiet)
+				self.runsuite.stats(self.quiet)
 				logger.flush(self.quiet)
 			else:
-				self._runsuite.runOne(self.test)
+				self.runsuite.runOne(self.test)
 			logger.flush(self.quiet)
-		if self._finished != None:
-			self._finished()
+		if self.finished != None:
+			self.finished()
 		Thread.__init__(self) # This looks like a real dirty hack :/
 		
 	def countTests(self):
-		return len(self._runsuite._testList)
+		return len(self.runsuite.testList)
 		

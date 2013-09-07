@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 # An example suite
-# This suite must be run from this diretory 
 
 DUT = "python example\dut.py"
 
@@ -10,7 +9,7 @@ suite = [
 		name = "Example 1",
 		description= "This test should be a success", 
 		command = "$DUT success", 
-		stdout = "success$n"
+		stdout = "success"
 	),
 	Test (
 		name = "Example 2", 
@@ -38,6 +37,6 @@ suite = [
 		name = "Example 6",
 		description = "Timeout",
 		command = "$DUT sleep",
-		timeout = 100
+		timeout = 10
 	)
 ]

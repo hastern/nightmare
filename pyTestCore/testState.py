@@ -5,7 +5,7 @@ from utils import TermColor
 class TestState:
 	#__slots__ = ["Success", "Fail", "Error", "Waiting", "Disabled", "InfoOnly", "Timeout"]
 
-	"""The test ist waiting for execution"""
+	"""The test is waiting for execution"""
 	Success = 0
 	"""The test was successful"""
 	Fail = 1
@@ -13,7 +13,7 @@ class TestState:
 	Error = 2
 	"""Enumeration of test states"""
 	Waiting = 3
-	"""The test has producsed an error"""
+	"""The test has produced an error"""
 	Disabled = 4
 	"""Disables the test"""
 	InfoOnly = 5

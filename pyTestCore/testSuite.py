@@ -21,34 +21,46 @@ class TestSuite:
 		"""
 		self.setMode(mode)
 		"""The test suite mode"""
-		self._testList = []
+		self.testList = []
 		"""The collection of tests"""
 		for t in tests:
 			if isinstance(t, Test):
-				self._testList.append(t)
+				self.testList.append(t)
 				t.DUT = str(DUT)
 			else:
 				self.addTest(t, DUT)
-		self._success = 0
+		self.success = 0
 		"""The number of successful tests"""
-		self._failed = 0
+		self.failed = 0
 		"""The number of failed tests"""
-		self._count = 0
+		self.count = 0
 		"""A counter for the executed tests"""
-		self._error = 0
+		self.error = 0
 		"""The number of errors occured during the testrun"""
-		self._timedout = 0
+		self.timedout = 0
 		"""The total number of timed out tests"""
-		self._lastResult = TestState.Waiting
+		self.lastResult = TestState.Waiting
 		"""The result of the last test"""
-		self._rate = 0
+		self.rate = 0
 		"""The successrate of the testrun"""
-		self._len = len(self._testList)
-		"""The total number of tests in the suite"""
+		
+	def __len__(self):
+		return len(self.testList)
+		
+	def __iter__(self):
+		for test in self.testList:
+			yield test
+		raise StopIteration()
+		
+	def __getitem__(self, key):
+		return self.testList[key]
+		
+	def __setitem(self, key, val):
+		self.testList[key] = val
 
 	def getRate(self):
 		"""Returns the success rate"""
-		return self._rate
+		return self.rate
 		
 	def setMode(self, mode):
 		"""
@@ -57,13 +69,13 @@ class TestSuite:
 		@type	mode: TestSuiteMode
 		@param	mode: New mode
 		"""
-		self._mode = mode
+		self.mode = mode
 		
 	def setDUT(self, DUT):
 		"""Define the 'Device under Test'"""
 		if DUT is not None:
 			self.DUT = DUT
-			for t in self._testList:
+			for t in self.testList:
 				t.DUT = DUT
 		
 	def addTest(self, test):
@@ -73,14 +85,13 @@ class TestSuite:
 		@type	test: Test
 		@param	test: Test to add
 		"""
-		self._testList.append(test)
-		self._len = len(self._testList)
+		self.testList.append(test)
 		
 	def getTests(self):
-		return self._testList
+		return self.testList
 		
 	def setAll(self, infoOnly=False, disabled=False, pipe=False, out=False, timeout=None, linesep=None): 
-		for t in self._testList:
+		for t in self.testList:
 			if disabled:
 				t.state = TestState.Disabled
 			else:
@@ -102,56 +113,60 @@ class TestSuite:
 		@type	n: int
 		@param	n: Number of the test
 		"""
-		if (n < self._len):
-			t = self._testList[n]
-			self._lastResult = t.run()
+		if n < len(self):
+			t = self.testList[n]
+			self.lastResult = t.run()
 			if t.descr is not None:
 				logger.log("Test[{:02}] {} - {}: {}".format(n, t.name, t.descr, TestState.toString(t.state)))
 			else:
 				logger.log("Test[{:02}] {}: {}".format(n, t.name, TestState.toString(t.state)))
-			return self._lastResult
+			return t
 		else:
 			logger.log("\tSorry but there is no test #{}".format(n))
-			self._lastResult = TestState.Error
-			return TestState.Error
+			self.lastResult = TestState.Error
+			return None
 		
-	def runAll(self, quiet = False):
+	def runAll(self, quiet = False, doYield = False):
 		"""
 		Runs the whole suite of tests
 		
 		@type	quiet: Boolean
 		@param	quiet: Flag, passed along to the logger
 		"""
-		self._success = 0
-		self._failed = 0
-		self._count = 0
-		self._error = 0
-		self._lastResult = TestState.Waiting
-		for t in self._testList:
-			self._count = self._count + 1 
-			self._lastResult = t.run()
+		self.success = 0
+		self.failed = 0
+		self.count = 0
+		self.error = 0
+		self.lastResult = TestState.Waiting
+		for t in self.testList:
+			self.count = self.count + 1 
+			self.lastResult = t.run()
 			if t.descr is not None:
-				logger.log("Test[{:02}] {} - {}: {}".format(self._count, t.name, t.descr, TestState.toString(t.state)))
+				logger.log("Test[{:02}] {} - {}: {}".format(self.count, t.name, t.descr, TestState.toString(t.state)))
 			else:
-				logger.log("Test[{:02}] {}: {}".format(self._count, t.name, TestState.toString(t.state)))
+				logger.log("Test[{:02}] {}: {}".format(self.count, t.name, TestState.toString(t.state)))
 			logger.flush(quiet)
-			if self._lastResult == TestState.Success:
-				self._success = self._success + 1
-			elif self._lastResult == TestState.Fail:
-				self._failed = self._failed + 1
-			elif self._lastResult == TestState.Error:
-				self._error = self._error + 1
-			elif self._lastResult == TestState.Timeout:
-				self._timedout = self._timedout + 1
-			if self._lastResult != TestState.Disabled:
-				if (self._mode == TestSuiteMode.BreakOnFail) and (self._lastResult != TestState.Success):
+			if self.lastResult == TestState.Success:
+				self.success = self.success + 1
+			elif self.lastResult == TestState.Fail:
+				self.failed = self.failed + 1
+			elif self.lastResult == TestState.Error:
+				self.error = self.error + 1
+			elif self.lastResult == TestState.Timeout:
+				self.timedout = self.timedout + 1
+			if doYield:
+				yield t
+			if self.lastResult != TestState.Disabled:
+				if (self.mode == TestSuiteMode.BreakOnFail) and (self.lastResult != TestState.Success):
 					break
-				if (self._mode == TestSuiteMode.BreakOnError) and (self._lastResult == TestState.Error):
+				if (self.mode == TestSuiteMode.BreakOnError) and (self.lastResult == TestState.Error):
 					break
+		if doYield:
+			raise StopIteration()
 
 	def calcRate(self):
-		self._rate = float(self._success) / float(self._len) * 100
-		return self._rate
+		self.rate = float(self.success) / float(len(self)) * 100
+		return self.rate
 				
 	def stats(self, quiet = False):
 		"""
@@ -160,14 +175,14 @@ class TestSuite:
 		@type	quiet: Boolean
 		@param	quiet: Flag, passed along to the logger
 		"""
-		logger.log("I ran {} out of {} tests in total".format(self._count, len(self._testList)))
-		logger.log(TermColor.colorText("\tSuccess: {}".format(self._success), TermColor.Green))
-		if (self._failed > 0):
-			logger.log(TermColor.colorText("\tFailed: {}".format(self._failed), TermColor.Red))
-		if (self._error > 0):
-			logger.log(TermColor.colorText("\tErrors: {}".format(self._error), TermColor.Yellow))
-		if (self._timedout > 0):
-			logger.log(TermColor.colorText("\tTimeouts: {}".format(self._timedout), TermColor.Purple))
-		if (self._error == 0) and (self._failed == 0) and (self._timedout == 0):
+		logger.log("I ran {} out of {} tests in total".format(self.count, len(self.testList)))
+		logger.log(TermColor.colorText("\tSuccess: {}".format(self.success), TermColor.Green))
+		if (self.failed > 0):
+			logger.log(TermColor.colorText("\tFailed: {}".format(self.failed), TermColor.Red))
+		if (self.error > 0):
+			logger.log(TermColor.colorText("\tErrors: {}".format(self.error), TermColor.Yellow))
+		if (self.timedout > 0):
+			logger.log(TermColor.colorText("\tTimeouts: {}".format(self.timedout), TermColor.Purple))
+		if (self.error == 0) and (self.failed == 0) and (self.timedout == 0):
 			logger.log("\tCongratulations, you passed all tests!")
 		return self.calcRate()
