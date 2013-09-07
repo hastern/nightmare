@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding:utf-8 -*-
 
 import sys
 import os
@@ -6,11 +7,9 @@ import subprocess
 
 from threading import Thread
 
-from utils import TermColor, logger
-from testState import TestState
-from testMode import TestSuiteMode
-from test import Test
-from testSuite import TestSuite
+from pyTestUtils import TermColor, logger
+from pyTest import Test, TestState
+from pyTestSuite import TestSuite, TestSuiteMode
 		
 class TestRunner(Thread):
 	"""Testrunner. Reads a testbench file and executes the testrun"""

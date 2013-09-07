@@ -1,8 +1,9 @@
 #!/usr/bin/env python
+# -*- coding:utf-8 -*-
 
 
-from pyTestCore.test import Test
-from pyTestCore.testRunner import TestRunner
+from pyTest import Test
+from pyTestRunner import TestRunner
 
 import wx
 
