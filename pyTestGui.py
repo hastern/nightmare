@@ -1,15 +1,15 @@
 #!/usr/bin/env python
+# -*- coding:utf-8 -*-
 
 import os
 import time
 import itertools
 
-from pyTestCore.testMode import TestSuiteMode
-from pyTestCore.testRunner import TestRunner
-from pyTestCore.testState import TestState
-from pyTestCore.testMode import TestSuiteMode
-from pyTestCore.utils import TermColor
-from pyTestGui.testEditForm import TestEditForm
+from pyTestSuite import TestSuiteMode
+from pyTestRunner import TestRunner
+from pyTest import TestState
+from pyTestUtils import TermColor
+from pyTestEditForm import TestEditForm
 
 import wx
 from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin
