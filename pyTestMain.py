@@ -95,9 +95,11 @@ def main():
 		runner.run()
 		if not runner.lengthOnly and not runner.infoOnly and runner.test == -1:
 			print "{:2.2f}%".format(suite.getRate())
-		sys.exit(suite._lastResult)
+		sys.exit(suite.lastResult)
 	else:
 		from pyTestGui import TestRunnerGui
+		if len(sys.argv) > 1 and not sys.argv[1].startswith("-") and os.path.exists(sys.argv[1]):
+			sys.argv[1] = '--bench='+sys.argv[1]
 		gui = TestRunnerGui()	
 		gui.buildWindow()
 		gui.show()
