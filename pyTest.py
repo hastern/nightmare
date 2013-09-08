@@ -108,8 +108,22 @@ class Test(object):
 		"""
 		Initalises a test
 		
-		@type	data: Dictionary
-		@param	data: Dictionary with test definitions
+		@type	DUT: str
+		@param 	DUT: The path to the Device Under Test
+		@type	name: str
+		@param	name: The name of the test case
+		@type	description: str
+		@param	description: The description of the test case
+		@type	command: str
+		@param	command: The command to be executed by the test case
+		@type	stdout: str
+		@param	stdout: The expected output on stdout
+		@type	stderr: str
+		@param	stderr: The expected output on stderr
+		@type	returnCode: int
+		@param	returnCode: The expected return code
+		@type	timeout: float
+		@param	timeout: The time out be before the DUT gets killed
 		"""
 		self.name = name
 		"""The name of the test"""
@@ -124,8 +138,8 @@ class Test(object):
 		self.expectRetCode = returnCode
 		self.timeout = timeout
 		"""The expected return code"""
-		if DUT is not None:
-			self.DUT = DUT
+		self.DUT = DUT
+		"""The Device under Test - could be None"""
 		self.output = ""
 		"""The stdout"""
 		self.error = ""
