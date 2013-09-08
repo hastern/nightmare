@@ -5,9 +5,9 @@ import os
 import time
 import itertools
 
+from pyTest import TestState
 from pyTestSuite import TestSuiteMode
 from pyTestRunner import TestRunner
-from pyTest import TestState
 from pyTestUtils import TermColor
 from pyTestEditForm import TestEditForm
 
@@ -60,11 +60,12 @@ class TestRunnerGui(wx.App):
 		""" Load a testsuite"""
 		fname = self.loadFileDialog(fileTypes = TestRunnerGui.filetypes)
 		if fname is not None:
-			self.runner.loadSuite(fname)
 			self.edtFile.SetValue(os.path.relpath(fname))
+			self.runner.file = fname
 			self.updateFromRunner()
 			
 	def updateFromRunner(self):
+		self.runner.loadSuite()
 		self.lstTests.DeleteAllItems()
 		self.applyToList(self.runner.getSuite().getTests(), self.insertTest )
 		self.edtDUT.SetValue(str(self.runner.DUT))
