@@ -123,22 +123,23 @@ class TestRunner(Thread):
 		logger.log("\nReading testfile ...")
 		if fname is not None:
 			self.file = fname
-		glb = {"__builtins__":__builtins__, "Test":Test, "Suite":TestSuite}
-		ctx = {self.suite:None, "DUT":None}
-		self.runsuite = None
-		execfile(self.file, glb, ctx)
-		if (self.suite in ctx):
-			if (ctx[self.suite] != None):
-				self.runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
-				self.runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self.pipe, out=self.out, timeout = self.timeout, linesep = self.linesep)
-				self.testCount = len(self.runsuite.testList)
-				if "DUT" in ctx and ctx['DUT'] is not None and self.DUT is None:
-					self.setDUT(ctx["DUT"])
+		if self.file is not None and self.file != "" and os.path.exists(self.file):
+			glb = {"__builtins__":__builtins__, "Test":Test, "Suite":TestSuite}
+			ctx = {self.suite:None, "DUT":None}
+			self.runsuite = None
+			execfile(self.file, glb, ctx)
+			if (self.suite in ctx):
+				if (ctx[self.suite] != None):
+					self.runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
+					self.runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self.pipe, out=self.out, timeout = self.timeout, linesep = self.linesep)
+					self.testCount = len(self.runsuite.testList)
+					if "DUT" in ctx and ctx['DUT'] is not None and self.DUT is None:
+						self.setDUT(ctx["DUT"])
+				else:
+					logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
 			else:
-				logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
-		else:
-			logger.log("Sorry, but there was no test-suite in the file")
-		return self.runsuite
+				logger.log("Sorry, but there was no test-suite in the file")
+			return self.runsuite
 		
 	def start(self, finished = None, test = -1):
 		"""start the runner-thread"""
@@ -171,4 +172,10 @@ class TestRunner(Thread):
 		
 	def countTests(self):
 		return len(self.runsuite.testList)
+		
+	def __str__(self):
+		self.toString()
+		
+	def toString(self):
+		s = self.suite + ' = ' + self.runsuite.toString()
 		

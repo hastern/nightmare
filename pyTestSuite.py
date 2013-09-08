@@ -31,7 +31,7 @@ class TestSuiteMode:
 			return "Break on Error"
 		return "Unknown mode"
 
-class TestSuite:
+class TestSuite(object):
 	"""A testsuite is a collection of tests"""
 		
 	def __init__(self, tests = [], DUT=None, mode=TestSuiteMode.BreakOnFail):
@@ -211,3 +211,14 @@ class TestSuite:
 		if (self.error == 0) and (self.failed == 0) and (self.timedout == 0):
 			logger.log("\tCongratulations, you passed all tests!")
 		return self.calcRate()
+		
+	def __str__(self):
+		self.toString(prefix = "")
+		
+	def toString(self, prefix = ""):
+		s = prefix+'[\n'
+		for test in self:
+			s += prefix
+			s += test.toString("\t")
+			s += ",\n"
+		s += prefix + ']\n'
