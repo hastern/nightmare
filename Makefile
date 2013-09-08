@@ -4,23 +4,21 @@
 
 PY	=python
 SETUP	=$(PY) setup.py
-DOC	=$(PY) epydoc.py
+DOC	=epydoc
 
 SRC_EGG	=$(shell $(SETUP) --fullname)-py2.7.egg
-TARGET	=$(shell $(SETUP) --name).egg
 
-.PHONY: build egg dist clean doc license description info
+.PHONY: build egg exe dist clean doc profile license description info
 
 default: all
 
-all: build dist egg
+all: build egg exe
 
 build:
 	$(SETUP) build
 
 egg: 
 	$(SETUP) bdist_egg
-	cp dist/$(SRC_EGG) $(SRC_EGG)
 	
 exe:
 	$(SETUP) py2exe
@@ -29,7 +27,10 @@ dist:
 	$(SETUP) sdist
 
 doc:
-	$(DOC) --config=epydocfile
+	python -c "from epydoc.cli import cli; cli()" --config=epydocfile
+	
+profile:
+	$(PY) -m cProfile -o profile.out pyTestMain.py
 	
 license:
 	@$(SETUP) --license

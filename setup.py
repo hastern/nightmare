@@ -9,7 +9,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
     
 includes = ['pyTest','pyTestSuite','pyTestRunner','pyTestGui','pyTestEditForm','pyTestUtils','__main__']
-excludes = ['pyreadline','pyreadline.console', 'pyreadline.rlmain','unittest','email', 'email.Utils','_ssl','Tkinter',"Tkconstants", "tcl"]
+excludes = ['pyreadline','pyreadline.console', 'pyreadline.rlmain','unittest','email', 'email.Utils','calendar','_ssl','Tkinter',"Tkconstants", "tcl"]
 packages = []
 dll_excludes = ['w9xpopen.exe',"MSVCP90.dll"]
 mainScript = 'pyTestMain'
@@ -32,7 +32,7 @@ setup(
 	options = {"py2exe": {
 			"compressed": 1, 
 			"optimize": 0,
-			"bundle_files": 1,
+			"bundle_files": 3,
 			"includes": includes,
 			"excludes": excludes,
 			"packages": packages,
@@ -43,6 +43,7 @@ setup(
 			}
 		},
 	console=[mainScript+'.py'],
+	data_files=[('',['example/suite.py'])],
 	#scripts=['pyTest.py'],
 	zipfile = None,
 	zip_safe=True,
