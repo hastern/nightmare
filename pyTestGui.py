@@ -186,10 +186,7 @@ class TestRunnerGui(wx.App):
 		if fileTypes is None:
 			wc = wx.FileSelectorDefaultWildcardStr
 		else:
-			wc = ""
-			for descr, ext in fileTypes:
-				wc += descr + " (*" +  ext + ")|*" + ext + "|"
-			wc = wc[:-1] # remove trailing "|"
+			wc = "|".join([ descr + " (*" +  ext + ")|*" + ext for descr, ext in fileTypes])
 		diag = wx.FileDialog(self.wHnd, message, defaultDir=dir, wildcard = wc, style=mode)
 		diag.ShowModal()
 		return os.path.join(diag.Directory,diag.Filename) if diag.Filename != "" else None

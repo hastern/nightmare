@@ -8,7 +8,7 @@ import py2exe
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
     
-includes = ['pyTest','pyTestSuite','pyTestRunner','pyTestGui','pyTestEditForm','pyTestUtils','__main__']
+includes = ['pyTest','pyTestMain','pyTestSuite','pyTestRunner','pyTestGui','pyTestEditForm','pyTestUtils','__main__']
 excludes = ['pyreadline','pyreadline.console', 'pyreadline.rlmain','unittest','email', 'email.Utils','calendar','_ssl','Tkinter',"Tkconstants", "tcl"]
 packages = []
 dll_excludes = ['w9xpopen.exe',"MSVCP90.dll"]
@@ -32,7 +32,7 @@ setup(
 	options = {"py2exe": {
 			"compressed": 1, 
 			"optimize": 0,
-			"bundle_files": 3,
+			"bundle_files": 1,
 			"includes": includes,
 			"excludes": excludes,
 			"packages": packages,
