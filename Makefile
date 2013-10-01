@@ -27,7 +27,7 @@ dist:
 	$(SETUP) sdist
 
 doc:
-	python -c "from epydoc.cli import cli; cli()" --config=epydocfile
+	$(PY) -c "from epydoc.cli import cli; cli()" --config=epydocfile
 	
 profile:
 	$(PY) -m cProfile -o profile.out pyTestMain.py

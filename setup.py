@@ -2,7 +2,10 @@
 
 import os
 from setuptools import setup
-import py2exe
+try:
+	import py2exe
+except:
+	py2exe = None
 
 
 def read(fname):
@@ -13,6 +16,23 @@ excludes = ['pyreadline','pyreadline.console', 'pyreadline.rlmain','unittest','e
 packages = []
 dll_excludes = ['w9xpopen.exe',"MSVCP90.dll"]
 mainScript = 'pyTestMain'
+
+if py2exe is not None:
+	options = {"py2exe": {
+		"compressed": 1, 
+		"optimize": 0,
+		"bundle_files": 1,
+		"includes": includes,
+		"excludes": excludes,
+		"packages": packages,
+		"dll_excludes": dll_excludes,
+		"dist_dir": "dist",
+		"custom_boot_script": '',
+		"unbuffered": True,
+		}
+	}
+else:
+	options = {}
 
 setup(
 	name='pyTest',
@@ -29,22 +49,10 @@ setup(
 			"eggsecutable = {}:main".format(mainScript)
 		]
 	},
-	options = {"py2exe": {
-			"compressed": 1, 
-			"optimize": 0,
-			"bundle_files": 1,
-			"includes": includes,
-			"excludes": excludes,
-			"packages": packages,
-			"dll_excludes": dll_excludes,
-			"dist_dir": "dist",
-			"custom_boot_script": '',
-			"unbuffered": True,
-			}
-		},
+	options = options,
 	console=[mainScript+'.py'],
 	data_files=[('',['example/suite.py'])],
 	#scripts=['pyTest.py'],
-	zipfile = None,
+	zipfile=None,
 	zip_safe=True,
 )
