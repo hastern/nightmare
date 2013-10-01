@@ -25,7 +25,7 @@ suite = [
 		name = "Example 4",
 		description = "Lambda expression fail",
 		command = "$DUT Some more text",
-		stdout = "lambda x: x.find('test') > 0 "
+		stdout = "lambda x: x.find('test') > 0"
 	),
 	Test (
 		name = "Example 5",

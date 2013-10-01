@@ -151,7 +151,7 @@ class TestSuite(object):
 			self.lastResult = TestState.Error
 			return None
 		
-	def runAll(self, quiet = False, doYield = False):
+	def runAll(self, quiet = False):
 		"""
 		Runs the whole suite of tests
 		
@@ -179,15 +179,13 @@ class TestSuite(object):
 				self.error = self.error + 1
 			elif self.lastResult == TestState.Timeout:
 				self.timedout = self.timedout + 1
-			if doYield:
-				yield t
+			yield t
 			if self.lastResult != TestState.Disabled:
 				if (self.mode == TestSuiteMode.BreakOnFail) and (self.lastResult != TestState.Success):
 					break
 				if (self.mode == TestSuiteMode.BreakOnError) and (self.lastResult == TestState.Error):
 					break
-		if doYield:
-			raise StopIteration()
+		raise StopIteration()
 
 	def calcRate(self):
 		self.rate = float(self.success) / float(len(self)) * 100

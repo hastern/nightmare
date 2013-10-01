@@ -92,7 +92,8 @@ def main():
 		runner = TestRunner()
 		runner.parseArgv()
 		suite = runner.loadSuite()
-		runner.run()
+		for testcase in runner.run():
+			pass
 		if not runner.lengthOnly and not runner.infoOnly and runner.test == -1:
 			print "{:2.2f}%".format(suite.getRate())
 		sys.exit(suite.lastResult)

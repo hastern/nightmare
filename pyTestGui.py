@@ -22,7 +22,7 @@ class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin):
 
 class TestRunnerGui(wx.App):
 	"""Graphical User Interface"""
-	modes = ["Continuous", "Halt of Fail", "Halt on Error"]
+	modes = ["Continuous", "Halt on Fail", "Halt on Error"]
 	filetypes = [('PyTest', 'py'), ('All Files', '*')]
 	
 	def suiteSave(self, fn):

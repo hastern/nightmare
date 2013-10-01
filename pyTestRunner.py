@@ -133,12 +133,14 @@ class TestRunner(Thread):
 					self.runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
 					self.runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self.pipe, out=self.out, timeout = self.timeout, linesep = self.linesep)
 					self.testCount = len(self.runsuite.testList)
-					if "DUT" in ctx and ctx['DUT'] is not None and self.DUT is None:
-						self.setDUT(ctx["DUT"])
+					if 'DUT' in ctx and ctx['DUT'] is not None and self.DUT is None:
+						self.setDUT(ctx['DUT'])
+					logger.log("I could load {} Testcase".format(self.testCount))
 				else:
 					logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
 			else:
 				logger.log("Sorry, but there was no test-suite in the file")
+			logger.flush(self.quiet)
 			return self.runsuite
 		
 	def start(self, finished = None, test = -1):
@@ -155,20 +157,17 @@ class TestRunner(Thread):
 			logger.flush(self.quiet)
 			self.runsuite.setMode(self.mode)
 			if (self.test == -1):
-				if doYield:
-					for test in self.runsuite.runAll(self.quiet, doYield):
-						yield test
-					raise StopIteration()
-				else:
-					self.runsuite.runAll(self.quiet)
+				for test in self.runsuite.runAll(self.quiet):
+					yield test
 				self.runsuite.stats(self.quiet)
 				logger.flush(self.quiet)
 			else:
 				self.runsuite.runOne(self.test)
-			logger.flush(self.quiet)
+				logger.flush(self.quiet)
 		if self.finished != None:
 			self.finished()
 		Thread.__init__(self) # This looks like a real dirty hack :/
+		raise StopIteration()
 		
 	def countTests(self):
 		return len(self.runsuite.testList)
