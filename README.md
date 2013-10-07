@@ -43,11 +43,11 @@ applications.
 	        Print this help
 
 Additional to the commandline interface there is a GUI using the 
-tkinter-package. The GUI is limited in its capabilities compared to the CLI,
+wxPython. The GUI is limited in its capabilities compared to the CLI,
 especially when it comes to testbench editing.
 
-Be careful when you save your testbench! You might loose data, if it originates
- from a handwritten testbench.
+Be careful when you save your testbench! You might loose data, if it originates 
+from a handwritten testbench.
 
 
 Testbench files
@@ -57,7 +57,7 @@ A collection of test is called a "testbench".
 Inside a testbench there are a number of suites grouping tests together.
 
 The testbench files a normal python files, which get evaluated by calling
-the internal "execfile" function. This might not be the savest approach, but
+the internal "`execfile`" function. This might not be the savest approach, but
 it is definitly one of the easiest ones.
 
 Here is a example for a minimal testbench.
