@@ -76,6 +76,8 @@ class logger:
 	"""Logger class"""
 	_buffer = []
 	"""Message buffer"""
+	autoflush = False
+	"""Autoflush logged messages"""
 	@staticmethod
 	def log(str):
 		"""
@@ -85,7 +87,10 @@ class logger:
 		@param	str: Log message
 		"""
 		msg = "[{0}] {1}".format(time.strftime("%H:%M:%S") , str.strip("\r\n") )
-		logger._buffer.append(msg)
+		if logger.autoflush:
+			print msg
+		else:
+			logger._buffer.append(msg)
 		
 	@staticmethod
 	def flush(quiet = False):
