@@ -5,18 +5,18 @@ import sys
 import os
 import subprocess
 
-from threading import Thread
+#from threading import Thread
 
 from pyTestUtils import TermColor, logger
 from pyTest import Test, TestState
 from pyTestSuite import TestSuite, TestSuiteMode
-		
-class TestRunner(Thread):
+
+class TestRunner(object):
 	"""Testrunner. Reads a testbench file and executes the testrun"""
 	
 	def __init__(self):
 		"""Initialises the test runner"""
-		Thread.__init__(self)
+		#Thread.__init__(self)
 		logger.log("Welcome to pyTest Version 2")
 		self.suite = "suite"
 		"""Test suite selector"""
@@ -120,15 +120,15 @@ class TestRunner(Thread):
 	
 	def loadSuite(self, fname = None):
 		"""Loads a python based suite from a file"""
-		logger.log("\nReading testfile ...")
 		if fname is not None:
 			self.file = fname
+		logger.log("\nReading testfile ...")
 		if self.file is not None and self.file != "" and os.path.exists(self.file):
 			glb = {"__builtins__":__builtins__, "Test":Test, "Suite":TestSuite}
 			ctx = {self.suite:None, "DUT":None}
-			self.runsuite = None
 			execfile(self.file, glb, ctx)
 			if (self.suite in ctx):
+				self.runsuite = None
 				if (ctx[self.suite] != None):
 					self.runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
 					self.runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self.pipe, out=self.out, timeout = self.timeout, linesep = self.linesep)
@@ -140,14 +140,17 @@ class TestRunner(Thread):
 					logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
 			else:
 				logger.log("Sorry, but there was no test-suite in the file")
-			logger.flush(self.quiet)
-			return self.runsuite
+			
+		else:
+			logger.log("Sorry, but I couldn't find the file '{}'".format(self.file))
+		logger.flush(self.quiet)
+		return self.runsuite
 		
-	def start(self, finished = None, test = -1):
-		"""start the runner-thread"""
-		self.finished = finished
-		self.test = test
-		Thread.start(self)
+	#def start(self, finished = None, test = -1):
+	#	"""start the runner-thread"""
+	#	self.finished = finished
+	#	self.test = test
+	#	Thread.start(self)
 	
 	def run(self, doYield = False):
 		"""Thread run function"""
@@ -166,7 +169,7 @@ class TestRunner(Thread):
 				logger.flush(self.quiet)
 		if self.finished != None:
 			self.finished()
-		Thread.__init__(self) # This looks like a real dirty hack :/
+		#Thread.__init__(self) # This looks like a real dirty hack :/
 		raise StopIteration()
 		
 	def countTests(self):
