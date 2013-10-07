@@ -3,3 +3,4 @@
 /pyTest.egg-info
 
 *.pyc
+/doc
