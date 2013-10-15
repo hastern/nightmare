@@ -8,12 +8,12 @@ from pyTestUtils import logger, TermColor
 class TestSuiteMode:
 	#__slots__ = ['Continuous', 'BreakOnFail', 'BreakOnError']
 	"""Enumeration for testsuite modes """
-	Continuous = 0
-	"""Run all test"""
-	BreakOnFail = 1
+	BreakOnFail = 0
 	"""Halt on first failed test"""
-	BreakOnError = 2
-	"""Halt only on errors"""
+	BreakOnError = 1
+	"""Halt on first erroneous test"""
+	Continuous = 2
+	"""Run all test"""
 	
 	@staticmethod
 	def toString(mode):
@@ -34,7 +34,7 @@ class TestSuiteMode:
 class TestSuite(object):
 	"""A testsuite is a collection of tests"""
 		
-	def __init__(self, tests = [], DUT=None, mode=TestSuiteMode.BreakOnFail):
+	def __init__(self, *tests, **options):
 		"""
 		Initialises a test suite
 		
@@ -43,17 +43,23 @@ class TestSuite(object):
 		
 		@type	mode: TestSuiteMode
 		@param	mode: The initial mode of the testsuite
+		@type	DUT: str
+		@param 	DUT: The path to the Device Under Test
+		@type	timeout: float
+		@param	timeout: The time out be before the DUT gets killed
+		@type	pipe: Boolean
+		@param	pipe: Flag, set if the output streams should be piped
+		@type	outputOnFail: Boolean
+		@param	outputOnFail: Flag, set if the output streams should be piped on failed test
 		"""
-		self.setMode(mode)
+		opts = {'mode': TestSuiteMode.BreakOnFail, 'pipe':None, 'outputOnFail':None, 'timeout':None, 'DUT':None}
+		opts.update(options)
+		self.setMode(opts['mode'])
 		"""The test suite mode"""
-		self.testList = []
+		self.testList = [t for t in tests]
+		self.setAll(pipe = opts['pipe'], out = opts['outputOnFail'], timeout = opts['timeout'])
+		self.setDUT(opts['DUT'])
 		"""The collection of tests"""
-		for t in tests:
-			if isinstance(t, Test):
-				self.testList.append(t)
-				t.DUT = str(DUT)
-			else:
-				self.addTest(t, DUT)
 		self.success = 0
 		"""The number of successful tests"""
 		self.failed = 0
@@ -96,7 +102,7 @@ class TestSuite(object):
 		"""
 		self.mode = mode
 		
-	def setDUT(self, DUT):
+	def setDUT(self, DUT = None):
 		"""Define the 'Device under Test'"""
 		if DUT is not None:
 			self.DUT = DUT
@@ -115,17 +121,13 @@ class TestSuite(object):
 	def getTests(self):
 		return self.testList
 		
-	def setAll(self, infoOnly=False, disabled=False, pipe=False, out=False, timeout=None, linesep=None): 
+	def setAll(self, state=TestState.Waiting, pipe=None, out=None, timeout=None, linesep=None): 
 		for t in self.testList:
-			if disabled:
-				t.state = TestState.Disabled
-			else:
-				t.state = TestState.Waiting
-			
-			if infoOnly:
-				t.state = TestState.InfoOnly
-			t.pipe = pipe
-			t.outputOnFail = out
+			t.state = state
+			if pipe is not None:
+				t.pipe = pipe
+			if out is not None:
+				t.outputOnFail = out
 			if timeout is not None:
 				t.timeout = timeout
 			if linesep is not None:

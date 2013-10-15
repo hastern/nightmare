@@ -104,7 +104,7 @@ class Command():
 class Test(object):
 	"""A single test"""
 	
-	def __init__(self, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None, timeout=5.0):
+	def __init__(self, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None, timeout=5.0, outputOnFail = False, pipe = False, state=TestState.Waiting):
 		"""
 		Initalises a test
 		
@@ -124,6 +124,10 @@ class Test(object):
 		@param	returnCode: The expected return code
 		@type	timeout: float
 		@param	timeout: The time out be before the DUT gets killed
+		@type	pipe: Boolean
+		@param	pipe: Flag, set if the output streams should be piped
+		@type	outputOnFail: Boolean
+		@param	outputOnFail: Flag, set if the output streams should be piped on failed test
 		"""
 		self.name = name
 		"""The name of the test"""
@@ -148,9 +152,9 @@ class Test(object):
 		"""The return code"""
 		self.state = TestState.Waiting
 		"""The state of the game"""
-		self.pipe = False
+		self.pipe = pipe
 		"""Flag, set if the output streams should be piped"""
-		self.outputOnFail = False
+		self.outputOnFail = outputOnFail
 		"""Flag, set if the output streams should be piped on failed test"""
 		self.timeout = timeout
 		"""Timeout after the DUT gets killed"""

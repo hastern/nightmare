@@ -36,8 +36,8 @@ class TestRunner(object):
 		self.testCount = 0
 		self.runsuite = None
 		self.finished = None
-		self.pipe = False
-		self.out = False
+		self.pipe = None
+		self.out = None
 		self.timeout = None
 		self.linesep = os.linesep
 		self.classpath = "."
@@ -124,14 +124,25 @@ class TestRunner(object):
 			self.file = fname
 		logger.log("\nReading testfile ...")
 		if self.file is not None and self.file != "" and os.path.exists(self.file):
-			glb = {"__builtins__":__builtins__, "Test":Test, "Suite":TestSuite}
+			glb = {"__builtins__":__builtins__, "Test":Test, "Suite":TestSuite, "Mode":TestSuiteMode, "State":TestState}
 			ctx = {self.suite:None, "DUT":None}
 			execfile(self.file, glb, ctx)
 			if (self.suite in ctx):
 				self.runsuite = None
 				if (ctx[self.suite] != None):
-					self.runsuite = TestSuite(ctx[self.suite], DUT=self.DUT, mode=self.mode)
-					self.runsuite.setAll(infoOnly=self.infoOnly, disabled = False, pipe=self.pipe, out=self.out, timeout = self.timeout, linesep = self.linesep)
+					if ctx[self.suite].__class__ == TestSuite:
+						self.runsuite = ctx[self.suite]
+						self.runsuite.setDUT(self.DUT)
+						self.mode = min(self.mode,self.runsuite.mode)
+					else:
+						self.runsuite = TestSuite(*ctx[self.suite], **{'DUT':self.DUT, 'mode':self.mode})
+					self.runsuite.setAll(
+						state=TestState.InfoOnly if self.infoOnly else TestState.Waiting, 
+						pipe=self.pipe, 
+						out=self.out, 
+						timeout = self.timeout, 
+						linesep = self.linesep
+					)
 					self.testCount = len(self.runsuite.testList)
 					if 'DUT' in ctx and ctx['DUT'] is not None and self.DUT is None:
 						self.setDUT(ctx['DUT'])
