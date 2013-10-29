@@ -70,6 +70,10 @@ class TestSuite(object):
 		"""The number of errors occured during the testrun"""
 		self.timedout = 0
 		"""The total number of timed out tests"""
+		self.assertions = 0
+		"""The total number of tests that caused an assertion"""
+		self.segfaults = 0
+		"""The total number of tests that caused a segfault""" 
 		self.lastResult = TestState.Waiting
 		"""The result of the last test"""
 		self.rate = 0
@@ -174,13 +178,17 @@ class TestSuite(object):
 				logger.log("Test[{:02}] {}: {}".format(self.count, t.name, TestState.toString(t.state)))
 			logger.flush(quiet)
 			if self.lastResult == TestState.Success:
-				self.success = self.success + 1
+				self.success += 1
 			elif self.lastResult == TestState.Fail:
-				self.failed = self.failed + 1
+				self.failed += 1
 			elif self.lastResult == TestState.Error:
-				self.error = self.error + 1
+				self.error += 1
 			elif self.lastResult == TestState.Timeout:
-				self.timedout = self.timedout + 1
+				self.timedout += 1
+			elif self.lastResult == TestState.SegFault:
+				self.segfaults += 1
+			elif self.lastResult == TestState.Assertion:
+				self.assertions += 1
 			yield t
 			if self.lastResult != TestState.Disabled:
 				if (self.mode == TestSuiteMode.BreakOnFail) and (self.lastResult != TestState.Success):
@@ -206,6 +214,10 @@ class TestSuite(object):
 			logger.log(TermColor.colorText("\tFailed: {}".format(self.failed), TermColor.Red))
 		if (self.error > 0):
 			logger.log(TermColor.colorText("\tErrors: {}".format(self.error), TermColor.Yellow))
+		if (self.assertions > 0):
+			logger.log(TermColor.colorText("\tAssertions: {}".format(self.assertions), TermColor.Yellow))
+		if (self.segfaults > 0):
+			logger.log(TermColor.colorText("\tSegFaults: {}".format(self.segfaults), TermColor.Yellow))
 		if (self.timedout > 0):
 			logger.log(TermColor.colorText("\tTimeouts: {}".format(self.timedout), TermColor.Purple))
 		if (self.error == 0) and (self.failed == 0) and (self.timedout == 0):

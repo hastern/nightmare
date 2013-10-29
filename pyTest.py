@@ -21,15 +21,20 @@ class TestState:
 	Fail = 1
 	"""The test has failed"""
 	Error = 2
-	"""Enumeration of test states"""
-	Waiting = 3
 	"""The test has produced an error"""
-	Disabled = 4
-	"""Disables the test"""
+	Assertion = 3
+	"""The test has produced a assertion"""
+	SegFault = 4
+	"""The test has produced a segmentation fault"""
 	InfoOnly = 5
 	"""Display only the test information"""
 	Timeout = 6
 	"""The test has timed out"""
+	Waiting = 7
+	"""The test awaits execution"""
+	Disabled = 8
+	"""Disables the test"""
+	
 	
 	@staticmethod
 	def toString(state):
@@ -47,12 +52,16 @@ class TestState:
 			return TermColor.colorText("FAIL", TermColor.Red, TermColor.Background)
 		if state == TestState.Error:
 			return TermColor.colorText("ERROR", TermColor.Red)
-		if state == TestState.Disabled:
-			return TermColor.colorText("DISABLED", TermColor.Blue)
+		if state == TestState.SegFault:
+			return TermColor.colorText("SEGFAULT", TermColor.Yellow, TermColor.Background)
+		if state == TestState.Assertion:
+			return TermColor.colorText("ASSERTION", TermColor.Yellow, TermColor.Background)
 		if state == TestState.InfoOnly:
 			return TermColor.colorText("INFO", TermColor.White)		
 		if state == TestState.Timeout:
 			return TermColor.colorText("TIMEOUT", TermColor.Purple)
+		if state == TestState.Disabled:
+			return TermColor.colorText("DISABLED", TermColor.Blue)
 		return TermColor.colorText("UNKNOWN", TermColor.Yellow)
 
 
@@ -222,7 +231,12 @@ class Test(object):
 				and self.check(self.expectStderr,self.error):
 				self.state = TestState.Success
 			else:
-				self.state = TestState.Fail
+				if self.error.find('Assertion failed') >= 0 :
+					self.state = TestState.Assertion
+				elif self.retCode < 0:
+					self.state = TestState.SegFault
+				else:
+					self.state = TestState.Fail
 			if (self.pipe) or (self.outputOnFail and self.state is TestState.Fail):
 				sys.stdout.write( "{} ".format(self.retCode) )
 				sys.stdout.write( self.output )
