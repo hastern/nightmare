@@ -3,6 +3,7 @@
 
 import sys
 import os
+import math
 import subprocess
 
 #from threading import Thread
@@ -24,7 +25,7 @@ class TestRunner(object):
 		"""single test selector"""
 		self.quiet = False
 		"""Definition of the programs verbosity"""
-		self.mode = TestSuiteMode.BreakOnFail
+		self.mode = None
 		"""Mode for the test suite"""
 		self.file = ""
 		"""test bench file"""
@@ -124,7 +125,7 @@ class TestRunner(object):
 			self.file = fname
 		logger.log("\nReading testfile ...")
 		if self.file is not None and self.file != "" and os.path.exists(self.file):
-			glb = {"__builtins__":__builtins__, "Test":Test, "Suite":TestSuite, "Mode":TestSuiteMode, "State":TestState}
+			glb = {"__builtins__":__builtins__, "math":math, "Test":Test, "Suite":TestSuite, "Mode":TestSuiteMode, "State":TestState}
 			ctx = {self.suite:None, "DUT":None}
 			execfile(self.file, glb, ctx)
 			if (self.suite in ctx):
@@ -133,7 +134,10 @@ class TestRunner(object):
 					if ctx[self.suite].__class__ == TestSuite:
 						self.runsuite = ctx[self.suite]
 						self.runsuite.setDUT(self.DUT)
-						self.mode = min(self.mode,self.runsuite.mode)
+						if self.mode is None:
+							self.mode =self.runsuite.mode
+						elif self.runsuite.mode is None:
+							self.runsuite.mode = self.mode
 					else:
 						self.runsuite = TestSuite(*ctx[self.suite], **{'DUT':self.DUT, 'mode':self.mode})
 					self.runsuite.setAll(
