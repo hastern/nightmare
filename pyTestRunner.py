@@ -167,7 +167,7 @@ class TestRunner(object):
 	#	self.test = test
 	#	Thread.start(self)
 	
-	def run(self, doYield = False):
+	def run(self):
 		"""Thread run function"""
 		if self.lengthOnly:
 			print len(self.runsuite.getTests())

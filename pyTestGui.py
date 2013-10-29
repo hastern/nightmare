@@ -3,6 +3,7 @@
 
 import os
 import time
+import threading
 import itertools
 
 from pyTest import TestState
@@ -150,14 +151,26 @@ class TestRunnerGui(wx.App):
 		test.state = TestState.Waiting if flag else TestState.Disabled
 		self.updateTest(idx, test)
 		
-	def run(self, testIdx = None):
+	def __runthread(self, testIdx = None):
 		"""Run tests"""
 		if testIdx is None:
 			self.applyToList(self.runner.getSuite().getTests(), lambda i,t: self.setTestState(t, i, TestState.Waiting), gauge = False)
-			self.applyToList(self.runner.run(doYield = True) , self.updateTest)
+			self.applyToList(self.runner.run() , self.updateTest)
 		else:
 			test = self.runner.getSuite().runOne(testIdx)
 			self.updateTest(testIdx, test)
+		self.testthread = None
+		"""Unset yourself for further processing"""
+		
+		
+	def run(self, testIdx = None):
+		"""start running thread"""
+		if self.testthread is None:
+			self.testthread = threading.Thread(target=self.__runthread,args=(testIdx,))
+			self.testthread.start()
+		else:
+			self.displayError("Test is already running!")
+			
 			
 	def addTest(self):
 		newIdx = len(self.runner.getSuite())
@@ -177,6 +190,7 @@ class TestRunnerGui(wx.App):
 		self.runner.quiet = True
 		self.runner.parseArgv()
 		self.runner.mode = TestSuiteMode.Continuous
+		self.testthread = None
 		
 	def messageDialog(self, message, caption=wx.MessageBoxCaptionStr, style=wx.OK | wx.ICON_INFORMATION):
 		dial = wx.MessageDialog(None, message, caption, style)
