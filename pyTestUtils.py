@@ -60,7 +60,7 @@ class TermColor:
 		if TermColor.active and ((colorama is not None) or (os.getenv('ANSI_COLORS_DISABLED') is not None)):
 			colStr = str(where + color)
 			styleStr = "{:02}".format(style)
-			return "\033[{};{}m{}".format(styleStr, colStr, text)
+			return "\033[{};{}m{}\033[0m".format(styleStr, colStr, text)
 		else:
 			return text
 			
