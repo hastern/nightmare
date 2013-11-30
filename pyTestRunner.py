@@ -1,16 +1,23 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-import sys
 import os
+import re
+import sys
 import math
 import subprocess
+
+try:
+	import pyparsing
+except:
+	pyparsing = None
 
 #from threading import Thread
 
 from pyTestUtils import TermColor, logger
 from pyTest import Test, TestState
 from pyTestSuite import TestSuite, TestSuiteMode
+from arnold_converter import syntax, buildTestList
 
 class TestRunner(object):
 	"""Testrunner. Reads a testbench file and executes the testrun"""
@@ -18,7 +25,25 @@ class TestRunner(object):
 	def __init__(self):
 		"""Initialises the test runner"""
 		#Thread.__init__(self)
-		logger.log("Welcome to pyTest Version 2")
+		logger.log(
+			  TermColor.colorText("NIGHTMARE", TermColor.Red, style = TermColor.Bold) 
+			+ TermColor.colorText(" is of ", TermColor.White)
+			+ TermColor.colorText("G", TermColor.Red, style = TermColor.Bold)
+			+ TermColor.colorText("enerous ", TermColor.White)
+			+ TermColor.colorText("H", TermColor.Red, style = TermColor.Bold)
+			+ TermColor.colorText("elp when ", TermColor.White)
+			+ TermColor.colorText("T", TermColor.Red, style = TermColor.Bold)
+			+ TermColor.colorText("esting; ", TermColor.White)
+			+ TermColor.colorText("M", TermColor.Red, style = TermColor.Bold)
+			+ TermColor.colorText("ay ", TermColor.White)
+			+ TermColor.colorText("A", TermColor.Red, style = TermColor.Bold)
+			+ TermColor.colorText("rnold be ", TermColor.White)
+			+ TermColor.colorText("R", TermColor.Red, style = TermColor.Bold)
+			+ TermColor.colorText("emembered ", TermColor.White)
+			+ TermColor.colorText("E", TermColor.Red, style = TermColor.Bold)
+			+ TermColor.colorText("ternally", TermColor.White)
+			)
+		logger.log("Welcome to nightmare Version 2")
 		self.suite = "suite"
 		"""Test suite selector"""
 		self.test = -1
@@ -42,6 +67,8 @@ class TestRunner(object):
 		self.timeout = None
 		self.linesep = os.linesep
 		self.classpath = "."
+		self.arnold = False
+		self.relative = False
 		
 	def setDUT(self, DUT):
 		"""
@@ -64,15 +91,15 @@ class TestRunner(object):
 		"""Parses the argument vector"""
 		argv = sys.argv
 		for arg in argv:
-			if arg == "-c":
+			if arg == "-c" or arg == "--continue":
 				logger.log("\tI'm running in continuous mode now")
 				self.mode = TestSuiteMode.Continuous
-			elif arg == "-e":
+			elif arg == "-e" or arg == "--error":
 				logger.log("\tI'm running in continuous mode now, but will halt if an error occurs")
 				self.mode = TestSuiteMode.BreakOnError
-			elif arg == "-q":
+			elif arg == "-q" or arg == "--quiet":
 				self.quiet = True
-			elif arg == "-v":
+			elif arg == "-v" or arg == "--verbose":
 				self.quiet = False
 			elif arg.startswith("--suite="):
 				self.suite = arg[8:]
@@ -98,18 +125,22 @@ class TestRunner(object):
 				self.infoOnly = True
 				self.mode = TestSuiteMode.Continuous
 				logger.log("\tI will only print the test information.")
+			elif arg == "--arnold":
+				self.arnold = True
 			elif arg.startswith("--crln"):
 				self.linesep = "\r\n"
 			elif arg.startswith("--ln"):
 				self.linesep = "\n"
 			elif arg.startswith("--cr"):
 				self.linesep = "\r"
-			elif arg == "-p":
+			elif arg == "-p" or arg == "--pipe-all":
 				self.pipe = True
 				logger.log("\tI will pipe all tests outputs to their respective streams")
-			elif arg == "-o":
+			elif arg == "-o" or arg == "--output-fail":
 				self.out = True
 				logger.log("\tI will pipe failed tests outputs to their respective streams")
+			elif arg == "-r" or arg == "--relative":
+				self.relative = True
 				
 	def addTest(self):
 		test = Test(name = "New Test", description = "Add a description", DUT = self.DUT)
@@ -119,43 +150,67 @@ class TestRunner(object):
 		self.getSuite().addTest(test) 
 		return test
 	
+	def loadArnold(self):
+		logger.log("\t...using Arnold-Mode")
+		syn = syntax()
+		fileHnd = open(self.file)
+		content = []
+		for line in fileHnd:
+			if not line.startswith("#") and not line.strip() == "":
+				content.append(line.replace("ä","ae").replace("Ä","Ae").replace("ö","oe").replace("Ö","Oe").replace("ü","ue").replace("Ü","Ue").replace("ß","ss"))
+		s = "".join(content)
+		ast = syn.parseString(s)
+		testList = buildTestList(ast)
+		suite = TestSuite(*testList)
+		suite.setDUT(self.DUT)
+		return suite
+		
+	def loadPython(self):
+		glb = {"__builtins__":__builtins__, "parser":pyparsing, "os":os, "regex":re, "math":math, "Test":Test, "Suite":TestSuite, "Mode":TestSuiteMode, "State":TestState}
+		ctx = {self.suite:None, "DUT":None}
+		execfile(self.file, glb, ctx)
+		if (self.suite in ctx):
+			suite = None
+			if (ctx[self.suite] != None):
+				if ctx[self.suite].__class__ == TestSuite:
+					suite = ctx[self.suite]
+					suite.setDUT(self.DUT)
+					if self.mode is None:
+						self.mode =self.runsuite.mode
+					elif suite.mode is None:
+						suite.mode = self.mode
+					if 'DUT' in ctx and ctx['DUT'] is not None and self.DUT is None:
+						self.setDUT(ctx['DUT'])
+				else:
+					suite = TestSuite(*ctx[self.suite], **{'DUT':self.DUT, 'mode':self.mode})
+			else:
+				logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
+		else:
+			logger.log("Sorry, but there was no test-suite in the file")
+		return suite
+	
 	def loadSuite(self, fname = None):
 		"""Loads a python based suite from a file"""
 		if fname is not None:
 			self.file = fname
-		logger.log("\nReading testfile ...")
 		if self.file is not None and self.file != "" and os.path.exists(self.file):
-			glb = {"__builtins__":__builtins__, "math":math, "Test":Test, "Suite":TestSuite, "Mode":TestSuiteMode, "State":TestState}
-			ctx = {self.suite:None, "DUT":None}
-			execfile(self.file, glb, ctx)
-			if (self.suite in ctx):
-				self.runsuite = None
-				if (ctx[self.suite] != None):
-					if ctx[self.suite].__class__ == TestSuite:
-						self.runsuite = ctx[self.suite]
-						self.runsuite.setDUT(self.DUT)
-						if self.mode is None:
-							self.mode =self.runsuite.mode
-						elif self.runsuite.mode is None:
-							self.runsuite.mode = self.mode
-					else:
-						self.runsuite = TestSuite(*ctx[self.suite], **{'DUT':self.DUT, 'mode':self.mode})
-					self.runsuite.setAll(
-						state=TestState.InfoOnly if self.infoOnly else TestState.Waiting, 
-						pipe=self.pipe, 
-						out=self.out, 
-						timeout = self.timeout, 
-						linesep = self.linesep
-					)
-					self.testCount = len(self.runsuite.testList)
-					if 'DUT' in ctx and ctx['DUT'] is not None and self.DUT is None:
-						self.setDUT(ctx['DUT'])
-					logger.log("I could load {} Testcase".format(self.testCount))
-				else:
-					logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.suite))
+			logger.log("\nReading testfile ...")
+			if self.arnold:
+				self.runsuite = self.loadArnold()
 			else:
-				logger.log("Sorry, but there was no test-suite in the file")
-			
+				self.runsuite = self.loadPython()
+			self.runsuite.setAll(
+				state=TestState.InfoOnly if self.infoOnly else TestState.Waiting, 
+				pipe=self.pipe, 
+				out=self.out, 
+				timeout = self.timeout, 
+				linesep = self.linesep
+			)
+			self.testCount = len(self.runsuite.testList)
+			logger.log("I could load {} Testcase".format(self.testCount))
+			if self.relative:
+				os.chdir(os.path.dirname(os.path.abspath(self.file)))
+				logger.log("Current Working Dir is: {}".format(os.getcwd()))
 		else:
 			logger.log("Sorry, but I couldn't find the file '{}'".format(self.file))
 		logger.flush(self.quiet)

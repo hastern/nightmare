@@ -85,7 +85,7 @@ class Command():
 
 	def commandFunc(self):
 		"""command to be run in the thread"""
-		self.proc = subprocess.Popen(self.cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True, shell=True)
+		self.proc = subprocess.Popen(self.cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True, shell=True, cwd=os.getcwd())
 		self.out, self.err = self.proc.communicate()
 		self.ret = self.proc.wait()
 		
@@ -101,19 +101,20 @@ class Command():
 		self.thread.join(timeout)
 		if self.proc is not None and self.proc.poll() is None:
 			if sys.platform == "win32":
-				subprocess.Popen(['taskkill', '/F', '/T', '/PID', str(self.proc.pid)], stdout=subprocess.PIPE).communicate()
+				subprocess.Popen(['taskkill', '/F', '/T', '/PID', str(self.proc.pid)]).communicate()
 			else:
 				childProc = int(subprocess.check_output("pgrep -P {}".format(self.proc.pid), shell=True, universal_newlines=True).strip())
 				os.kill(childProc, signal.SIGKILL)
 				if self.proc.poll() is None:
 					os.kill(self.proc.pid, signal.SIGTERM)
+				#os.killpg(os.getpgid(self.proc.pid), signal.SIGTERM)
 			return TestState.Timeout
 		return TestState.Success
 	
 class Test(object):
 	"""A single test"""
 	
-	def __init__(self, DUT=None, name=None, description=None, command=None, stdout=None, stderr=None, returnCode=None, timeout=5.0, outputOnFail = False, pipe = False, state=TestState.Waiting):
+	def __init__(self, DUT=None, name="", description="", command=None, stdout=None, stderr=None, returnCode=None, timeout=5.0, outputOnFail = False, pipe = False, state=TestState.Waiting):
 		"""
 		Initalises a test
 		
@@ -231,9 +232,9 @@ class Test(object):
 				and self.check(self.expectStderr,self.error):
 				self.state = TestState.Success
 			else:
-				if self.error.find('Assertion failed') >= 0 :
+				if 'Assertion' in self.error or 'assertion' in self.error:
 					self.state = TestState.Assertion
-				elif self.retCode < 0:
+				elif "stackdump" in self.error or "coredump" in self.error or "Segmentation Fault" in self.error or self.retCode < 0:
 					self.state = TestState.SegFault
 				else:
 					self.state = TestState.Fail
