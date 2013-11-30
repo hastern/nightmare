@@ -11,9 +11,9 @@ except:
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
     
-includes = ['pyTest','pyTestMain','pyTestSuite','pyTestRunner','pyTestGui','pyTestEditForm','pyTestUtils','__main__']
+includes = ['pyTest','pyTestMain','pyTestSuite','pyTestRunner','pyTestGui','pyTestEditForm','pyTestUtils','__main__','arnold_converter']
 excludes = ['pyreadline','pyreadline.console', 'pyreadline.rlmain','unittest','email', 'email.Utils','calendar','_ssl','Tkinter',"Tkconstants", "tcl"]
-packages = []
+packages = ['pyparsing']
 dll_excludes = ['w9xpopen.exe',"MSVCP90.dll"]
 mainScript = 'pyTestMain'
 
@@ -35,9 +35,10 @@ else:
 	options = {}
 
 setup(
-	name='pyTest',
+	name='nightmare',
+	#name='pyTest',
 	version='2.0',
-	description='pyTest - A simple test tool for command line programms',
+	description='NIGHTMARE is of Generous Help when Testing; May Arnold be Remembered Eternally',
 	author='Hanno Sternberg',
 	author_email='hanno@almostintelligent.de',
 	url='https://github.com/drakehutner/pyTest',
@@ -49,6 +50,7 @@ setup(
 			"eggsecutable = {}:main".format(mainScript)
 		]
 	},
+	install_requires=['pyparsing'],
 	options = options,
 	console=[mainScript+'.py'],
 	data_files=[('',['example/suite.py'])],
