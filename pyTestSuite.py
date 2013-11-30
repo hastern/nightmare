@@ -208,20 +208,44 @@ class TestSuite(object):
 		@type	quiet: Boolean
 		@param	quiet: Flag, passed along to the logger
 		"""
-		logger.log("I ran {} out of {} tests in total".format(self.count, len(self.testList)))
-		logger.log(TermColor.colorText("\tSuccess: {}".format(self.success), TermColor.Green))
-		if (self.failed > 0):
-			logger.log(TermColor.colorText("\tFailed: {}".format(self.failed), TermColor.Red))
-		if (self.error > 0):
-			logger.log(TermColor.colorText("\tErrors: {}".format(self.error), TermColor.Yellow))
-		if (self.assertions > 0):
-			logger.log(TermColor.colorText("\tAssertions: {}".format(self.assertions), TermColor.Yellow))
-		if (self.segfaults > 0):
-			logger.log(TermColor.colorText("\tSegFaults: {}".format(self.segfaults), TermColor.Yellow))
-		if (self.timedout > 0):
-			logger.log(TermColor.colorText("\tTimeouts: {}".format(self.timedout), TermColor.Purple))
-		if (self.error == 0) and (self.failed == 0) and (self.timedout == 0):
-			logger.log("\tCongratulations, you passed all tests!")
+		if (self.lastResult != TestState.InfoOnly):
+			logger.log("I ran {} out of {} tests in total".format(self.count, len(self.testList)))
+			fails = self.count - self.success
+			logger.log(TermColor.colorText("\tSuccess: {}".format(self.success), TermColor.Green))
+			if (self.failed > 0):
+				logger.log(TermColor.colorText("\tFailed: {}".format(self.failed), TermColor.Red))
+			if (self.error > 0):
+				logger.log(TermColor.colorText("\tErrors: {}".format(self.error), TermColor.Yellow))
+			if (self.assertions > 0):
+				logger.log(TermColor.colorText("\tAssertions: {}".format(self.assertions), TermColor.Yellow))
+			if (self.segfaults > 0):
+				logger.log(TermColor.colorText("\tSegFaults: {}".format(self.segfaults), TermColor.Yellow))
+				
+			if (self.timedout > 0):
+				logger.log(TermColor.colorText("\tTimeouts: {}".format(self.timedout), TermColor.Purple))
+			# A little bit of fun
+			if (self.error == 0) and (self.failed == 0) \
+			and (self.timedout == 0) and (self.segfaults == 0) and (self.assertions == 0):
+				logger.log("\tCongratulations, you passed all tests!")
+				logger.log("\tgrep yourself a refreshing " + TermColor.colorText("Beer", TermColor.Yellow, style = TermColor.Bold))
+				logger.log("")
+				logger.log("              \033[1;37m,%%%%.\033[0m")
+				logger.log("              \033[1;37mi\033[36m====\033[1;37mi\033[1;36m_.\033[0m")
+				logger.log("              \033[1;36m|\033[1;33m####\033[36m|_]\033[0m")
+				logger.log("              \033[1;36m|\033[1;33m####\033[36m|\033[0m")
+				logger.log("              \033[1;36m`-==-'\033[0m")
+				logger.log("")
+			elif (self.success == 0):
+				logger.log("\tWhat is wrong with you, not even a single test?")
+			elif fails > 0:
+				if self.assertions/fails > 0.6:
+					logger.log("\tYou do realise that assertions do not replace error handling?")
+				elif self.assertions/fails > 0.3:
+					logger.log("\tWe're a bit lazy with calling environments, aren't we?")
+				if self.segfaults/fails > 0.6:
+					logger.log("\tMay the CPU-Gods have mercy with that poor memory management units soul!")
+				elif self.segfaults/fails > 0.3:
+					logger.log("\tYou know, memory garbage doesn't collects itself?!")
 		return self.calcRate()
 		
 	def __str__(self):
