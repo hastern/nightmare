@@ -1,10 +1,10 @@
-pyTest (working title)
-======================
+NIGHTMARE - Is of Generous Help when Testing; May Arnold be Remembered Eternally
+================================================================================
 You must really, really love to test!
 
 ---
 
-pyTest is a tool for automatic testing of non-interactive commandline 
+nightmare is a tool for automatic testing of non-interactive commandline 
 applications.
 
 	Usage: pyTest [OPTIONS]
@@ -122,3 +122,19 @@ All expectation fields (stdout, stderr, returnCode) may contain lambda
 a lambda expression.
 
 
+History / Background
+--------------------
+
+The development started in 2012 at FH-Wedel as a addition / replacement to the 
+aging "[arnold](http://stud.fh-wedel.de/~arnold)"-tool, which is a tcl-script. 
+Since I'm a notorious windows user I was annoyed by the fact, that tcl/expect 
+barely works on windows. Being a fan of the python language I decided to 
+develop a new tool which fulfills the same requirements but by using a (in my 
+humble opinion) more modern language.
+
+As part of my job at the FH Wedel it was successfully used as the primary 
+testing tool, to check if the implementation of the programming exercise meet 
+the required specifications.
+Since "arnold" is an acronym, this tool's name needed to be equally ridiculous.
+The name "*nightmare*" was given as a consequence, because most of the students 
+in the exercises absolutely hated the strictness of my tests. 
