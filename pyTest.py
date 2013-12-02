@@ -5,11 +5,12 @@ import os
 import re
 import sys
 import signal
+import difflib
 import subprocess
 
 from threading import Thread
 
-from pyTestUtils import isLambda, TermColor
+from pyTestUtils import isLambda, TermColor, logger
 
 
 class TestState:
@@ -114,7 +115,7 @@ class Command():
 class Test(object):
 	"""A single test"""
 	
-	def __init__(self, DUT=None, name="", description="", command=None, stdout=None, stderr=None, returnCode=None, timeout=5.0, outputOnFail = False, pipe = False, state=TestState.Waiting):
+	def __init__(self, DUT=None, name="", description="", command=None, stdout=None, stderr=None, returnCode=None, timeout=5.0, outputOnFail = False, pipe = False, diff = False, state=TestState.Waiting):
 		"""
 		Initalises a test
 		
@@ -166,11 +167,13 @@ class Test(object):
 		"""Flag, set if the output streams should be piped"""
 		self.outputOnFail = outputOnFail
 		"""Flag, set if the output streams should be piped on failed test"""
+		self.diff = diff
+		"""Flag, show comparison between input and string-expectation"""
 		self.timeout = timeout
 		"""Timeout after the DUT gets killed"""
 		self.linesep = os.linesep
 			
-	def check(self, exp, out):
+	def check(self, exp, out, stream=""):
 		"""
 		Test an expectation against an output
 		If it's a lambda function, it will be executed with the output
@@ -197,6 +200,9 @@ class Test(object):
 				patCode = re.compile(exp[6:].replace("$n", self.linesep), re.IGNORECASE)
 				return (patCode.match(str(out)) != None)
 			else:
+				if self.diff:
+					for line in difflib.unified_diff(exp.replace("$n", self.linesep).splitlines(), str(out).rstrip().splitlines(), stream , "Expectation"):
+						logger.log(line)
 				return exp.replace("$n", self.linesep) == str(out).rstrip()
 		elif exp is None:
 			return True
@@ -214,9 +220,9 @@ class Test(object):
 		"""
 		if isinstance(lst, list):
 			for exp in lst:
-				if not self.check(exp, out):
-					return False
-			return True
+				if self.check(exp, out):
+					return True
+			return False
 		else:
 			return self.check(lst, out)
 	
@@ -228,8 +234,8 @@ class Test(object):
 			self.error = _cmd.err
 			self.retCode = _cmd.ret
 			if self.check(self.expectRetCode, self.retCode) \
-				and self.check(self.expectStdout,self.output) \
-				and self.check(self.expectStderr,self.error):
+				and self.check(self.expectStdout,self.output, "stdout") \
+				and self.check(self.expectStderr,self.error, "stderr"):
 				self.state = TestState.Success
 			else:
 				if 'Assertion' in self.error or 'assertion' in self.error:

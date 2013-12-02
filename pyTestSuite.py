@@ -125,13 +125,15 @@ class TestSuite(object):
 	def getTests(self):
 		return self.testList
 		
-	def setAll(self, state=TestState.Waiting, pipe=None, out=None, timeout=None, linesep=None): 
+	def setAll(self, state=TestState.Waiting, pipe=None, out=None, diff=None, timeout=None, linesep=None): 
 		for t in self.testList:
 			t.state = state
 			if pipe is not None:
 				t.pipe = pipe
 			if out is not None:
 				t.outputOnFail = out
+			if diff is not None:
+				t.diff = diff
 			if timeout is not None:
 				t.timeout = timeout
 			if linesep is not None:

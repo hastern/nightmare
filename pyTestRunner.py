@@ -64,6 +64,7 @@ class TestRunner(object):
 		self.finished = None
 		self.pipe = None
 		self.out = None
+		self.diff = None
 		self.timeout = None
 		self.linesep = os.linesep
 		self.classpath = "."
@@ -139,6 +140,9 @@ class TestRunner(object):
 			elif arg == "-o" or arg == "--output-fail":
 				self.out = True
 				logger.log("\tI will pipe failed tests outputs to their respective streams")
+			elif arg == "-d" or arg == "--diff":
+				self.diff = True
+				logger.log("\tI will show the differences in output and expectations")
 			elif arg == "-r" or arg == "--relative":
 				self.relative = True
 				
@@ -180,7 +184,7 @@ class TestRunner(object):
 					suite = ctx[self.suite]
 					suite.setDUT(self.DUT)
 					if self.mode is None:
-						self.mode =self.runsuite.mode
+						self.mode = suite.mode
 					elif suite.mode is None:
 						suite.mode = self.mode
 					if 'DUT' in ctx and ctx['DUT'] is not None and self.DUT is None:
@@ -207,6 +211,7 @@ class TestRunner(object):
 				state=TestState.InfoOnly if self.infoOnly else TestState.Waiting, 
 				pipe=self.pipe, 
 				out=self.out, 
+				diff=self.diff,
 				timeout = self.timeout, 
 				linesep = self.linesep
 			)
