@@ -26,8 +26,8 @@ class TestRunner(object):
 		"""Initialises the test runner"""
 		#Thread.__init__(self)
 		logger.log(
-			  TermColor.colorText("NIGHTMARE", TermColor.Red, style = TermColor.Bold) 
-			+ TermColor.colorText(" is of ", TermColor.White)
+			  TermColor.colorText("NIGHTMARE I", TermColor.Red, style = TermColor.Bold) 
+			+ TermColor.colorText("s of ", TermColor.White)
 			+ TermColor.colorText("G", TermColor.Red, style = TermColor.Bold)
 			+ TermColor.colorText("enerous ", TermColor.White)
 			+ TermColor.colorText("H", TermColor.Red, style = TermColor.Bold)
@@ -151,18 +151,22 @@ class TestRunner(object):
 		return test
 	
 	def loadArnold(self):
-		logger.log("\t...using Arnold-Mode")
-		syn = syntax()
-		fileHnd = open(self.file)
-		content = []
-		for line in fileHnd:
-			if not line.startswith("#") and not line.strip() == "":
-				content.append(line.replace("ä","ae").replace("Ä","Ae").replace("ö","oe").replace("Ö","Oe").replace("ü","ue").replace("Ü","Ue").replace("ß","ss"))
-		s = "".join(content)
-		ast = syn.parseString(s)
-		testList = buildTestList(ast)
-		suite = TestSuite(*testList)
-		suite.setDUT(self.DUT)
+		if syntax is not None:
+			logger.log("\t...using Arnold-Mode")
+			syn = syntax()
+			fileHnd = open(self.file)
+			content = []
+			for line in fileHnd:
+				if not line.startswith("#") and not line.strip() == "":
+					content.append(line.replace("ä","ae").replace("Ä","Ae").replace("ö","oe").replace("Ö","Oe").replace("ü","ue").replace("Ü","Ue").replace("ß","ss"))
+			s = "".join(content)
+			ast = syn.parseString(s)
+			testList = buildTestList(ast)
+			suite = TestSuite(*testList)
+			suite.setDUT(self.DUT)
+		else:
+			logger.log("\t ... could not init arnold mode due to missing pyparsing package")
+			suite = TestSuite()
 		return suite
 		
 	def loadPython(self):
