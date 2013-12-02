@@ -62,14 +62,14 @@ class TestRunnerGui(wx.App):
 		fname = self.loadFileDialog(fileTypes = TestRunnerGui.filetypes)
 		if fname is not None:
 			self.edtFile.SetValue(os.path.relpath(fname))
-			self.runner.file = fname
+			self.runner.options['bench'] = fname
 			self.updateFromRunner()
 			
 	def updateFromRunner(self):
 		self.runner.loadSuite()
 		self.lstTests.DeleteAllItems()
 		self.applyToList(self.runner.getSuite().getTests(), self.insertTest )
-		self.edtDUT.SetValue(str(self.runner.DUT))
+		self.edtDUT.SetValue(str(self.runner.options['dut']))
 		self.edtTests.SetValue(str(self.runner.countTests()))
 		self.grpMode.SetSelection(self.runner.getSuite().mode)
 			
@@ -187,9 +187,9 @@ class TestRunnerGui(wx.App):
 		"""Initialise the gui"""
 		wx.App.__init__(self, redirect = False, useBestVisual=True)
 		self.runner = TestRunner()
-		self.runner.quiet = True
+		self.runner.options['quiet'] = True
 		self.runner.parseArgv()
-		self.runner.mode = TestSuiteMode.Continuous
+		self.runner.options['mode'] = TestSuiteMode.Continuous
 		self.testthread = None
 		
 	def messageDialog(self, message, caption=wx.MessageBoxCaptionStr, style=wx.OK | wx.ICON_INFORMATION):
@@ -278,7 +278,7 @@ class TestRunnerGui(wx.App):
 		self.wHnd.Bind(wx.EVT_BUTTON, lambda e:self.run(), id = self.btnRun.GetId())
 		self.wHnd.Bind(wx.EVT_BUTTON, lambda e:self.selectDut(), id = self.btnSelect.GetId())
 		self.wHnd.Bind(wx.EVT_BUTTON, lambda e:self.addTest(), id = self.btnAdd.GetId())
-		self.wHnd.Bind(wx.EVT_RADIOBOX, lambda e:self.runner.__setattr__("mode",self.grpMode.GetSelection()), id = self.grpMode.GetId())
+		self.wHnd.Bind(wx.EVT_RADIOBOX, lambda e:self.runner.options.__setitem__("mode",self.grpMode.GetSelection()), id = self.grpMode.GetId())
 		self.wHnd.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
 		self.wHnd.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 		self.lstTests.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.selectTest, id = self.lstTests.GetId())

@@ -13,7 +13,7 @@ def read(fname):
     
 includes = ['pyTest','pyTestMain','pyTestSuite','pyTestRunner','pyTestGui','pyTestEditForm','pyTestUtils','__main__','arnold_converter']
 excludes = ['pyreadline','pyreadline.console', 'pyreadline.rlmain','unittest','email', 'email.Utils','calendar','_ssl','Tkinter',"Tkconstants", "tcl"]
-packages = ['pyparsing']
+packages = ['pyparsing','colorama']
 dll_excludes = ['w9xpopen.exe',"MSVCP90.dll"]
 mainScript = 'pyTestMain'
 

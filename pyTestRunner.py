@@ -91,7 +91,7 @@ class TestRunner(object):
 		args.add_argument("--cr", action="store_const", const="\r", dest="linesep", help="Force the line separation character (Mac OS).")
 		args.add_argument("--ln", action="store_const", const="\n", dest="linesep", help="Force the line separation character (Unix / Mac OS-X).")
 		args.add_argument("--crln", action="store_const", const="\r\n", dest="linesep", help="Force the line separation character (Windows).")
-		args.set_defaults(linesep=os.linesep, bench=[""], suite=["suite"], dut=[""], test=[])
+		args.set_defaults(linesep=os.linesep, bench=[""], suite=["suite"], dut=[""], timeout=[5.0], test=[])
 		
 		self.options.update(vars(args.parse_args()))
 		self.options['bench'] = self.options['bench'][0]
