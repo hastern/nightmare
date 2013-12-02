@@ -139,27 +139,19 @@ class TestSuite(object):
 			if linesep is not None:
 				t.linesep = linesep
 		
-	def runOne(self, n):
-		"""
-		Run one single test
+	def runSelected(self, tests):
+		for test in tests:
+			yield self.runOne(test)
 		
-		@type	n: int
-		@param	n: Number of the test
-		"""
-		if n < len(self):
-			t = self.testList[n]
-			self.lastResult = t.run()
-			if t.descr is not None:
-				logger.log("Test[{:02}] {} - {}: {}".format(n, t.name, t.descr, TestState.toString(t.state)))
-			else:
-				logger.log("Test[{:02}] {}: {}".format(n, t.name, TestState.toString(t.state)))
-			return t
-		else:
-			logger.log("\tSorry but there is no test #{}".format(n))
-			self.lastResult = TestState.Error
-			return None
+	def _getTests(self, tests):
+		if len(tests) == 0:
+			tests = xrange(len(self))
+		for t in tests:
+			if t < len(self):
+				yield self[t]
+		raise StopIteration()
 		
-	def runAll(self, quiet = False):
+	def run(self, quiet = False, tests = []):
 		"""
 		Runs the whole suite of tests
 		
@@ -171,7 +163,7 @@ class TestSuite(object):
 		self.count = 0
 		self.error = 0
 		self.lastResult = TestState.Waiting
-		for t in self.testList:
+		for t in self._getTests(tests):
 			self.count = self.count + 1 
 			self.lastResult = t.run()
 			if t.descr is not None:
@@ -226,8 +218,7 @@ class TestSuite(object):
 			if (self.timedout > 0):
 				logger.log(TermColor.colorText("\tTimeouts: {}".format(self.timedout), TermColor.Purple))
 			# A little bit of fun
-			if (self.error == 0) and (self.failed == 0) \
-			and (self.timedout == 0) and (self.segfaults == 0) and (self.assertions == 0):
+			if (self.success == len(self)):
 				logger.log("\tCongratulations, you passed all tests!")
 				logger.log("\tgrep yourself a refreshing " + TermColor.colorText("Beer", TermColor.Yellow, style = TermColor.Bold))
 				logger.log("")

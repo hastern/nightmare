@@ -86,18 +86,21 @@ def printHelp():
 
 def main():
 	TermColor.init()
-	if "-h" in sys.argv or "--help" in sys.argv or "-?" in sys.argv:
-		printHelp()
+	#if "-h" in sys.argv or "--help" in sys.argv or "-?" in sys.argv:
+	#	printHelp()
 	if "--no-gui" in sys.argv:
 		# Capt. Obvious: We're running in console mode
 		runner = TestRunner()
 		runner.parseArgv()
 		suite = runner.loadSuite()
-		for testcase in runner.run():
-			pass
-		if not runner.lengthOnly and not runner.infoOnly and runner.test == -1:
-			print "{:2.2f}%".format(suite.getRate())
-		sys.exit(suite.lastResult if suite.lastResult not in [TestState.Waiting,TestState.InfoOnly] else 0)
+		if suite is not None:
+			for testcase in runner.run():
+				pass
+			if not runner.options['info'] and not runner.options['length']:
+				print "{:2.2f}%".format(suite.getRate())
+			sys.exit(suite.lastResult if suite.lastResult not in [TestState.Waiting,TestState.InfoOnly] else 0)
+		else:
+			sys.exit(1)
 	else:
 		from pyTestGui import TestRunnerGui
 		if len(sys.argv) > 1 and not sys.argv[1].startswith("-") and os.path.exists(sys.argv[1]):
