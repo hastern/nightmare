@@ -39,9 +39,9 @@ class TestRunnerGui(wx.App):
 		fHnd.write("# Saved at {}\n".format(time.strftime("%H:%M:%S")))
 		fHnd.write("# \n\n")
 		#fHnd.write("# Author: {}\n".format())
-		if self.runner.DUT is not None:
+		if self.runner.optionts['DUT'] is not None:
 			fHnd.write("# Device Under Test\n")
-			fHnd.write("DUT = \"{}\"\n\n".format(os.path.relpath(self.runner.DUT)))
+			fHnd.write("DUT = \"{}\"\n\n".format(os.path.relpath(self.runner.optionts['DUT'])))
 		fHnd.write("# Test definitions\n")
 		fHnd.write("suite = [\n")
 		tests = []
