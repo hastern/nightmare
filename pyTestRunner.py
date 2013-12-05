@@ -4,6 +4,7 @@
 import os
 import re
 import sys
+import time
 import math
 import argparse
 import subprocess
@@ -27,7 +28,7 @@ class TestRunner(object):
 		"""Initialises the test runner"""
 		#Thread.__init__(self)
 		logger.log(
-			  TermColor.colorText("NIGHTMARE I", TermColor.Red, style = TermColor.Bold) 
+			  TermColor.colorText("NIGHTMARE I", TermColor.Red, style =TermColor.Bold) 
 			+ TermColor.colorText("s of ", TermColor.White)
 			+ TermColor.colorText("G", TermColor.Red, style = TermColor.Bold)
 			+ TermColor.colorText("enerous ", TermColor.White)
@@ -86,6 +87,7 @@ class TestRunner(object):
 		args.add_argument("--diff-fails", "-d", action="store_true", dest="diff", help="Display the differences between output and expectation.")
 		args.add_argument("--relative", "-r", action="store_true", default=False, dest="relative", help="Use a path relative to the testbench path.")
 		args.add_argument("--arnold", "-a", action="store_true", default=False, dest="arnold", help="Use the arnold mode (requires pyparsing module)")
+		args.add_argument("--save", action="store", nargs=1, help="Save the testsuite as FILE", metavar="FILE")
 		args.add_argument("--no-color", action="store_false", default=True, dest="color", help="Don't use any colored output.")
 		args.add_argument("--no-gui", action="store_true", default=False, dest="gui", help="Don't use the GUI.")
 		args.add_argument("--cr", action="store_const", const="\r", dest="linesep", help="Force the line separation character (Mac OS).")
@@ -106,7 +108,7 @@ class TestRunner(object):
 				if v == TestSuiteMode.BreakOnError 
 				else "I will halt on first fail."),
 			('suite', lambda v: "I'm using the testsuite '{}'".format(v)),
-			('test', lambda v: "I'm only running test {}".format(v) if v >= 0 else ""),
+			('test', lambda v: "I'm only running test {}".format(v) if len(v) > 0 else ""),
 			('bench', lambda v: "I'm using testbench '{}'".format(v)),
 			('timeout', lambda v: "Setting global timeout to {}".format(v)),
 			('dut', lambda v: "Device under Test is: {}".format(v)),
@@ -217,16 +219,18 @@ class TestRunner(object):
 		"""Thread run function"""
 		if self.options['length']:
 			print len(self.runsuite.getTests())
+		elif len(self.options['save']) == 1:
+			logger.log("Saving Suite to {}".format(self.options['save'][0]))
+			self.saveToFile(self.options['save'][0])
 		else:
 			logger.flush(self.options['quiet'])
 			self.runsuite.setMode(self.options['mode'])
 			for test in self.runsuite.run(self.options['quiet'], tests=self.options['test']):
 				yield test
 			self.runsuite.stats(self.options['quiet'])
-			logger.flush(self.options['quiet'])
 		if self.finished != None:
 			self.finished()
-		#Thread.__init__(self) # This looks like a real dirty hack :/
+		logger.flush(self.options['quiet'])
 		raise StopIteration()
 		
 	def countTests(self):
@@ -237,4 +241,30 @@ class TestRunner(object):
 		
 	def toString(self):
 		s = self.options['suite'] + ' = ' + self.runsuite.toString()
+		
+	def saveToFile(self, fn):
+		"""
+		Save the testsuite into a file
+		
+		@type	fn: String
+		@param 	fn: The filename
+		"""
+		fHnd = open(fn,"w")
+		fHnd.write("#!/usr/bin/env python\n\n")
+		fHnd.write("# pyTest - Testbench\n")
+		fHnd.write("# Saved at {}\n".format(time.strftime("%H:%M:%S")))
+		fHnd.write("# \n\n")
+		#fHnd.write("# Author: {}\n".format())
+		if self.options['dut'] is not None:
+			fHnd.write("# Device Under Test\n")
+			fHnd.write("DUT = \"{}\"\n\n".format(os.path.relpath(self.options['dut'])))
+		fHnd.write("# Test definitions\n")
+		fHnd.write("{} = [\n".format(self.options['suite']))
+		tests = []
+		for test in self.getSuite().getTests():
+			tests.append("\t{}".format(test.toString()))
+		fHnd.write(",\n".join(tests))
+		fHnd.write("\n]\n")
+		fHnd.close()
+		
 		

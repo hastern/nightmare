@@ -27,29 +27,7 @@ class TestRunnerGui(wx.App):
 	filetypes = [('PyTest', 'py'), ('All Files', '*')]
 	
 	def suiteSave(self, fn):
-		"""
-		Save the testsuite into a file
-		
-		@type	fn: String
-		@param 	fn: The filename
-		"""
-		fHnd = open(fn,"w")
-		fHnd.write("#!/usr/bin/env python\n\n")
-		fHnd.write("# pyTest - Testbench\n")
-		fHnd.write("# Saved at {}\n".format(time.strftime("%H:%M:%S")))
-		fHnd.write("# \n\n")
-		#fHnd.write("# Author: {}\n".format())
-		if self.runner.optionts['DUT'] is not None:
-			fHnd.write("# Device Under Test\n")
-			fHnd.write("DUT = \"{}\"\n\n".format(os.path.relpath(self.runner.optionts['DUT'])))
-		fHnd.write("# Test definitions\n")
-		fHnd.write("suite = [\n")
-		tests = []
-		for test in self.runner.getSuite().getTests():
-			tests.append("\t{}".format(test.toString()))
-		fHnd.write(",\n".join(tests))
-		fHnd.write("\n]\n")
-		fHnd.close()
+		self.runner.saveToFile(fn)
 		
 	def saveSuite(self):
 		""" Savedialog execution before saving the suite"""
