@@ -24,7 +24,7 @@ applications.
 	  --suite SUITE         Use testsuite SUITE from the testbench.
 	  --dut DUT, --DUT DUT  Set the device under test.
 	  --test TEST [TEST ...]
-				Run only the specified tests
+	                        Run only the specified tests
 	  --timeout TIMEOUT     Set a global timeout for all tests.
 	  --continue, -c        Continuous mode (Don't halt on failed tests).
 	  --error, -e           Same as '-c', but will halt if an error occurs.
@@ -34,9 +34,9 @@ applications.
 	  --info-only, -i       Display only test information, but don't run them.
 	  --pipe-streams, -p    Redirect DUT output to their respective streams.
 	  --output-fails, -o    Redirect DUT output from failed tests to their
-				respective streams.
+	                        respective streams.
 	  --diff-fails, -d      Display the differences between output and
-				expectation.
+	                        expectation.
 	  --relative, -r        Use a path relative to the testbench path.
 	  --arnold, -a          Use the arnold mode (requires pyparsing module)
 	  --save FILE           Save the testsuite as FILE
