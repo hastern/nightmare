@@ -6,6 +6,7 @@ import re
 import sys
 import time
 import math
+import difflib
 import argparse
 import subprocess
 
@@ -84,7 +85,8 @@ class TestRunner(object):
 		args.add_argument("--info-only", "-i", action="store_true", default=False, dest="info", help="Display only test information, but don't run them.")
 		args.add_argument("--pipe-streams", "-p", action="store_true", dest="pipe", help="Redirect DUT output to their respective streams.")
 		args.add_argument("--output-fails", "-o", action="store_true", dest="output", help="Redirect DUT output from failed tests to their respective streams.")
-		args.add_argument("--diff-fails", "-d", action="store_true", dest="diff", help="Display the differences between output and expectation.")
+		args.add_argument("--diff-fails", "-d", action="store_const", const=lambda a,b,l,r: difflib.ndiff(a,b), dest="diff", help="Display the differences between output and expectation.")
+		args.add_argument("--unify-fails", "-u", action="store_const", const=lambda a,b,l,r: difflib.unified_diff(a,b,l,r), dest="diff", help="Display the unified diff of output and expectation.")
 		args.add_argument("--relative", "-r", action="store_true", default=False, dest="relative", help="Use a path relative to the testbench path.")
 		args.add_argument("--arnold", "-a", action="store_true", default=False, dest="arnold", help="Use the arnold mode (requires pyparsing module)")
 		args.add_argument("--save", action="store", nargs=1, help="Save the testsuite as FILE", metavar="FILE")

@@ -5,13 +5,11 @@ import os
 import re
 import sys
 import signal
-import difflib
 import subprocess
 
 from threading import Thread
 
 from pyTestUtils import isLambda, TermColor, logger
-
 
 class TestState:
 	#__slots__ = ["Success", "Fail", "Error", "Waiting", "Disabled", "InfoOnly", "Timeout"]
@@ -115,7 +113,7 @@ class Command():
 class Test(object):
 	"""A single test"""
 	
-	def __init__(self, DUT=None, name="", description="", command=None, stdout=None, stderr=None, returnCode=None, timeout=5.0, outputOnFail = False, pipe = False, diff = False, state=TestState.Waiting):
+	def __init__(self, DUT=None, name="", description="", command=None, stdout=None, stderr=None, returnCode=None, timeout=5.0, outputOnFail = False, pipe = False, diff = None, state=TestState.Waiting):
 		"""
 		Initalises a test
 		
@@ -200,17 +198,18 @@ class Test(object):
 				patCode = re.compile(exp[6:].replace("$n", self.linesep), re.IGNORECASE)
 				return (patCode.match(str(out)) != None)
 			else:
-				if self.diff:
-					for line in difflib.unified_diff(exp.replace("$n", self.linesep).splitlines(), str(out).rstrip().splitlines(), stream , "Expectation"):
+				comp = exp.replace("$n", self.linesep) == str(out).rstrip()
+				if self.diff is not None and not comp:
+					for line in self.diff(exp.replace("$n", self.linesep).splitlines(), str(out).rstrip().splitlines(), stream, "expecation"):
 						if line.startswith("+"):
 							logger.log(TermColor.colorText(line.rstrip(), TermColor.Green))
 						elif line.startswith("-"):
 							logger.log(TermColor.colorText(line.rstrip(), TermColor.Red))
-						elif line.startswith("@"):
-							logger.log(TermColor.colorText(line.rstrip(), TermColor.Blue))
+						elif line.startswith("?") or line.startswith("@"):
+							logger.log(TermColor.colorText(line.rstrip(), TermColor.Cyan))
 						else:
 							logger.log(line)
-				return exp.replace("$n", self.linesep) == str(out).rstrip()
+				return comp
 		elif exp is None:
 			return True
 		return False
