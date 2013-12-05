@@ -46,24 +46,24 @@ class TestState:
 		@param	state: Enumeration value
 		"""
 		if state == TestState.Waiting:
-			return TermColor.colorText("WAITING", TermColor.White)
+			return TermColor.colorText(" WAITING ", TermColor.White)
 		if state == TestState.Success:
-			return TermColor.colorText("SUCCESS", TermColor.Green, TermColor.Background)
+			return TermColor.colorText(" SUCCESS ", fg=TermColor.Black, bg=TermColor.Green)
 		if state == TestState.Fail:
-			return TermColor.colorText("FAIL", TermColor.Red, TermColor.Background)
+			return TermColor.colorText(" FAIL ", fg=TermColor.Black, bg=TermColor.Red)
 		if state == TestState.Error:
-			return TermColor.colorText("ERROR", TermColor.Red)
+			return TermColor.colorText(" ERROR ", fg=TermColor.Black, bg=TermColor.Red, style=TermColor.Bold)
 		if state == TestState.SegFault:
-			return TermColor.colorText("SEGFAULT", TermColor.Yellow, TermColor.Background)
+			return TermColor.colorText(" SEGFAULT ", fg=TermColor.Black, bg=TermColor.Yellow)
 		if state == TestState.Assertion:
-			return TermColor.colorText("ASSERTION", TermColor.Yellow, TermColor.Background)
+			return TermColor.colorText(" ASSERTION ", fg=TermColor.Black, bg=TermColor.Yellow, style=TermColor.Bold)
 		if state == TestState.InfoOnly:
-			return TermColor.colorText("INFO", TermColor.White)		
+			return TermColor.colorText(" INFO ", TermColor.White)		
 		if state == TestState.Timeout:
-			return TermColor.colorText("TIMEOUT", TermColor.Purple)
+			return TermColor.colorText(" TIMEOUT ", TermColor.Purple)
 		if state == TestState.Disabled:
-			return TermColor.colorText("DISABLED", TermColor.Blue)
-		return TermColor.colorText("UNKNOWN", TermColor.Yellow)
+			return TermColor.colorText(" DISABLED ", TermColor.Blue)
+		return TermColor.colorText(" UNKNOWN ", TermColor.Yellow)
 
 
 class Command():
@@ -202,7 +202,14 @@ class Test(object):
 			else:
 				if self.diff:
 					for line in difflib.unified_diff(exp.replace("$n", self.linesep).splitlines(), str(out).rstrip().splitlines(), stream , "Expectation"):
-						logger.log(line)
+						if line.startswith("+"):
+							logger.log(TermColor.colorText(line.rstrip(), TermColor.Green))
+						elif line.startswith("-"):
+							logger.log(TermColor.colorText(line.rstrip(), TermColor.Red))
+						elif line.startswith("@"):
+							logger.log(TermColor.colorText(line.rstrip(), TermColor.Blue))
+						else:
+							logger.log(line)
 				return exp.replace("$n", self.linesep) == str(out).rstrip()
 		elif exp is None:
 			return True
@@ -245,9 +252,9 @@ class Test(object):
 				else:
 					self.state = TestState.Fail
 			if (self.pipe) or (self.outputOnFail and self.state is TestState.Fail):
-				sys.stdout.write( "{} ".format(self.retCode) )
-				sys.stdout.write( self.output )
-				sys.stderr.write( self.error )
+				sys.stdout.write( TermColor.colorText("{} ".format(self.retCode), fg=TermColor.Black, bg=TermColor.Yellow) )
+				sys.stdout.write( TermColor.colorText(self.output, fg=TermColor.Black, bg=TermColor.Green)  )
+				sys.stderr.write( TermColor.colorText(self.error, fg=TermColor.Black, bg=TermColor.Red)  )
 		else:
 			self.state = cmdRet
 			
@@ -282,14 +289,14 @@ class Test(object):
 		@rtype: 	String
 		"""
 		fields = []
-		fields.append("{}\tname = \"{:s}\"".format(prefix, self.name))
+		fields.append("{}\tname = '{:s}'".format(prefix, self.name))
 		if self.descr is not None and self.descr != "":
-			fields.append("{}\tdescription = \"{:s}\"".format(prefix, self.descr))
-		fields.append("{}\tcommand = \"{:s}\"".format(prefix, self.cmd))
+			fields.append("{}\tdescription = '{:s}'".format(prefix, self.descr))
+		fields.append("{}\tcommand = '{:s}'".format(prefix, self.cmd))
 		if self.expectStdout is not None:
-			fields.append("{}\tstdout = \"{}\"".format(prefix, self.expectStdout))
+			fields.append("{}\tstdout = \"\"\"{}\"\"\"".format(prefix, self.expectStdout))
 		if self.expectStderr is not None:
-			fields.append("{}\tstderr = \"{}\"".format(prefix, self.expectStderr))
+			fields.append("{}\tstderr = \"\"\"{}\"\"\"".format(prefix, self.expectStderr))
 		if self.expectRetCode is not None:
 			fields.append("{}\treturnCode = \"{}\"".format(prefix, self.expectRetCode))
 		if self.timeout is not None:

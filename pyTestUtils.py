@@ -56,11 +56,10 @@ class TermColor:
 	
 	
 	@staticmethod
-	def colorText(text, color = 7, where = 30, style = 0):
+	def colorText(text, fg = 7, bg = 0, style = 0):
 		if TermColor.active and ((colorama is not None) or (os.getenv('ANSI_COLORS_DISABLED') is not None)):
-			colStr = str(where + color)
 			styleStr = "{:02}".format(style)
-			return "\033[{};{}m{}\033[0m".format(styleStr, colStr, text)
+			return "\033[{};{};{}m{}\033[0m".format(styleStr, fg+TermColor.Text, bg+TermColor.Background, text)
 		else:
 			return text
 			
@@ -86,7 +85,7 @@ class logger:
 		@type	str: String
 		@param	str: Log message
 		"""
-		msg = "[{0}] {1}".format(time.strftime("%H:%M:%S") , str.strip("\r\n") )
+		msg = "{0} {1}".format(TermColor.colorText("[{0}]".format(time.strftime("%H:%M:%S")), TermColor.Blue, style=TermColor.Dim), str.strip("\r\n") )
 		if logger.autoflush:
 			print msg
 		else:
