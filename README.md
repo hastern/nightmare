@@ -7,40 +7,44 @@ You must really, really love to test!
 nightmare is a tool for automatic testing of non-interactive commandline 
 applications.
 
-	Usage: pyTest [OPTIONS]
-	  OPTIONS:
-	    --bench=TESTBENCH
-	        Load the testbench form the file TESTBENCH.
-	    --suite=SUITE
-	        Use the testsuite SUITE from the testbench.
-	    --test=TEST
-	        Only run test number TEST.
-	    --dut=DUT
-	        Set the device under test to the file DUT.
-	    --timeout=SEC
-	        Set a global timeout for all tests.
-	    -c
-	        Continuous mode (Don't halt on failed tests).
-	    -e
-	        Same as '-c', but will halt if an error occurs.
-	    -l
-	        Print only the number of tests in the suite.
-	    -p
-	        Redirect DUT output to their respective streams.
-	    -o
-	        Redirect DUT output from failed tests to their respective streams.
-	    --no-color
-	        Don't use any colored output.
-	    --no-gui
-	        Don't use the GUI.
-	    --info-only
-	        Display only test information, but don't run them.
-	    -q
-	        Quiet mode. There will be no output except results.
-	    -v
-	        Verbose mode. The program gets chatty (default).
-	    -h, --help, -?
-	        Print this help
+	usage: nightmare-2.0-py2.7.egg [-h] [--bench BENCH] [--suite SUITE]
+				       [--dut DUT] [--test TEST [TEST ...]]
+				       [--timeout TIMEOUT] [--continue] [--error]
+				       [--quiet] [--verbose] [--length] [--info-only]
+				       [--pipe-streams] [--output-fails]
+				       [--diff-fails] [--relative] [--arnold]
+				       [--save FILE] [--no-color] [--no-gui] [--cr]
+				       [--ln] [--crln]
+
+	A test tool for non-interactive commandline programms
+
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  --bench BENCH         File which contains the testbench.
+	  --suite SUITE         Use testsuite SUITE from the testbench.
+	  --dut DUT, --DUT DUT  Set the device under test.
+	  --test TEST [TEST ...]
+				Run only the specified tests
+	  --timeout TIMEOUT     Set a global timeout for all tests.
+	  --continue, -c        Continuous mode (Don't halt on failed tests).
+	  --error, -e           Same as '-c', but will halt if an error occurs.
+	  --quiet, -q           Quiet mode. There will be no output except results.
+	  --verbose, -v         Verbose mode. The program gets chatty (default).
+	  --length, -l          Print only the number of tests in the suite.
+	  --info-only, -i       Display only test information, but don't run them.
+	  --pipe-streams, -p    Redirect DUT output to their respective streams.
+	  --output-fails, -o    Redirect DUT output from failed tests to their
+				respective streams.
+	  --diff-fails, -d      Display the differences between output and
+				expectation.
+	  --relative, -r        Use a path relative to the testbench path.
+	  --arnold, -a          Use the arnold mode (requires pyparsing module)
+	  --save FILE           Save the testsuite as FILE
+	  --no-color            Don't use any colored output.
+	  --no-gui              Don't use the GUI.
+	  --cr                  Force the line separation character (Mac OS).
+	  --ln                  Force the line separation character (Unix / Mac OS-X).
+	  --crln                Force the line separation character (Windows).
 
 Additional to the commandline interface there is a GUI using the 
 wxPython. The GUI is limited in its capabilities compared to the CLI,
