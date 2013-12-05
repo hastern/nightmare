@@ -252,9 +252,11 @@ class Test(object):
 				else:
 					self.state = TestState.Fail
 			if (self.pipe) or (self.outputOnFail and self.state is TestState.Fail):
-				sys.stdout.write( TermColor.colorText("{} ".format(self.retCode), fg=TermColor.Black, bg=TermColor.Yellow) )
-				sys.stdout.write( TermColor.colorText(self.output, fg=TermColor.Black, bg=TermColor.Green)  )
-				sys.stderr.write( TermColor.colorText(self.error, fg=TermColor.Black, bg=TermColor.Red)  )
+				sys.stdout.write( TermColor.colorText("{}".format(self.retCode), fg=TermColor.Black, bg=TermColor.Yellow)+" " )
+				for line in self.output.splitlines():
+					sys.stdout.write( TermColor.colorText(line+" ", fg=TermColor.Black, bg=TermColor.Green)+"\n"  )
+				for line in self.error.splitlines():
+					sys.stderr.write( TermColor.colorText(line+" ", fg=TermColor.Black, bg=TermColor.Red)+"\n"  )
 		else:
 			self.state = cmdRet
 			

@@ -167,9 +167,9 @@ class TestSuite(object):
 			self.count = self.count + 1 
 			self.lastResult = t.run()
 			if t.descr is not None:
-				logger.log("Test[{:02}] {} - {}: {}".format(self.count, t.name, t.descr, TestState.toString(t.state)))
+				logger.log("{}[{:02}] {} - {}: {}".format(TermColor.colorText("Test", TermColor.Purple), self.count, t.name, t.descr, TestState.toString(t.state)))
 			else:
-				logger.log("Test[{:02}] {}: {}".format(self.count, t.name, TestState.toString(t.state)))
+				logger.log("{}[{:02}] {}: {}".format(TermColor.colorText("Test", TermColor.Purple), self.count, t.name, TestState.toString(t.state)))
 			logger.flush(quiet)
 			if self.lastResult == TestState.Success:
 				self.success += 1
