@@ -95,7 +95,7 @@ class TestRunner(object):
 		args.add_argument("--cr", action="store_const", const="\r", dest="linesep", help="Force the line separation character (Mac OS).")
 		args.add_argument("--ln", action="store_const", const="\n", dest="linesep", help="Force the line separation character (Unix / Mac OS-X).")
 		args.add_argument("--crln", action="store_const", const="\r\n", dest="linesep", help="Force the line separation character (Windows).")
-		args.set_defaults(linesep=os.linesep, bench=[""], save=[], suite=["suite"], dut=[""], timeout=[5.0], test=[])
+		args.set_defaults(linesep=os.linesep, bench=[""], save=[], suite=["suite"], dut=[None], timeout=[5.0], test=[])
 		
 		self.options.update(vars(args.parse_args()))
 		self.options['bench'] = self.options['bench'][0]
@@ -161,6 +161,8 @@ class TestRunner(object):
 		execfile(self.options['bench'], glb, ctx)
 		if (self.options['suite'] in ctx):
 			suite = None
+			if 'DUT' in ctx and ctx['DUT'] is not None and self.options['dut'] is None:
+				self.setDUT(ctx['DUT'])	
 			if (ctx[self.options['suite']] != None):
 				if ctx[self.options['suite']].__class__ == TestSuite:
 					suite = ctx[self.options['suite']]
@@ -169,8 +171,6 @@ class TestRunner(object):
 						self.options['mode'] = suite.mode
 					elif suite.mode is None:
 						suite.mode = self.options['mode']
-					if 'DUT' in ctx and ctx['DUT'] is not None and self.options['dut'] is None:
-						self.setDUT(ctx['DUT'])
 				else:
 					suite = TestSuite(*ctx[self.options['suite']], **{'DUT':self.options['dut'], 'mode':self.options['mode']})
 			else:
