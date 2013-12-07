@@ -1,5 +1,7 @@
-NIGHTMARE - Is of Generous Help when Testing; May Arnold be Remembered Eternally
-================================================================================
+NIGHTMARE
+=========
+Nightmare Is of Generous Help when Testing; May Arnold be Remembered Eternally
+
 You must really, really love to test!
 
 ---
