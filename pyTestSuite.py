@@ -112,6 +112,8 @@ class TestSuite(object):
 			self.DUT = DUT
 			for t in self.testList:
 				t.DUT = DUT
+		else:
+			self.DUT = None
 		
 	def addTest(self, test):
 		"""

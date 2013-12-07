@@ -77,14 +77,14 @@ class TestRunner(object):
 		args.add_argument("--dut", "--DUT", action="store", nargs=1, help="Set the device under test.")
 		args.add_argument("--test", action="store", nargs="+", type=int, help="Run only the specified tests")
 		args.add_argument("--timeout", action="store", nargs=1, type=float, help="Set a global timeout for all tests.")
-		args.add_argument("--continue", "-c", action="store_const", default=TestSuiteMode.BreakOnFail, const=TestSuiteMode.Continuous, dest="mode", help="Continuous mode (Don't halt on failed tests).")
+		args.add_argument("--continue", "-c", action="store_const", const=TestSuiteMode.Continuous, dest="mode", help="Continuous mode (Don't halt on failed tests).")
 		args.add_argument("--error", "-e", action="store_const", const=TestSuiteMode.BreakOnError, dest="mode", help="Same as '-c', but will halt if an error occurs.")
 		args.add_argument("--quiet", "-q", action="store_const", const=True, default=False, dest="quiet", help="Quiet mode. There will be no output except results.")
 		args.add_argument("--verbose", "-v", action="store_const", const=False, dest="quiet", help="Verbose mode. The program gets chatty (default).")
 		args.add_argument("--length", "-l", action="store_true", default=False, dest="length", help="Print only the number of tests in the suite.")
 		args.add_argument("--info-only", "-i", action="store_true", default=False, dest="info", help="Display only test information, but don't run them.")
-		args.add_argument("--pipe-streams", "-p", action="store_true", dest="pipe", help="Redirect DUT output to their respective streams.")
-		args.add_argument("--output-fails", "-o", action="store_true", dest="output", help="Redirect DUT output from failed tests to their respective streams.")
+		args.add_argument("--pipe-streams", "-p", action="store_true", default=None, dest="pipe", help="Redirect DUT output to their respective streams.")
+		args.add_argument("--output-fails", "-o", action="store_true", default=None, dest="output", help="Redirect DUT output from failed tests to their respective streams.")
 		args.add_argument("--diff-fails", "-d", action="store_const", const=lambda a,b,l,r: difflib.ndiff(a,b), dest="diff", help="Display the differences between output and expectation.")
 		args.add_argument("--unify-fails", "-u", action="store_const", const=lambda a,b,l,r: difflib.unified_diff(a,b,l,r), dest="diff", help="Display the unified diff of output and expectation.")
 		args.add_argument("--relative", "-r", action="store_true", default=False, dest="relative", help="Use a path relative to the testbench path.")
@@ -166,7 +166,8 @@ class TestRunner(object):
 			if (ctx[self.options['suite']] != None):
 				if ctx[self.options['suite']].__class__ == TestSuite:
 					suite = ctx[self.options['suite']]
-					suite.setDUT(self.options['dut'])
+					if suite.DUT is None:
+						suite.setDUT(self.options['dut'])
 					if self.options['mode'] is None:
 						self.options['mode'] = suite.mode
 					elif suite.mode is None:
