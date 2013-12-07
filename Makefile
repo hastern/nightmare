@@ -14,13 +14,13 @@ default: all
 
 all: build egg exe
 
-build:
+build: validate
 	$(SETUP) build
 
-egg: 
+egg: validate
 	$(SETUP) bdist_egg
 	
-exe:
+exe: validate
 	$(SETUP) py2exe
 	
 dist:
@@ -31,6 +31,9 @@ doc:
 	
 profile:
 	$(PY) -m cProfile -o profile.out pyTestMain.py
+	
+validate:
+	$(PY) validation.py
 	
 license:
 	@$(SETUP) --license
