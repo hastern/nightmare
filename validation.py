@@ -14,7 +14,7 @@ if __name__ == '__main__':
 	import sys
 	if 'sleep' in sys.argv:
 		import time
-		time.sleep(1.0)
+		time.sleep(0.5)
 	else:
 		from pyTestMain import main
 		sys.argv = ['--no-gui', '--bench', 'validation.py', '--dut', DUT, '--suite', 'validateThisNightmare', '-o']
@@ -161,14 +161,14 @@ else:
 			description = "This test should timeout due to insufficient time, also test local timeout",
 			command = "python validation.py sleep",
 			stdout = "",
-			timeout = 0.5
+			timeout = 0.1
 		),
 		Test(
 			name = "Timeout 02",
 			description = "This test should not timeout due to insufficient time, also test local timeout",
 			command = "python validation.py sleep",
 			stdout = "",
-			timeout = 1.5
+			timeout = 1.0
 		),
 	]
 	
