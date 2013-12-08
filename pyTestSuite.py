@@ -169,9 +169,9 @@ class TestSuite(object):
 			self.count = self.count + 1 
 			self.lastResult = t.run()
 			if t.descr is not None:
-				logger.log("{}[{:02}] {} - {}: {}".format(TermColor.colorText("Test", TermColor.Purple), self.count, t.name, t.descr, TestState.toString(t.state)))
+				logger.log("{}[{:03}] {} - {}: {}".format(TermColor.colorText("Test", TermColor.Purple), self.count, t.name, t.descr, TestState.toString(t.state)))
 			else:
-				logger.log("{}[{:02}] {}: {}".format(TermColor.colorText("Test", TermColor.Purple), self.count, t.name, TestState.toString(t.state)))
+				logger.log("{}[{:03}] {}: {}".format(TermColor.colorText("Test", TermColor.Purple), self.count, t.name, TestState.toString(t.state)))
 			logger.flush(quiet)
 			if self.lastResult == TestState.Success:
 				self.success += 1
@@ -225,9 +225,9 @@ class TestSuite(object):
 				logger.log("\tgrep yourself a refreshing " + TermColor.colorText("Beer", TermColor.Yellow, style = TermColor.Bold))
 				logger.log("")
 				logger.log("              \033[1;37m,%%%%.\033[0m")
-				logger.log("              \033[1;37mi\033[36m====\033[1;37mi\033[1;36m_.\033[0m")
-				logger.log("              \033[1;36m|\033[1;33m####\033[36m|_]\033[0m")
-				logger.log("              \033[1;36m|\033[1;33m####\033[36m|\033[0m")
+				logger.log("              \033[1;37mi\033[36m====\033[1;37mi\033[1;36m_\033[0m")
+				logger.log("              \033[1;36m|\033[1;33m####\033[36m| |\033[0m")
+				logger.log("              \033[1;36m|\033[1;33m####\033[36m|-'\033[0m")
 				logger.log("              \033[1;36m`-==-'\033[0m")
 				logger.log("")
 			elif (self.success == 0 and self.failed > 0):
