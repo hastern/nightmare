@@ -65,6 +65,8 @@ class TestEditForm(wx.Frame):
 		# Buttons
 		self.line2         = wx.StaticLine(self.panel)
 		self.btnCancel     = wx.Button(self.panel, label="Cancel", id=wx.ID_CANCEL)
+		self.btnPrevious   = wx.Button(self.panel, label="Previous")
+		self.btnNext       = wx.Button(self.panel, label="Next")
 		self.btnRun        = wx.Button(self.panel, label="Run")
 		self.btnSave       = wx.Button(self.panel, label="Save", id=wx.ID_SAVE)
 		# Layout - Main Components
@@ -81,6 +83,8 @@ class TestEditForm(wx.Frame):
 		self.sizer.Add(self.szrResult,     pos=(3,4),  span=(1,4), border=5, flag=                   wx.RIGHT |             wx.EXPAND )
 		self.sizer.Add(self.line2,         pos=(4,0),  span=(1,8), border=5, flag=wx.TOP | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.EXPAND )
 		self.sizer.Add(self.btnCancel,     pos=(5,0),  span=(1,1), border=5, flag=         wx.LEFT |            wx.BOTTOM | wx.EXPAND )
+		self.sizer.Add(self.btnPrevious,   pos=(5,1),  span=(1,1), border=5, flag=                              wx.BOTTOM | wx.EXPAND )
+		self.sizer.Add(self.btnNext,       pos=(5,2),  span=(1,2), border=5, flag=                              wx.BOTTOM | wx.EXPAND )
 		self.sizer.Add(self.btnRun,        pos=(5,6),  span=(1,1), border=5, flag=                              wx.BOTTOM | wx.EXPAND )
 		self.sizer.Add(self.btnSave,       pos=(5,7),  span=(1,1), border=5, flag=                   wx.RIGHT | wx.BOTTOM | wx.EXPAND )
 		# Layout - Expectations and Result Boxes
@@ -107,8 +111,24 @@ class TestEditForm(wx.Frame):
 		self.Bind(wx.EVT_BUTTON, lambda e: self.Destroy(), id = self.btnCancel.GetId())
 		self.Bind(wx.EVT_BUTTON, lambda e: self.save() or self.gui.run(self.idx) or self.updateValues, id = self.btnRun.GetId())
 		self.Bind(wx.EVT_BUTTON, lambda e: self.save(), id = self.btnSave.GetId())
+		self.Bind(wx.EVT_BUTTON, lambda e: self.updateTest(self.idx-1), id = self.btnPrevious.GetId())
+		self.Bind(wx.EVT_BUTTON, lambda e: self.updateTest(self.idx+1), id = self.btnNext.GetId())
 		#
 		self.updateValues()
+	
+	def updateTest(self, newIdx):
+		self.idx = newIdx
+		if self.idx == 0:
+			self.btnPrevious.Disable()
+		else:
+			self.btnPrevious.Enable()
+		if self.idx == len(self.gui.runner.getSuite())-1:
+			self.btnNext.Disable()
+		else:
+			self.btnNext.Enable()
+		self.test = self.gui.runner.getSuite()[self.idx]
+		self.updateValues()
+		
 	
 	def updateValues(self):
 		self.edtName.SetValue(self.test.name)
