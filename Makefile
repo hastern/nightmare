@@ -45,7 +45,7 @@ info: license description
 	
 clean:
 	$(SETUP) clean
-	rm -rf build dist pyTest.egg-info doc
+	rm -rf build dist $(shell $(SETUP) --fullname).egg-info doc
 	rm -f *.pyc
 	
 	
