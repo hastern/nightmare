@@ -110,6 +110,18 @@ class Command():
 			return TestState.Timeout
 		return TestState.Success
 	
+class Expectation(object):
+	def __call__(self):
+		return True
+
+class ExpectFile(Expectation):
+	def __init__(self, fname):
+		self.exp = open(fname).read()
+	def __call__(self, out):
+		return exp == out
+	def __str__(self):
+		return self.exp
+	
 class Test(object):
 	"""A single test"""
 	
@@ -171,25 +183,26 @@ class Test(object):
 		"""Timeout after the DUT gets killed"""
 		self.linesep = os.linesep
 			
-	def check(self, exp, out, stream=""):
+	def check(self, exp, out, stream="returnCode"):
 		"""
 		Test an expectation against an output
 		If it's a lambda function, it will be executed with the output
 		If it's a string, it will be treated as a regular expression.
-		If it's an integer, it gets compared with the output
-		@type	exp: String, Int, lambda 
+		@type	exp: String, lambda 
 		@param	exp: Expected result
-		@type 	out: String, Int
+		@type 	out: String
 		@param	out: output The output
 		@rtype:	Boolean
 		@return: Result of the comparison
 		"""
-		if (isLambda(exp)):
+		if isLambda(exp) or isinstance(exp, Expectation):
 			return exp(out)
-		elif (isinstance(exp, int) and isinstance(out, int)):
+		elif isinstance(exp, int) and isinstance(out, int):
 			return exp == out
 		elif isinstance(exp, list):
 			return self.checkList(exp, out)
+		elif isinstance(exp, set):
+			return self.checkSet(exp, out)
 		elif isinstance(exp, str):
 			if exp.startswith("lambda"):
 				f = eval(exp)
@@ -217,6 +230,7 @@ class Test(object):
 	def checkList(self, lst, out):
 		"""
 		Tests a list of expectations against an output
+		all elements in the list must match to be successful
 		@type	lst: List
 		@param	lst: List with expectation
 		@type 	out: String, Int
@@ -224,13 +238,26 @@ class Test(object):
 		@rtype:	Boolean
 		@return: Result of the comparison
 		"""
-		if isinstance(lst, list):
-			for exp in lst:
-				if self.check(exp, out):
-					return True
-			return False
-		else:
-			return self.check(lst, out)
+		for exp in lst:
+			if not self.check(exp, out):
+				return False
+		return True
+			
+	def checkSet(self, st, out):
+		"""
+		Tests a set of expectations against an output
+		one element in the set must match to be successful
+		@type	lst: List
+		@param	lst: List with expectation
+		@type 	out: String, Int
+		@param	out: output The output
+		@rtype:	Boolean
+		@return: Result of the comparison
+		"""
+		for exp in st:
+			if self.check(exp, out):
+				return True
+		return False	
 	
 	def runCmd(self, command):
 		_cmd = Command(cmd=str(command).replace("$DUT", self.DUT))
@@ -240,8 +267,8 @@ class Test(object):
 			self.error = _cmd.err
 			self.retCode = _cmd.ret
 			if self.check(self.expectRetCode, self.retCode) \
-				and self.check(self.expectStdout,self.output, "stdout") \
-				and self.check(self.expectStderr,self.error, "stderr"):
+			and self.check(self.expectStdout,self.output, "stdout") \
+			and self.check(self.expectStderr,self.error, "stderr"):
 				self.state = TestState.Success
 			else:
 				if 'Assertion' in self.error or 'assertion' in self.error:

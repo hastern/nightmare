@@ -33,10 +33,13 @@ profile:
 	$(PY) -m cProfile -o profile.out pyTestMain.py
 	
 validate:
-	$(PY) validation.py
+	@$(PY) validation.py
 	
 license:
 	@$(SETUP) --license
+	
+version:
+	@$(PY) version.py
 	
 description:
 	@$(SETUP) --long-description

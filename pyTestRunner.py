@@ -8,6 +8,7 @@ import time
 import math
 import difflib
 import argparse
+import itertools
 import subprocess
 
 try:
@@ -18,14 +19,16 @@ except:
 #from threading import Thread
 
 from pyTestUtils import TermColor, logger
-from pyTest import Test, TestState
+from pyTest import Test, TestState, Expectation, ExpectFile
 from pyTestSuite import TestSuite, TestSuiteMode
 from arnold_converter import syntax, buildTestList
+
+import version
 
 class TestRunner(object):
 	"""Testrunner. Reads a testbench file and executes the testrun"""
 	
-	def __init__(self):
+	def __init__(self, flush = False):
 		"""Initialises the test runner"""
 		#Thread.__init__(self)
 		logger.log(
@@ -46,7 +49,9 @@ class TestRunner(object):
 			+ TermColor.colorText("E", TermColor.Red, style = TermColor.Bold)
 			+ TermColor.colorText("ternally", TermColor.White)
 			)
-		logger.log("Welcome to nightmare Version 2")
+		logger.log("Welcome to nightmare Version {} #{}".format(version.Version, version.Build))
+		if flush:
+			logger.flush(quiet = False)
 		self.options = dict()
 		self.testCount= 0
 		self.runsuite = None
@@ -95,6 +100,7 @@ class TestRunner(object):
 		args.add_argument("--cr", action="store_const", const="\r", dest="linesep", help="Force the line separation character (Mac OS).")
 		args.add_argument("--ln", action="store_const", const="\n", dest="linesep", help="Force the line separation character (Unix / Mac OS-X).")
 		args.add_argument("--crln", action="store_const", const="\r\n", dest="linesep", help="Force the line separation character (Windows).")
+		args.add_argument("--version", action="store_const", const=True, default=False, help="Display version information")
 		args.set_defaults(linesep=os.linesep, bench=[""], save=[], suite=["suite"], dut=[None], timeout=[None], test=[])
 		
 		self.options.update(vars(args.parse_args()))
@@ -155,8 +161,15 @@ class TestRunner(object):
 			suite = None
 		return suite
 		
-	def loadPython(self):
-		glb = {"__builtins__":__builtins__, "parser":pyparsing, "os":os, "regex":re, "math":math, "Test":Test, "Suite":TestSuite, "Mode":TestSuiteMode, "State":TestState}
+	def loadPython(self):	
+		glb = {"__builtins__":__builtins__, 
+			# External / Standard libraries
+			"parser":pyparsing, "os":os, "regex":re, "math":math, "itertools":itertools,
+			# nightmare specific things
+			"Test":Test, "Suite":TestSuite, "Mode":TestSuiteMode, "State":TestState, "Expectation":Expectation, "ExpectFile":ExpectFile,
+			# Helping functions
+			"readFile": lambda fname: open(fname).read().rstrip() if os.path.exists(fname) else "File not found", 
+			}
 		ctx = {self.options['suite']:None, "DUT":None}
 		execfile(self.options['bench'], glb, ctx)
 		if (self.options['suite'] in ctx):

@@ -47,7 +47,9 @@ def main():
 	TermColor.init()
 	if "--no-color" in sys.argv:
 		TermColor.active = False
-	if "--no-gui" in sys.argv:
+	if "--version" in sys.argv:
+		runner = TestRunner(flush = True)
+	elif "--no-gui" in sys.argv:
 		# Capt. Obvious: We're running in console mode
 		runner = TestRunner()
 		runner.parseArgv()
@@ -55,7 +57,7 @@ def main():
 		if suite is not None:
 			for testcase in runner.run():
 				pass
-			if not runner.options['info'] and not runner.options['length']:
+			if not runner.options['info'] and not runner.options['length'] and not runner.options['quiet']:
 				print "{:2.2f}%".format(suite.getRate())
 			sys.exit(suite.lastResult if suite.lastResult not in [TestState.Waiting,TestState.InfoOnly] else 0)
 		else:
