@@ -10,10 +10,11 @@ except:
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+from version import *
     
 Name = "nightmare"
 Description = "NIGHTMARE is of Generous Help when Testing; May Arnold be Remembered Eternally"
-Version = "2.0"
 Author = "Hanno Sternberg"
 Mail = "hanno@almostintelligent.de"
 Url = 'https://github.com/drakehutner/pyTest'
