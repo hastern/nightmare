@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-# An example suite with direct suite instanciation
+# An example suite with direct suite instantiation
 
-tests = 
 
 suite = Suite(
 	*[
