@@ -31,6 +31,7 @@ class TestEditForm(wx.Frame):
 		self.runner = runner
 		self.gui = gui
 		self.idx = idx
+		self.Centre()
 		
 		self.panel = wx.Panel(self)
 		self.sizer = wx.GridBagSizer(3,3)
@@ -107,17 +108,40 @@ class TestEditForm(wx.Frame):
 		self.sizer.AddGrowableCol(5)
 		self.sizer.AddGrowableRow(3)
 		self.panel.SetSizer(self.sizer)
+		# Some Shortcuts
+		self.acceleratorTable = wx.AcceleratorTable([
+			(wx.ACCEL_CTRL,  ord('w'), self.btnCancel.GetId()),
+			(wx.ACCEL_CTRL,  ord('s'), self.btnSave.GetId()),
+			(wx.ACCEL_CTRL,  ord('r'), self.btnRun.GetId()),
+			(wx.ACCEL_NORMAL,  wx.WXK_PAGEUP, self.btnPrevious.GetId()),
+			(wx.ACCEL_NORMAL,  wx.WXK_PAGEDOWN, self.btnNext.GetId()),
+		])
+		self.SetAcceleratorTable(self.acceleratorTable)
 		# Event handling
-		self.Bind(wx.EVT_BUTTON, lambda e: self.Destroy(), id = self.btnCancel.GetId())
-		self.Bind(wx.EVT_BUTTON, lambda e: self.save() or self.gui.run(self.idx) or self.updateValues, id = self.btnRun.GetId())
+		self.Bind(wx.EVT_BUTTON, lambda e: self.Hide(), id = self.btnCancel.GetId())
+		self.Bind(wx.EVT_BUTTON, lambda e: self.run(), id = self.btnRun.GetId())
 		self.Bind(wx.EVT_BUTTON, lambda e: self.save(), id = self.btnSave.GetId())
 		self.Bind(wx.EVT_BUTTON, lambda e: self.updateTest(self.idx-1), id = self.btnPrevious.GetId())
 		self.Bind(wx.EVT_BUTTON, lambda e: self.updateTest(self.idx+1), id = self.btnNext.GetId())
-		#
+		self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+		# Shortcut bindings
+		self.Bind(wx.EVT_MENU, lambda e: self.Hide(), id = self.btnCancel.GetId())
+		self.Bind(wx.EVT_MENU, lambda e: self.run(), id = self.btnRun.GetId())
+		self.Bind(wx.EVT_MENU, lambda e: self.save(), id = self.btnSave.GetId())
+		self.Bind(wx.EVT_MENU, lambda e: self.updateTest(self.idx-1), id = self.btnPrevious.GetId())
+		self.Bind(wx.EVT_MENU, lambda e: self.updateTest(self.idx+1), id = self.btnNext.GetId())
+		# Fill test data
 		self.updateValues()
 	
+	def run(self):
+		self.save() or self.gui.run(self.idx) or self.updateValues()
+		
+	def OnCloseWindow(self, e):
+		self.gui.editForm = None
+		e.Skip()
+	
 	def updateTest(self, newIdx):
-		self.idx = newIdx
+		self.idx = min(max(0,newIdx), len(self.gui.runner.getSuite())-1)
 		if self.idx == 0:
 			self.btnPrevious.Disable()
 		else:
@@ -151,9 +175,5 @@ class TestEditForm(wx.Frame):
 		self.test.expectStderr = self.edtExpErr.GetValue() if self.edtExpErr.GetValue() != "" else None
 		self.test.expectRetCode = self.edtExpCode.GetValue() if self.edtExpCode.GetValue() != "" else None
 		self.gui.updateTest(self.idx, self.test)
-		
-	def show(self):
-		self.Center()
-		self.Show()
 		
 		

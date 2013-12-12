@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 import os
+import sys
 import time
 import threading
 import itertools
@@ -28,6 +29,15 @@ class TestRunnerGui(wx.App):
 	
 	def suiteSave(self, fn):
 		self.runner.saveToFile(fn)
+		
+	def loadIcon(self, frame):
+		try:
+			if sys.platform == 'win32':
+				exeName = sys.executable
+				icon = wx.Icon( exeName+';0', wx.BITMAP_TYPE_ICO )
+				frame.SetIcon(icon)
+		except:
+			pass
 		
 	def saveSuite(self):
 		""" Savedialog execution before saving the suite"""
@@ -154,12 +164,19 @@ class TestRunnerGui(wx.App):
 		newIdx = len(self.runner.getSuite())
 		newTest = self.runner.addTest()
 		self.insertTest(newIdx, newTest)
-		TestEditForm(self.wHnd, newIdx, newTest, self.runner, self).show()
+		self.editTest(newIdx)
 	
 	def selectTest(self, event):
-		idx = event.GetIndex()
-		test = self.runner.getSuite()[idx]
-		TestEditForm(self.wHnd, idx, test, self.runner, self).show()
+		self.editTest(event.GetIndex())
+		
+	def editTest(self, testIdx):
+		test = self.runner.getSuite()[testIdx]
+		if self.editForm is None:
+			self.editForm = TestEditForm(self.wHnd, testIdx, test, self.runner, self)
+			self.loadIcon(self.editForm)
+		else:
+			self.editForm.updateTest(testIdx)
+		self.editForm.Show()
 	
 	def __init__(self):
 		"""Initialise the gui"""
@@ -169,6 +186,7 @@ class TestRunnerGui(wx.App):
 		self.runner.parseArgv()
 		self.runner.options['mode'] = TestSuiteMode.Continuous
 		self.testthread = None
+		self.editForm = None
 		
 	def messageDialog(self, message, caption=wx.MessageBoxCaptionStr, style=wx.OK | wx.ICON_INFORMATION):
 		dial = wx.MessageDialog(None, message, caption, style)
@@ -202,6 +220,7 @@ class TestRunnerGui(wx.App):
 		"""Creates the window with all its components"""
 		self.wHnd = wx.Frame(None, wx.DEFAULT_FRAME_STYLE, title = "pyTest GUI", size=(500,400))
 		self.SetTopWindow(self.wHnd)
+		self.loadIcon(self.wHnd)
 		
 		panel = wx.Panel(self.wHnd)
 		sizer = wx.GridBagSizer(3, 3)
@@ -267,6 +286,7 @@ class TestRunnerGui(wx.App):
 			(wx.ACCEL_CTRL,  ord('o'), lambda e:self.loadSuite() ),
 			(wx.ACCEL_CTRL,  ord('d'), lambda e:self.selectDut() ),
 			(wx.ACCEL_CTRL,  ord('n'), lambda e:self.addTest() ),
+			(wx.ACCEL_CTRL,  ord('e'), lambda e:self.addTest() ),
 		]
 		entries = []
 		for special, key, func in shortcuts:

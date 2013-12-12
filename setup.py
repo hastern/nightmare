@@ -67,12 +67,11 @@ MANIFEST_TEMPLATE = """
 </assembly>
 """    
     
-includes = ['pyTest','pyTestMain','pyTestSuite','pyTestRunner','pyTestGui','pyTestEditForm','pyTestUtils','__main__','arnold_converter']
+includes = ['pyTest','pyTestMain','pyTestSuite','pyTestRunner','pyTestGui','pyTestEditForm','pyTestUtils','__main__','arnold_converter','version']
 excludes = ['pyreadline','pyreadline.console', 'pyreadline.rlmain','unittest','email', 'email.Utils','calendar','_ssl','Tkinter',"Tkconstants", "tcl"]
 packages = ['pyparsing','colorama']
-icon_resources = []
+icon_resources = [(1,"resource/nightmare.ico")]
 bitmap_resources = []
-other_resources = []
 other_resources = [(24, 1, MANIFEST_TEMPLATE % dict(prog=Name, descr=Description))]
 dll_excludes = ['w9xpopen.exe',"MSVCP90.dll"]
 mainScript = 'pyTestMain'
@@ -81,7 +80,7 @@ mainScript = 'pyTestMain'
 if py2exe is not None:
 	options = {"py2exe": {
 		"compressed": 1, 
-		"optimize": 0,
+		"optimize": 2,
 		"bundle_files": 1,
 		"includes": includes,
 		"excludes": excludes,
@@ -96,15 +95,15 @@ else:
 	options = {}
 	
 GUI2Exe_Target = {
-	"script": mainScript + ".py",
-	"icon_resources": icon_resources,
-	"bitmap_resources": bitmap_resources,
-	"other_resources": other_resources,
-	"dest_base": Name,
-	"version": Version,
-	"company_name": Company,
-	"copyright": Copyright,
-	"name": Name
+	'script': mainScript + '.py',
+	'icon_resources': icon_resources,
+	'bitmap_resources': bitmap_resources,
+	'other_resources': other_resources,
+	'dest_base': Name,
+	'version': Version,
+	'company_name': Company,
+	'copyright': Copyright,
+	'name': Name
 }
 
 setup(
@@ -122,7 +121,7 @@ setup(
 	options = options,
 	#console=[mainScript+'.py'],
 	console=[GUI2Exe_Target],
-	data_files=[('',['example/suite.py'])],
+	data_files=[('',['resource/nightmare.ico'])],
 	#scripts=['pyTest.py'],
 	zipfile=None,
 	zip_safe=True,
