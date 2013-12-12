@@ -257,20 +257,29 @@ class TestRunnerGui(wx.App):
 		self.wHnd.Bind(wx.EVT_BUTTON, lambda e:self.selectDut(), id = self.btnSelect.GetId())
 		self.wHnd.Bind(wx.EVT_BUTTON, lambda e:self.addTest(), id = self.btnAdd.GetId())
 		self.wHnd.Bind(wx.EVT_RADIOBOX, lambda e:self.runner.options.__setitem__("mode",self.grpMode.GetSelection()), id = self.grpMode.GetId())
-		self.wHnd.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
 		self.wHnd.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 		self.lstTests.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.selectTest, id = self.lstTests.GetId())
+		# Some Shortcuts
+		shortcuts = [
+			(wx.ACCEL_CTRL,  ord('q'), self.OnCloseWindow ),
+			(wx.ACCEL_CTRL,  ord('r'), lambda e:self.run() ),
+			(wx.ACCEL_CTRL,  ord('l'), lambda e:self.loadSuite() ),
+			(wx.ACCEL_CTRL,  ord('o'), lambda e:self.loadSuite() ),
+			(wx.ACCEL_CTRL,  ord('d'), lambda e:self.selectDut() ),
+			(wx.ACCEL_CTRL,  ord('n'), lambda e:self.addTest() ),
+		]
+		entries = []
+		for special, key, func in shortcuts:
+			id = wx.NewId()
+			entries.append((special,key,id))
+			self.wHnd.Bind(wx.EVT_MENU, func, id = id)
+		self.acceleratorTable = wx.AcceleratorTable(entries)
+		self.wHnd.SetAcceleratorTable(self.acceleratorTable)
 		# Change the DUT after the user left the associated TextCtrl
 		self.edtDUT.Bind(wx.EVT_KILL_FOCUS, lambda e: self.runner.setDUT(self.edtDUT.GetValue()), id = self.edtDUT.GetId())
 		#
 		self.updateFromRunner()
 
-	def OnKeyDown(self, e):
-		"""Handler for key events"""
-		if e.CmdDown and e.GetUniChar() == 'q':
-			self.Destroy()
-		e.Skip()
-		
 	def OnCloseWindow(self, e):
 		"""Handler to make sure the window doesn't gets close by accident"""
 		ret = self.displayQuestion('Are you sure, you want to quit?')
