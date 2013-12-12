@@ -123,7 +123,7 @@ class TestEditForm(wx.Frame):
 		self.Bind(wx.EVT_BUTTON, lambda e: self.save(), id = self.btnSave.GetId())
 		self.Bind(wx.EVT_BUTTON, lambda e: self.updateTest(self.idx-1), id = self.btnPrevious.GetId())
 		self.Bind(wx.EVT_BUTTON, lambda e: self.updateTest(self.idx+1), id = self.btnNext.GetId())
-		self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+		self.Bind(wx.EVT_CLOSE, lambda e: self.Hide())
 		# Shortcut bindings
 		self.Bind(wx.EVT_MENU, lambda e: self.Hide(), id = self.btnCancel.GetId())
 		self.Bind(wx.EVT_MENU, lambda e: self.run(), id = self.btnRun.GetId())
@@ -135,10 +135,6 @@ class TestEditForm(wx.Frame):
 	
 	def run(self):
 		self.save() or self.gui.run(self.idx) or self.updateValues()
-		
-	def OnCloseWindow(self, e):
-		self.gui.editForm = None
-		e.Skip()
 	
 	def updateTest(self, newIdx):
 		self.idx = min(max(0,newIdx), len(self.gui.runner.getSuite())-1)

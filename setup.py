@@ -120,7 +120,7 @@ setup(
 	install_requires=['pyparsing'],
 	options = options,
 	#console=[mainScript+'.py'],
-	console=[GUI2Exe_Target],
+	windows=[GUI2Exe_Target],
 	data_files=[('',['resource/nightmare.ico'])],
 	#scripts=['pyTest.py'],
 	zipfile=None,

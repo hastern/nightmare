@@ -222,7 +222,7 @@ class TestSuite(object):
 			# A little bit of fun
 			if (self.success == len(self)):
 				logger.log("\tCongratulations, you passed all tests!")
-				logger.log("\tgrep yourself a refreshing " + TermColor.colorText("Beer", TermColor.Yellow, style = TermColor.Bold))
+				logger.log("\t`grep` yourself a refreshing " + TermColor.colorText("Beer", TermColor.Yellow, style = TermColor.Bold))
 				logger.log("")
 				logger.log("              \033[1;37m,%%%%.\033[0m")
 				logger.log("              \033[1;37mi\033[36m====\033[1;37mi\033[1;36m_\033[0m")

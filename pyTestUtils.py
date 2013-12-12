@@ -68,8 +68,10 @@ class TermColor:
 		if colorama is not None:
 			colorama.init(autoreset=True)
 		
+@staticmethod
+def logPrinter(msg):
+	print msg
 		
-
 class logger:
 	__slots__ = ['_buffer']
 	"""Logger class"""
@@ -77,6 +79,8 @@ class logger:
 	"""Message buffer"""
 	autoflush = False
 	"""Autoflush logged messages"""
+	logListener = logPrinter
+	"""Listener to redirect output"""
 	@staticmethod
 	def log(str):
 		"""
@@ -87,7 +91,7 @@ class logger:
 		"""
 		msg = "{0} {1}".format(TermColor.colorText("[{0}]".format(time.strftime("%H:%M:%S")), TermColor.Blue, style=TermColor.Dim), str.strip("\r\n") )
 		if logger.autoflush:
-			print msg
+			logger.logListener(msg)
 		else:
 			logger._buffer.append(msg)
 		
@@ -101,7 +105,7 @@ class logger:
 		"""
 		if not quiet:
 			for b in logger._buffer:
-				print b
+				logger.logListener(b)
 			sys.stdout.flush()
 		logger.clear()
 	

@@ -10,10 +10,11 @@ import itertools
 from pyTest import TestState
 from pyTestSuite import TestSuiteMode
 from pyTestRunner import TestRunner
-from pyTestUtils import TermColor
+from pyTestUtils import TermColor, logger
 from pyTestEditForm import TestEditForm
 
 import wx
+import wx.html
 from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin
 
 class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin):
@@ -22,10 +23,28 @@ class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin):
 		CheckListCtrlMixin.__init__(self)
 		ListCtrlAutoWidthMixin.__init__(self)
 
+class LogWindow(wx.Frame):
+	"""Window to show the log output"""
+	def __init__(self, parent, prevLog = []):
+		wx.Frame.__init__(self, parent, size=(600,400))
+		self.log = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_RICH2 | wx.TE_READONLY)
+		map(self.add, prevLog)
+		id = wx.NewId()
+		self.acceleratorTable = wx.AcceleratorTable([
+			(wx.ACCEL_CTRL,  ord('l'), id),
+			(wx.ACCEL_CTRL,  ord('w'), id),
+		])
+		self.SetAcceleratorTable(self.acceleratorTable)
+		self.Bind(wx.EVT_CLOSE, lambda e: self.Hide())
+		self.Bind(wx.EVT_MENU, lambda e: self.Hide(), id = id)
+	def add(self, line):
+		self.log.AppendText(line+"\n")
+		
 class TestRunnerGui(wx.App):
 	"""Graphical User Interface"""
 	modes = ["Continuous", "Halt on Fail", "Halt on Error"]
-	filetypes = [('PyTest', 'py'), ('All Files', '*')]
+	benchtypes = [('nightmare', 'py'), ('All Files', '*')]
+	duttypes = [('All Files', '*'), ('Executables', '*.exe')]
 	
 	def suiteSave(self, fn):
 		self.runner.saveToFile(fn)
@@ -41,13 +60,13 @@ class TestRunnerGui(wx.App):
 		
 	def saveSuite(self):
 		""" Savedialog execution before saving the suite"""
-		fname = self.saveFileDialog(fileTypes = TestRunnerGui.filetypes)
+		fname = self.saveFileDialog(fileTypes = TestRunnerGui.benchtypes)
 		if fname is not None:
 			self.suiteSave(fname)
 	
 	def loadSuite(self):
 		""" Load a testsuite"""
-		fname = self.loadFileDialog(fileTypes = TestRunnerGui.filetypes)
+		fname = self.loadFileDialog(fileTypes = TestRunnerGui.benchtypes)
 		if fname is not None:
 			self.edtFile.SetValue(os.path.relpath(fname))
 			self.runner.options['bench'] = fname
@@ -63,7 +82,7 @@ class TestRunnerGui(wx.App):
 			
 	def selectDut(self):
 		"""Show filedialog and set the result as DUT"""
-		fname = self.loadFileDialog(fileTypes = TestRunnerGui.filetypes)
+		fname = self.loadFileDialog(fileTypes = TestRunnerGui.duttypes)
 		if fname is not None:
 			self.runner.setDUT(fname)
 			self.edtDUT.SetValue(os.path.relpath(fname))
@@ -125,7 +144,6 @@ class TestRunnerGui(wx.App):
 		self.lstTests.SetStringItem(idx, 0, test.name)
 		self.lstTests.SetStringItem(idx, 1, test.descr)
 		self.lstTests.SetStringItem(idx, 2, TestState.toString(test.state))
-		TermColor.active = True
 		
 	def setTestState(self, test, idx, state):
 		"""Update the state of one test, but only if the test is not enabled"""
@@ -181,12 +199,30 @@ class TestRunnerGui(wx.App):
 	def __init__(self):
 		"""Initialise the gui"""
 		wx.App.__init__(self, redirect = False, useBestVisual=True)
+		logger.logListener = self.addLog
+		TermColor.active = False
+		self.wHnd = None
+		self.testthread = None
+		self.editForm = None
+		self.log = []
+		self.logForm = None
 		self.runner = TestRunner()
 		self.runner.options['quiet'] = True
 		self.runner.parseArgv()
 		self.runner.options['mode'] = TestSuiteMode.Continuous
-		self.testthread = None
-		self.editForm = None
+		
+	def addLog(self, line):
+		self.log.append(line)
+		if self.logForm is not None:
+			self.logForm.add(line)
+			
+	def showLog(self):
+		if self.logForm is None:
+			self.logForm = LogWindow(self.wHnd, self.log)
+		if self.logForm.IsShown():
+			self.logForm.Hide()
+		else:
+			self.logForm.Show()
 		
 	def messageDialog(self, message, caption=wx.MessageBoxCaptionStr, style=wx.OK | wx.ICON_INFORMATION):
 		dial = wx.MessageDialog(None, message, caption, style)
@@ -218,7 +254,7 @@ class TestRunnerGui(wx.App):
 		
 	def buildWindow(self):
 		"""Creates the window with all its components"""
-		self.wHnd = wx.Frame(None, wx.DEFAULT_FRAME_STYLE, title = "pyTest GUI", size=(500,400))
+		self.wHnd = wx.Frame(None, wx.DEFAULT_FRAME_STYLE, title = "nightmare GUI-Modus", size=(500,400))
 		self.SetTopWindow(self.wHnd)
 		self.loadIcon(self.wHnd)
 		
@@ -282,11 +318,11 @@ class TestRunnerGui(wx.App):
 		shortcuts = [
 			(wx.ACCEL_CTRL,  ord('q'), self.OnCloseWindow ),
 			(wx.ACCEL_CTRL,  ord('r'), lambda e:self.run() ),
-			(wx.ACCEL_CTRL,  ord('l'), lambda e:self.loadSuite() ),
 			(wx.ACCEL_CTRL,  ord('o'), lambda e:self.loadSuite() ),
 			(wx.ACCEL_CTRL,  ord('d'), lambda e:self.selectDut() ),
 			(wx.ACCEL_CTRL,  ord('n'), lambda e:self.addTest() ),
 			(wx.ACCEL_CTRL,  ord('e'), lambda e:self.addTest() ),
+			(wx.ACCEL_CTRL,  ord('l'), lambda e:self.showLog() ),
 		]
 		entries = []
 		for special, key, func in shortcuts:
