@@ -6,7 +6,6 @@ import re
 import sys
 import time
 import math
-import difflib
 import argparse
 import itertools
 import subprocess
@@ -90,8 +89,8 @@ class TestRunner(object):
 		args.add_argument("--info-only", "-i", action="store_true", default=False, dest="info", help="Display only test information, but don't run them.")
 		args.add_argument("--pipe-streams", "-p", action="store_true", default=None, dest="pipe", help="Redirect DUT output to their respective streams.")
 		args.add_argument("--output-fails", "-o", action="store_true", default=None, dest="output", help="Redirect DUT output from failed tests to their respective streams.")
-		args.add_argument("--diff-fails", "-d", action="store_const", const=lambda a,b,l,r: difflib.ndiff(a,b), dest="diff", help="Display the differences between output and expectation.")
-		args.add_argument("--unify-fails", "-u", action="store_const", const=lambda a,b,l,r: difflib.unified_diff(a,b,l,r), dest="diff", help="Display the unified diff of output and expectation.")
+		args.add_argument("--unify-fails", "-u", action="store_true", default=None, dest="diff", help="Display the unified diff of output and expectation.")
+		args.add_argument("--ignoreEmptyLines", "-L", action="store_true", default=None, dest="ignoreEmptyLines", help="Ignore empty lines")
 		args.add_argument("--relative", "-r", action="store_true", default=False, dest="relative", help="Use a path relative to the testbench path.")
 		args.add_argument("--arnold", "-a", action="store_true", default=False, dest="arnold", help="Use the arnold mode (requires pyparsing module)")
 		args.add_argument("--save", action="store", nargs=1, help="Save the testsuite as FILE", metavar="FILE")
@@ -210,7 +209,8 @@ class TestRunner(object):
 					out=self.options['output'], 
 					diff=self.options['diff'],
 					timeout = self.options['timeout'], 
-					linesep = self.options['linesep']
+					linesep = self.options['linesep'],
+					ignoreEmptyLines = self.options['ignoreEmptyLines']
 				)
 				self.testCount= len(self.runsuite.testList)
 				logger.log("I could load {} Testcase".format(self.testCount))

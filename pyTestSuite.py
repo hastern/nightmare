@@ -52,12 +52,12 @@ class TestSuite(object):
 		@type	outputOnFail: Boolean
 		@param	outputOnFail: Flag, set if the output streams should be piped on failed test
 		"""
-		opts = {'mode': TestSuiteMode.BreakOnFail, 'pipe':None, 'outputOnFail':None, 'timeout':None, 'DUT':None}
+		opts = {'mode': TestSuiteMode.BreakOnFail, 'pipe':None, 'outputOnFail':None, 'timeout':None, 'DUT':None, 'ignoreEmptyLines':None}
 		opts.update(options)
 		self.setMode(opts['mode'])
 		"""The test suite mode"""
 		self.testList = [t for t in tests]
-		self.setAll(pipe = opts['pipe'], out = opts['outputOnFail'], timeout = opts['timeout'])
+		self.setAll(pipe = opts['pipe'], out = opts['outputOnFail'], timeout = opts['timeout'], ignoreEmptyLines = opts['ignoreEmptyLines'])
 		self.setDUT(opts['DUT'])
 		"""The collection of tests"""
 		self.success = 0
@@ -127,7 +127,7 @@ class TestSuite(object):
 	def getTests(self):
 		return self.testList
 		
-	def setAll(self, state=TestState.Waiting, pipe=None, out=None, diff=None, timeout=None, linesep=None): 
+	def setAll(self, state=TestState.Waiting, pipe=None, out=None, diff=None, timeout=None, linesep=None, ignoreEmptyLines = None): 
 		for t in self.testList:
 			t.state = state
 			if pipe is not None:
@@ -140,6 +140,8 @@ class TestSuite(object):
 				t.timeout = timeout
 			if linesep is not None:
 				t.linesep = linesep
+			if ignoreEmptyLines is not None:
+				t.ignoreEmptyLines = ignoreEmptyLines
 		
 	def runSelected(self, tests):
 		for test in tests:

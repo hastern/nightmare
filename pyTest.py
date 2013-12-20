@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import signal
+import difflib
 import subprocess
 
 from threading import Thread
@@ -121,7 +122,7 @@ class ExpectFile(Expectation):
 		return exp == out
 	def __str__(self):
 		return self.exp
-	
+		
 class Test(object):
 	"""A single test"""
 	
@@ -182,7 +183,10 @@ class Test(object):
 		self.timeout = timeout
 		"""Timeout after the DUT gets killed"""
 		self.linesep = os.linesep
-			
+		"""Force a specific line ending"""
+		self.ignoreEmptyLines = False
+		"""Ignore empty lines Flag"""
+		
 	def check(self, exp, out, stream="returnCode"):
 		"""
 		Test an expectation against an output
@@ -211,18 +215,28 @@ class Test(object):
 				patCode = re.compile(exp[6:].replace("$n", self.linesep), re.IGNORECASE)
 				return (patCode.match(str(out)) != None)
 			else:
-				comp = exp.replace("$n", self.linesep) == str(out).rstrip()
-				if self.diff is not None and not comp:
-					for line in self.diff(exp.replace("$n", self.linesep).splitlines(), str(out).rstrip().splitlines(), stream, "expecation"):
-						if line.startswith("+"):
-							logger.log(TermColor.colorText(line.rstrip(), TermColor.Green))
-						elif line.startswith("-"):
-							logger.log(TermColor.colorText(line.rstrip(), TermColor.Red))
-						elif line.startswith("?") or line.startswith("@"):
-							logger.log(TermColor.colorText(line.rstrip(), TermColor.Cyan))
-						else:
-							logger.log(line)
-				return comp
+				same = True
+				expLines = exp.replace("$n", self.linesep).splitlines()
+				outLines = str(out).rstrip().splitlines()
+				if self.ignoreEmptyLines:
+					while expLines.count("") > 0:
+						expLines.remove("")
+					while outLines.count("") > 0:
+						outLines.remove("")
+				for line in difflib.unified_diff(expLines, outLines, stream, "expectation"):
+					col = TermColor.White
+					if line.startswith("+"):
+						same = False
+						col = TermColor.Green
+					elif line.startswith("-"):
+						same = False
+						col = TermColor.Red
+					elif line.startswith("@"):
+						same = False
+						col = TermColor.Cyan
+					if self.diff:
+						logger.log(TermColor.colorText(line.rstrip(), col))
+				return same
 		elif exp is None:
 			return True
 		return False
