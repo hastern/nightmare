@@ -242,7 +242,7 @@ class TestSuite(object):
 				if self.segfaults/fails > 0.6:
 					logger.log("\tMay the CPU-Gods have mercy with that poor memory management units soul!")
 				elif self.segfaults/fails > 0.3:
-					logger.log("\tYou know, memory garbage doesn't collects itself?!")
+					logger.log("\tYou know, memory garbage doesn't collect itself?!")
 		return self.calcRate()
 		
 	def __str__(self):

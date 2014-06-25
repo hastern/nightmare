@@ -123,6 +123,13 @@ class ExpectFile(Expectation):
 	def __str__(self):
 		return self.exp
 		
+class Stringifier(object):
+	def __init__(self, expectation):
+		self.exp = expectation.encode("utf8", errors="ignore")
+	def __call__(self, output):
+		out = output.encode("utf8", errors="ignore")
+		return self.exp.strip().split("\n"), out.strip().split("\n")
+		
 class Test(object):
 	"""A single test"""
 	
@@ -187,6 +194,29 @@ class Test(object):
 		self.ignoreEmptyLines = False
 		"""Ignore empty lines Flag"""
 		
+	def lineComparison(self, expLines, outLines, stream=""):
+		same = True
+		if self.ignoreEmptyLines:
+			while expLines.count("") > 0:
+				expLines.remove("")
+			while outLines.count("") > 0:
+				outLines.remove("")
+		for line in difflib.unified_diff(expLines, outLines, stream, "expectation"):
+			col = TermColor.White
+			line = unicode(line, encoding="utf-8", errors="ignore")
+			if line.startswith("+"):
+				same = False
+				col = TermColor.Green
+			elif line.startswith("-"):
+				same = False
+				col = TermColor.Red
+			elif line.startswith("@"):
+				same = False
+				col = TermColor.Cyan
+			if self.diff:
+				logger.log(TermColor.colorText(line.rstrip(), col))
+		return same
+		
 	def check(self, exp, out, stream="returnCode"):
 		"""
 		Test an expectation against an output
@@ -201,6 +231,8 @@ class Test(object):
 		"""
 		if isLambda(exp) or isinstance(exp, Expectation):
 			return exp(out)
+		elif isLambda(exp) or isinstance(exp, Stringifier):
+			return self.lineComparison(*(exp(out)), stream=stream)
 		elif isinstance(exp, int) and isinstance(out, int):
 			return exp == out
 		elif isinstance(exp, list):
@@ -215,28 +247,9 @@ class Test(object):
 				patCode = re.compile(exp[6:].replace("$n", self.linesep), re.IGNORECASE)
 				return (patCode.match(str(out)) != None)
 			else:
-				same = True
 				expLines = exp.replace("$n", self.linesep).splitlines()
 				outLines = str(out).rstrip().splitlines()
-				if self.ignoreEmptyLines:
-					while expLines.count("") > 0:
-						expLines.remove("")
-					while outLines.count("") > 0:
-						outLines.remove("")
-				for line in difflib.unified_diff(expLines, outLines, stream, "expectation"):
-					col = TermColor.White
-					if line.startswith("+"):
-						same = False
-						col = TermColor.Green
-					elif line.startswith("-"):
-						same = False
-						col = TermColor.Red
-					elif line.startswith("@"):
-						same = False
-						col = TermColor.Cyan
-					if self.diff:
-						logger.log(TermColor.colorText(line.rstrip(), col))
-				return same
+				return self.lineComparison(expLines, outLines, stream)
 		elif exp is None:
 			return True
 		return False
@@ -277,8 +290,8 @@ class Test(object):
 		_cmd = Command(cmd=str(command).replace("$DUT", self.DUT))
 		cmdRet = _cmd.execute(self.timeout)
 		if cmdRet == TestState.Success:
-			self.output = _cmd.out
-			self.error = _cmd.err
+			self.output = _cmd.out.decode(encoding="utf8", errors="ignore")
+			self.error = _cmd.err.decode(encoding="utf8", errors="ignore")
 			self.retCode = _cmd.ret
 			if self.check(self.expectRetCode, self.retCode) \
 			and self.check(self.expectStdout,self.output, "stdout") \
