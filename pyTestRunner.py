@@ -18,7 +18,7 @@ except:
 #from threading import Thread
 
 from pyTestUtils import TermColor, logger
-from pyTest import Test, TestState, Expectation, ExpectFile, Stringifier
+from pyTest import Test, TestState, Expectation, ExpectFile, Stringifier, StringifiedFile
 from pyTestSuite import TestSuite, TestSuiteMode
 from arnold_converter import syntax, buildTestList
 
@@ -165,7 +165,9 @@ class TestRunner(object):
 			# External / Standard libraries
 			"parser":pyparsing, "os":os, "regex":re, "math":math, "itertools":itertools,
 			# nightmare specific things
-			"Test":Test, "Suite":TestSuite, "Mode":TestSuiteMode, "State":TestState, "Expectation":Expectation, "ExpectFile":ExpectFile, "Stringifier":Stringifier,
+			"Test":Test, "Suite":TestSuite, "Mode":TestSuiteMode, "State":TestState, 
+			"Expectation":Expectation, "ExpectFile":ExpectFile, 
+			"Stringifier":Stringifier, "StringifiedFile":StringifiedFile,
 			# Helping functions
 			"readFile": lambda fname: open(fname).read().rstrip() if os.path.exists(fname) else "File not found", 
 			}

@@ -119,7 +119,7 @@ class ExpectFile(Expectation):
 	def __init__(self, fname):
 		self.exp = open(fname).read()
 	def __call__(self, out):
-		return exp == out
+		return self.exp == out
 	def __str__(self):
 		return self.exp
 		
@@ -129,6 +129,10 @@ class Stringifier(object):
 	def __call__(self, output):
 		out = output.encode("utf8", errors="ignore")
 		return self.exp.strip().split("\n"), out.strip().split("\n")
+		
+class StringifiedFile(Stringifier):
+		def __init__(self, fname):
+			Stringifier.__init__(self, open(fname).read())
 		
 class Test(object):
 	"""A single test"""
