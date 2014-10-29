@@ -222,7 +222,7 @@ class TestSuite(object):
 			if (self.timedout > 0):
 				logger.log(TermColor.colorText("\tTimeouts: {}".format(self.timedout), TermColor.Purple))
 			# A little bit of fun
-			if (self.success == len(self)):
+			if (self.success == len(self) and self.count > 3):
 				logger.log("\tCongratulations, you passed all tests!")
 				logger.log("\t`grep` yourself a refreshing " + TermColor.colorText("Beer", TermColor.Yellow, style = TermColor.Bold))
 				logger.log("")
@@ -232,9 +232,9 @@ class TestSuite(object):
 				logger.log("              \033[1;36m|\033[1;33m####\033[36m|-'\033[0m")
 				logger.log("              \033[1;36m`-==-'\033[0m")
 				logger.log("")
-			elif (self.success == 0 and self.failed > 0):
+			elif (self.success == 0 and self.count > 3 and self.failed > 0):
 				logger.log("\tWhat is wrong with you, not even a single test?")
-			elif fails > 0:
+			elif fails > 0 and self.count > 3:
 				if self.assertions/fails > 0.6:
 					logger.log("\tYou do realise that assertions do not replace error handling?")
 				elif self.assertions/fails > 0.3:
