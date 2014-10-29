@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 
 Version = "2.0"
-Build = 4
+Build = 6
 
 if __name__ == "__main__":
 	content = open("version.py", "r").read()
