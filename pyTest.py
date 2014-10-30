@@ -128,7 +128,7 @@ class Stringifier(object):
 		self.exp = expectation.encode("utf8", errors="ignore")
 	def __call__(self, output):
 		out = output.encode("utf8", errors="ignore")
-		return self.exp.strip().split("\n"), out.strip().split("\n")
+		return self.exp.strip().splitlines(), out.strip().splitlines()
 		
 class StringifiedFile(Stringifier):
 		def __init__(self, fname):
