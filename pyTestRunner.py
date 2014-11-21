@@ -202,6 +202,10 @@ class TestRunner(object):
 			self.options['bench'] = fname
 		if self.options['bench'] is not None and self.options['bench'] != "" and os.path.exists(self.options['bench']):
 			logger.log("\nReading testfile ...")
+			if self.options['relative']:
+				os.chdir(os.path.dirname(os.path.abspath(self.options['bench'])))
+				logger.log("Current Working Dir is: {}".format(os.getcwd()))
+				self.options['bench'] = os.path.basename(self.options['bench'])
 			if self.options['arnold']:
 				self.runsuite = self.loadArnold()
 			else:
@@ -218,9 +222,6 @@ class TestRunner(object):
 				)
 				self.testCount= len(self.runsuite.testList)
 				logger.log("I have loaded {} Testcase{}".format(self.testCount, "s" if self.testCount > 0 else ""))
-				if self.options['relative']:
-					os.chdir(os.path.dirname(os.path.abspath(self.options['bench'])))
-					logger.log("Current Working Dir is: {}".format(os.getcwd()))
 				
 			else:
 				logger.log("Sorry, but I failed to load the requested suite")
