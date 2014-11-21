@@ -8,6 +8,7 @@ import time
 import math
 import argparse
 import itertools
+import struct
 import subprocess
 
 try:
@@ -164,7 +165,7 @@ class TestRunner(object):
 	def loadPython(self):	
 		glb = {"__builtins__":__builtins__, 
 			# External / Standard libraries
-			"parser":pyparsing, "os":os, "regex":re, "math":math, "itertools":itertools,
+			"parser":pyparsing, "os":os, "regex":re, "math":math, "itertools":itertools, "struct":struct,
 			# nightmare specific things
 			"Test":Test, "Suite":TestSuite, "Mode":TestSuiteMode, "State":TestState, 
 			"Expectation":Expectation, "ExpectFile":ExpectFile, 
