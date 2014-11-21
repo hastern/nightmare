@@ -86,6 +86,7 @@ class TestRunner(object):
 		args.add_argument("--error", "-e",            action="store_const", const=TestSuiteMode.BreakOnError, dest="mode", help="Same as '-c', but will halt if an error occurs.")
 		args.add_argument("--quiet", "-q",            action="store_const", const=True, default=False, dest="quiet", help="Quiet mode. There will be no output except results.")
 		args.add_argument("--verbose", "-v",          action="store_const", const=False, dest="quiet", help="Verbose mode. The program gets chatty (default).")
+		args.add_argument("--commands", "-C",         action="store_true", default=False, dest="commands", help="Show the command executed for each test.")
 		args.add_argument("--length", "-l",           action="store_true", default=False, dest="length", help="Print only the number of tests in the suite.")
 		args.add_argument("--info-only", "-i",        action="store_true", default=False, dest="info", help="Display only test information, but don't run them.")
 		args.add_argument("--pipe-streams", "-p",     action="store_true", default=None, dest="pipe", help="Redirect DUT output to their respective streams.")
@@ -121,6 +122,7 @@ class TestRunner(object):
 			('bench', lambda v: "I'm using testbench '{}'".format(v)),
 			('timeout', lambda v: "Setting global timeout to {}".format(v)),
 			('dut', lambda v: "Device under Test is: {}".format(v)),
+			('commands', lambda v: "I will print every command I'll exceute." if v else ""),
 			('length', lambda v: "I will only print the number of tests" if v else ""),
 			('info', lambda v: "I will only print the test information." if v else ""),
 			('pipe', lambda v: "I will pipe all tests outputs to their respective streams" if v else ""),
@@ -211,6 +213,7 @@ class TestRunner(object):
 			else:
 				self.runsuite = self.loadPython()
 			if self.runsuite is not None:
+				self.runsuite.options['commands'] = self.options['commands']
 				self.runsuite.setAll(
 					state=TestState.InfoOnly if self.options['info'] else TestState.Waiting, 
 					pipe=self.options['pipe'], 

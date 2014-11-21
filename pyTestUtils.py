@@ -81,14 +81,17 @@ class logger:
 	logListener = logPrinter
 	"""Listener to redirect output"""
 	@staticmethod
-	def log(str):
+	def log(str, showTime = True):
 		"""
 		Writes a log message to the buffer
 		
 		@type	str: String
 		@param	str: Log message
 		"""
-		msg = u"{0} {1}".format(TermColor.colorText("[{0}]".format(time.strftime("%H:%M:%S")), TermColor.Blue, style=TermColor.Dim), str.strip("\r\n") )
+		if showTime:
+			msg = u"{0} {1}".format(TermColor.colorText("[{0}]".format(time.strftime("%H:%M:%S")), TermColor.Blue, style=TermColor.Dim), str.strip("\r\n") )
+		else:
+			msg = u"           {0}".format( str.strip("\r\n") )
 		if logger.autoflush:
 			logger.logListener(msg)
 		else:

@@ -52,13 +52,13 @@ class TestSuite(object):
 		@type	outputOnFail: Boolean
 		@param	outputOnFail: Flag, set if the output streams should be piped on failed test
 		"""
-		opts = {'mode': TestSuiteMode.BreakOnFail, 'pipe':None, 'outputOnFail':None, 'timeout':None, 'DUT':None, 'ignoreEmptyLines':None}
-		opts.update(options)
-		self.setMode(opts['mode'])
+		self.options = {'mode': TestSuiteMode.BreakOnFail, 'pipe':None, 'outputOnFail':None, 'timeout':None, 'DUT':None, 'ignoreEmptyLines':None, 'commands':False}
+		self.options.update(options)
+		self.setMode(self.options['mode'])
 		"""The test suite mode"""
 		self.testList = [t for t in tests]
-		self.setAll(pipe = opts['pipe'], out = opts['outputOnFail'], timeout = opts['timeout'], ignoreEmptyLines = opts['ignoreEmptyLines'])
-		self.setDUT(opts['DUT'])
+		self.setAll(pipe = self.options['pipe'], out = self.options['outputOnFail'], timeout = self.options['timeout'], ignoreEmptyLines = self.options['ignoreEmptyLines'])
+		self.setDUT(self.options['DUT'])
 		"""The collection of tests"""
 		self.success = 0
 		"""The number of successful tests"""
@@ -168,12 +168,13 @@ class TestSuite(object):
 		self.error = 0
 		self.lastResult = TestState.Waiting
 		for t in self._getTests(tests):
-			self.count = self.count + 1 
 			self.lastResult = t.run()
 			if t.descr is not None:
 				logger.log("{}[{:03}] {} - {}: {}".format(TermColor.colorText("Test", TermColor.Purple), self.count, t.name, t.descr, TestState.toString(t.state)))
 			else:
 				logger.log("{}[{:03}] {}: {}".format(TermColor.colorText("Test", TermColor.Purple), self.count, t.name, TestState.toString(t.state)))
+			if self.options['commands']:
+				logger.log(" --> {}".format(t.cmd), showTime=False)
 			logger.flush(quiet)
 			if self.lastResult == TestState.Success:
 				self.success += 1
@@ -187,6 +188,7 @@ class TestSuite(object):
 				self.segfaults += 1
 			elif self.lastResult == TestState.Assertion:
 				self.assertions += 1
+			self.count = self.count + 1 
 			yield t
 			if self.lastResult != TestState.Disabled:
 				if (self.mode == TestSuiteMode.BreakOnFail) and (self.lastResult != TestState.Success):
