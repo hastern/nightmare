@@ -96,6 +96,7 @@ class TestRunner(object):
 		args.add_argument("--save",                   action="store", nargs=1, help="Save the testsuite as FILE", metavar="FILE")
 		args.add_argument("--no-color",               action="store_false", default=True, dest="color", help="Don't use any colored output.")
 		args.add_argument("--no-gui",                 action="store_true", default=False, dest="gui", help="Don't use the GUI.")
+		args.add_argument("--gui",                    action="store_true", default=False, dest="gui", help="Use the GUI (experimental and unstable).")
 		args.add_argument("--cr",                     action="store_const", const="\r", dest="linesep", help="Force the line separation character (Mac OS).")
 		args.add_argument("--ln",                     action="store_const", const="\n", dest="linesep", help="Force the line separation character (Unix / Mac OS-X).")
 		args.add_argument("--crln",                   action="store_const", const="\r\n", dest="linesep", help="Force the line separation character (Windows).")

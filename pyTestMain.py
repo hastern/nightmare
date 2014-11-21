@@ -56,7 +56,15 @@ def main():
 		TermColor.active = False
 	if "--version" in sys.argv:
 		runner = TestRunner(flush = True)
-	elif "--no-gui" in sys.argv:
+	elif "--gui" in sys.argv:
+		# Capt. Obvious: We're running the GUI 
+		from pyTestGui import TestRunnerGui
+		if len(sys.argv) > 1 and not sys.argv[1].startswith("-") and os.path.exists(sys.argv[1]):
+			sys.argv[1] = '--bench='+sys.argv[1]
+		gui = TestRunnerGui()	
+		gui.buildWindow()
+		gui.show()
+	else:
 		# Capt. Obvious: We're running in console mode
 		runner = TestRunner()
 		runner.parseArgv()
@@ -69,13 +77,6 @@ def main():
 			sys.exit(suite.lastResult if suite.lastResult not in [TestState.Waiting,TestState.InfoOnly] else 0)
 		else:
 			sys.exit(1)
-	else:
-		from pyTestGui import TestRunnerGui
-		if len(sys.argv) > 1 and not sys.argv[1].startswith("-") and os.path.exists(sys.argv[1]):
-			sys.argv[1] = '--bench='+sys.argv[1]
-		gui = TestRunnerGui()	
-		gui.buildWindow()
-		gui.show()
 
 if __name__ == "__main__":
 	main()
