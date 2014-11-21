@@ -129,10 +129,13 @@ class Stringifier(object):
 	def __call__(self, output):
 		out = output.encode("utf8", errors="ignore")
 		return self.exp.strip().splitlines(), out.strip().splitlines()
+	def __str__(self):
+		return self.exp
 		
 class StringifiedFile(Stringifier):
 		def __init__(self, fname):
 			Stringifier.__init__(self, open(fname).read())
+
 		
 class Test(object):
 	"""A single test"""
@@ -295,7 +298,7 @@ class Test(object):
 		cmdRet = _cmd.execute(self.timeout)
 		if cmdRet == TestState.Success:
 			self.output = _cmd.out.decode(encoding="utf8", errors="ignore")
-			self.error = _cmd.err.decode(encoding="utf8", errors="ignore")
+			self.error  = _cmd.err.decode(encoding="utf8", errors="ignore")
 			self.retCode = _cmd.ret
 			if self.check(self.expectRetCode, self.retCode) \
 			and self.check(self.expectStdout,self.output, "stdout") \
