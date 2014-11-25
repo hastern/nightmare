@@ -200,6 +200,7 @@ class Test(object):
 		"""Force a specific line ending"""
 		self.ignoreEmptyLines = False
 		"""Ignore empty lines Flag"""
+		self.pipeLimit = 2000
 		
 	def lineComparison(self, expLines, outLines, stream=""):
 		same = True
@@ -293,6 +294,15 @@ class Test(object):
 				return True
 		return False	
 	
+	def pipeOutputStream(self, stream, lines, color):
+		bytes = 0
+		for line in lines:
+			bytes += len(line)
+			stream.write( TermColor.colorText(line+" ", fg=color)+"\n"  )
+			if bytes > self.pipeLimit:
+				stream.write( TermColor.colorText("Stopped after {} Bytes".format(bytes), fg=TermColor.Yellow)+"\n"  )
+				break
+	
 	def runCmd(self, command):
 		_cmd = Command(cmd=str(command).replace("$DUT", self.DUT))
 		cmdRet = _cmd.execute(self.timeout)
@@ -312,11 +322,9 @@ class Test(object):
 				else:
 					self.state = TestState.Fail
 			if (self.pipe) or (self.outputOnFail and self.state is TestState.Fail):
-				sys.stdout.write( TermColor.colorText("{}".format(self.retCode), fg=TermColor.Black, bg=TermColor.Yellow)+" " )
-				for line in self.output.splitlines():
-					sys.stdout.write( TermColor.colorText(line+" ", fg=TermColor.Black, bg=TermColor.Green)+"\n"  )
-				for line in self.error.splitlines():
-					sys.stderr.write( TermColor.colorText(line+" ", fg=TermColor.Black, bg=TermColor.Red)+"\n"  )
+				sys.stdout.write( TermColor.colorText("{}".format(self.retCode), fg=TermColor.Yellow)+" " )
+				self.pipeOutputStream(sys.stdout, self.output.splitlines(), TermColor.Green)
+				self.pipeOutputStream(sys.stderr, self.error.splitlines(), TermColor.Red)
 		else:
 			self.state = cmdRet
 			

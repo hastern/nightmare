@@ -82,6 +82,7 @@ class TestRunner(object):
 		args.add_argument("--dut", "--DUT",           action="store", nargs=1, help="Set the device under test.")
 		args.add_argument("--test",                   action="store", nargs="+", type=int,   help="Run only the specified tests")
 		args.add_argument("--timeout",                action="store", nargs=1,   type=float, help="Set a global timeout for all tests.")
+		args.add_argument("--limit",                  action="store", nargs=1,   type=int, default=2000, help="Set a (soft) limit for a number of Bytes, after which output piping will we stopped. Checks are made after each line.")
 		args.add_argument("--continue", "-c",         action="store_const", const=TestSuiteMode.Continuous, dest="mode", help="Continuous mode (Don't halt on failed tests).")
 		args.add_argument("--error", "-e",            action="store_const", const=TestSuiteMode.BreakOnError, dest="mode", help="Same as '-c', but will halt if an error occurs.")
 		args.add_argument("--quiet", "-q",            action="store_const", const=True, default=False, dest="quiet", help="Quiet mode. There will be no output except results.")
