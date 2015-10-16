@@ -34,6 +34,10 @@ class TestState:
 	"""The test awaits execution"""
 	Disabled = 8
 	"""Disables the test"""
+	Clean = 10
+	"""BadWord come clean"""
+	BadWord = 11
+	"""A BadWord was detected"""
 	
 	
 	@staticmethod
@@ -62,6 +66,10 @@ class TestState:
 			return TermColor.colorText(" TIMEOUT ", TermColor.Purple)
 		if state == TestState.Disabled:
 			return TermColor.colorText(" DISABLED ", TermColor.Blue)
+		if state == TestState.Clean:
+			return TermColor.colorText(" CLEAN ", fg=TermColor.White, bg=TermColor.Green, style=TermColor.Bold)
+		if state == TestState.BadWord:
+			return TermColor.colorText(" BADWORD ", fg=TermColor.Yellow, bg=TermColor.Red, style=TermColor.Bold)
 		return TermColor.colorText(" UNKNOWN ", TermColor.Yellow)
 
 
@@ -211,18 +219,18 @@ class Test(object):
 				outLines.remove("")
 		for line in difflib.unified_diff(expLines, outLines, stream, "expectation"):
 			col = TermColor.White
-			line = unicode(line, encoding="utf-8", errors="ignore")
-			if line.startswith("+"):
+			uline = unicode(line, encoding="utf-8", errors="ignore") if type(line) is not unicode else line
+			if uline.startswith("+"):
 				same = False
 				col = TermColor.Green
-			elif line.startswith("-"):
+			elif uline.startswith("-"):
 				same = False
 				col = TermColor.Red
-			elif line.startswith("@"):
+			elif uline.startswith("@"):
 				same = False
 				col = TermColor.Cyan
 			if self.diff:
-				logger.log(TermColor.colorText(line.rstrip(), col))
+				logger.log(TermColor.colorText(uline.rstrip(), col))	
 		return same
 		
 	def check(self, exp, out, stream="returnCode"):
@@ -338,6 +346,32 @@ class Test(object):
 			else:
 				print "{} - {}".format(self.name, self.descr)
 			return TestState.InfoOnly
+		if self.name == "Badword":
+			# Bad Word Detection Mode
+			# Description holds a list if matching file patterns
+			# Recursive look through the directory of DUT
+			# Treat command as a list of Badwords
+			words = map(lambda s: re.compile(s), self.cmd)
+			searchpath = os.path.abspath(os.path.dirname(self.DUT))
+			searchpattern = re.compile(self.descr)
+			hits = []
+			for dirpath,dirnames,filenames in os.walk(searchpath):
+				for file in filenames:
+					if searchpattern.match(file) is not None:
+						fname = os.path.join(dirpath,file)
+						fHnd = open(fname, "rb")
+						for nr,line in enumerate(fHnd.readlines()):
+							for word in words:
+								if word.search(line) is not None:
+									hits.append(( os.path.relpath(fname), nr, line.rstrip(), word.pattern))
+						fHnd.close()
+			if len(hits) > 0:
+				for file, lineno, text, pattern in hits:
+					logger.log("{} {}[{}]: '{}' matches '{}'".format(TestState.toString(TestState.BadWord), file, lineno, text, pattern))
+				self.state = TestState.BadWord
+			else:
+				self.state = TestState.Clean
+			return self.state
 		if self.cmd is not None and self.DUT is not None:
 			if isinstance(self.cmd, list):
 				for cmd_ in self.cmd:

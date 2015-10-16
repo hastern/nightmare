@@ -178,7 +178,7 @@ class TestSuite(object):
 			if self.options['commands']:
 				logger.log(" --> {}".format(t.cmd), showTime=False)
 			logger.flush(quiet)
-			if self.lastResult == TestState.Success:
+			if self.lastResult in [TestState.Success, TestState.Clean]:
 				self.success += 1
 			elif self.lastResult == TestState.Fail:
 				self.failed += 1

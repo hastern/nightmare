@@ -51,24 +51,30 @@ else:
 		),
 		Test(
 			name = 'CLI-05',
+			description = 'Badword Tests',
+			command = 'python "$DUT" --no-gui --bench validation.py --suite badwordTests -c',
+			stdout = 'lambda r: r.find("I ran 2 out of 2 tests in total") > 0 and r.find("BADWORD") > 0 and r.find("CLEAN") > 0',
+		),
+		Test(
+			name = 'CLI-06',
 			description = 'Timeout Tests',
 			command = 'python "$DUT" --no-gui --bench validation.py --suite timeoutTests -c',
 			stdout = 'lambda r: r.find("I ran 2 out of 2 tests in total") > 0 and r.find("Timeouts: 1") > 0 and r.find("Success: 1") > 0',
 		),
 		Test(
-			name = 'CLI-06',
+			name = 'CLI-07',
 			description = 'Suite Instance',
 			command = 'python "$DUT" --no-gui --bench validation.py --suite suiteInstance --dut echo -c',
 			stdout = 'lambda r: r.find("I ran 5 out of 5 tests in total") > 0 and r.find("Errors: 1") > 0 and r.find("Success: 2") > 0 and r.find("Failed: 2") > 0',
 		),
 		Test(
-			name = 'CLI-07',
+			name = 'CLI-08',
 			description = 'Suite Instance with Options',
 			command = 'python "$DUT" --no-gui --bench validation.py --suite suiteWithOptions --dut echo',
 			stdout = 'lambda r: r.find("I ran 5 out of 5 tests in total") > 0 and r.find("Errors: 1") > 0 and r.find("Success: 2") > 0 and r.find("Failed: 2") > 0 and r.find("Some more text") > 0',
 		),
 		Test(
-			name = 'CLI-08',
+			name = 'CLI-09',
 			description = 'Suite Instance with python code',
 			command = 'python "$DUT" --no-gui --bench validation.py --suite suiteWithPython -c',
 			stdout = 'lambda r: r.find("I ran 10 out of 10 tests in total") > 0 and r.find("Success: 10") > 0',
@@ -169,6 +175,19 @@ else:
 			command = "python validation.py sleep",
 			stdout = "",
 			timeout = 1.0
+		),
+	]
+	
+	badwordTests = [
+		Test(
+			name = "Badword",
+			description = "validation.py",
+			command = ["Test\("]
+		),
+		Test(
+			name = "Badword",
+			description = "validation.py",
+			command = ["system\("]
 		),
 	]
 	
