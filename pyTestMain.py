@@ -47,9 +47,15 @@ def main():
 	# Check whether wxpython is installed or not
 	try:
 		import wx
+		# Has the exe been double clicked? -> Try GUI
+		# Allow at max 1 parameter if a testbench has been dropped onto the
+		# the exe.
+		if sys.argv[0].endswith(".exe") and len(sys.argv) < 2:
+			sys.argv.append("--gui")
 	except ImportError:
 		if "--no-gui" not in sys.argv:
 			sys.argv.append("--no-gui")
+	
 
 	if "--no-color" in sys.argv:
 		TermColor.active = False
