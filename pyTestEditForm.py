@@ -134,7 +134,9 @@ class TestEditForm(wx.Frame):
 		self.updateValues()
 	
 	def run(self):
-		self.save() or self.gui.run(self.idx) or self.updateValues()
+		self.save()
+		self.gui.run(self.idx)
+		self.updateValues()
 	
 	def updateTest(self, newIdx):
 		self.idx = min(max(0,newIdx), len(self.gui.runner.getSuite())-1)
@@ -165,11 +167,11 @@ class TestEditForm(wx.Frame):
 	def save(self):
 		self.test.name = self.edtName.GetValue()
 		self.test.descr = self.edtDescr.GetValue()
-		self.test.command = self.edtCommand.GetValue()
+		self.test.cmd = self.edtCommand.GetValue()
 		self.test.timeout = float(self.edtTimeout.GetValue())
-		self.test.expectStdout = self.edtExpOut.GetValue() if self.edtExpOut.GetValue() != "" else None
-		self.test.expectStderr = self.edtExpErr.GetValue() if self.edtExpErr.GetValue() != "" else None
-		self.test.expectRetCode = self.edtExpCode.GetValue() if self.edtExpCode.GetValue() != "" else None
+		self.test.expectStdout = self.edtExpOut.GetValue() if self.edtExpOut.GetValue().strip() != "" else None
+		self.test.expectStderr = self.edtExpErr.GetValue() if self.edtExpErr.GetValue().strip() != "" else None
+		self.test.expectRetCode = self.edtExpCode.GetValue() if self.edtExpCode.GetValue().strip() != "" else None
 		self.gui.updateTest(self.idx, self.test)
 		
 		

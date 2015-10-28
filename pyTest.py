@@ -249,7 +249,7 @@ class Test(object):
 			return True
 		elif isLambda(exp) or isinstance(exp, Expectation):
 			return exp(out)
-		elif isLambda(exp) or isinstance(exp, Stringifier):
+		elif isinstance(exp, Stringifier):
 			return self.lineComparison(*(exp(out)), stream=stream)
 		elif isinstance(exp, int) and isinstance(out, int):
 			return exp == out
@@ -257,7 +257,7 @@ class Test(object):
 			return self.checkList(exp, out)
 		elif isinstance(exp, set):
 			return self.checkSet(exp, out)
-		elif isinstance(exp, str):
+		elif isinstance(exp, str) or isinstance(exp, unicode):
 			if exp.startswith("lambda"):
 				f = eval(exp)
 				return f(out)
