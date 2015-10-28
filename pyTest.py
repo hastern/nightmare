@@ -245,7 +245,9 @@ class Test(object):
 		@rtype:	Boolean
 		@return: Result of the comparison
 		"""
-		if isLambda(exp) or isinstance(exp, Expectation):
+		if exp is None:
+			return True
+		elif isLambda(exp) or isinstance(exp, Expectation):
 			return exp(out)
 		elif isLambda(exp) or isinstance(exp, Stringifier):
 			return self.lineComparison(*(exp(out)), stream=stream)
@@ -266,8 +268,6 @@ class Test(object):
 				expLines = exp.replace("$n", self.linesep).splitlines()
 				outLines = str(out).rstrip().splitlines()
 				return self.lineComparison(expLines, outLines, stream)
-		elif exp is None:
-			return True
 		return False
 	
 	def checkList(self, lst, out):
