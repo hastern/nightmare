@@ -3,10 +3,6 @@
 import sys
 import os
 import time
-try:
-	import colorama
-except:
-	colorama = None
 
 def isLambda(v):
 	""" 
@@ -57,16 +53,11 @@ class TermColor:
 	
 	@staticmethod
 	def colorText(text, fg = 7, bg = 0, style = 0):
-		if TermColor.active and ((colorama is not None) or (os.getenv('ANSI_COLORS_DISABLED') is not None)):
+		if TermColor.active and (os.getenv('ANSI_COLORS_DISABLED') is None):
 			return u"\033[{:02};{:2};{:2}m{:s}\033[0m".format(style, fg+TermColor.Text, bg+TermColor.Background, text)
 		else:
 			return text
 			
-	@staticmethod
-	def init():
-		if colorama is not None:
-			colorama.init(autoreset=True)
-		
 @staticmethod
 def logPrinter(msg):
 	print msg

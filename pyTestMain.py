@@ -51,7 +51,6 @@ def main():
 		if "--no-gui" not in sys.argv:
 			sys.argv.append("--no-gui")
 
-	TermColor.init()
 	if "--no-color" in sys.argv:
 		TermColor.active = False
 	if "--version" in sys.argv:
