@@ -46,7 +46,7 @@ from pyTestUtils import TermColor
 def main():
 	# Check whether wxpython is installed or not
 	try:
-		__import__('imp').find_module('wx')
+		import wx
 	except ImportError:
 		if "--no-gui" not in sys.argv:
 			sys.argv.append("--no-gui")
