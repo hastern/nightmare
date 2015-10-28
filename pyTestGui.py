@@ -163,7 +163,7 @@ class TestRunnerGui(wx.App):
 			self.applyToList(self.runner.getSuite().getTests(), lambda i,t: self.setTestState(t, i, TestState.Waiting), gauge = False)
 			self.applyToList(self.runner.run() , self.updateTest)
 		else:
-			test = self.runner.getSuite().runOne(testIdx)
+			test, = self.runner.getSuite().run(tests=[testIdx])
 			self.updateTest(testIdx, test)
 		self.testthread = None
 		"""Unset yourself for further processing"""

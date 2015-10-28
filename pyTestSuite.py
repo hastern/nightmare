@@ -145,10 +145,6 @@ class TestSuite(object):
 			if pipeLimit is not None:
 				t.pipeLimit = pipeLimit
 		
-	def runSelected(self, tests):
-		for test in tests:
-			yield self.runOne(test)
-		
 	def _getTests(self, tests):
 		if len(tests) == 0:
 			tests = xrange(len(self))
