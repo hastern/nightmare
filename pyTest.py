@@ -348,7 +348,7 @@ class Test(object):
 			return TestState.InfoOnly
 		if self.name == "Badword":
 			# Bad Word Detection Mode
-			# Description holds a list if matching file patterns
+			# Description holds a matching file patterns
 			# Recursive look through the directory of DUT
 			# Treat command as a list of Badwords
 			words = map(lambda s: re.compile(s), self.cmd)
