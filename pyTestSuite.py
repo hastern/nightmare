@@ -145,10 +145,6 @@ class TestSuite(object):
 			if pipeLimit is not None:
 				t.pipeLimit = pipeLimit
 		
-	def runSelected(self, tests):
-		for test in tests:
-			yield self.runOne(test)
-		
 	def _getTests(self, tests):
 		if len(tests) == 0:
 			tests = xrange(len(self))
@@ -178,7 +174,7 @@ class TestSuite(object):
 			if self.options['commands']:
 				logger.log(" --> {}".format(t.cmd), showTime=False)
 			logger.flush(quiet)
-			if self.lastResult == TestState.Success:
+			if self.lastResult in [TestState.Success, TestState.Clean]:
 				self.success += 1
 			elif self.lastResult == TestState.Fail:
 				self.failed += 1

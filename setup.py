@@ -17,7 +17,7 @@ Name = "nightmare"
 Description = "NIGHTMARE is of Generous Help when Testing; May Arnold be Remembered Eternally"
 Author = "Hanno Sternberg"
 Mail = "hanno@almostintelligent.de"
-Url = 'https://github.com/drakehutner/pyTest'
+Url = 'https://github.com/hastern/nightmare'
 Company = ''
 Copyright = ''
 
@@ -69,7 +69,7 @@ MANIFEST_TEMPLATE = """
     
 includes = ['pyTest','pyTestMain','pyTestSuite','pyTestRunner','pyTestGui','pyTestEditForm','pyTestUtils','__main__','arnold_converter','version']
 excludes = ['pyreadline','pyreadline.console', 'pyreadline.rlmain','unittest','email', 'email.Utils','calendar','_ssl','Tkinter',"Tkconstants", "tcl"]
-packages = ['pyparsing','colorama']
+packages = ['pyparsing']
 icon_resources = [(1,"resource/nightmare.ico")]
 bitmap_resources = []
 other_resources = [(24, 1, MANIFEST_TEMPLATE % dict(prog=Name, descr=Description))]

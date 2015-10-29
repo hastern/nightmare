@@ -163,7 +163,7 @@ class TestRunnerGui(wx.App):
 			self.applyToList(self.runner.getSuite().getTests(), lambda i,t: self.setTestState(t, i, TestState.Waiting), gauge = False)
 			self.applyToList(self.runner.run() , self.updateTest)
 		else:
-			test = self.runner.getSuite().runOne(testIdx)
+			test, = self.runner.getSuite().run(tests=[testIdx])
 			self.updateTest(testIdx, test)
 		self.testthread = None
 		"""Unset yourself for further processing"""
@@ -254,7 +254,7 @@ class TestRunnerGui(wx.App):
 		
 	def buildWindow(self):
 		"""Creates the window with all its components"""
-		self.wHnd = wx.Frame(None, wx.DEFAULT_FRAME_STYLE, title = "nightmare GUI-Modus", size=(500,400))
+		self.wHnd = wx.Frame(None, style=wx.DEFAULT_FRAME_STYLE, title="nightmare GUI-Modus", size=(600,400))
 		self.SetTopWindow(self.wHnd)
 		self.loadIcon(self.wHnd)
 		
@@ -277,8 +277,8 @@ class TestRunnerGui(wx.App):
 		self.lstTests  = CheckListCtrl(panel)
 		# Feature for wxPython 2.9 (currently in development)
 		if hasattr(self.btnSave, 'SetBitmap'):
-			self.btnSave.SetBitmap(wx.ART_FILE_OPEN)
-			self.btnLoad.SetBitmap(wx.ART_FILE_LOAD)
+			self.btnSave.SetBitmap(wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE))
+			self.btnLoad.SetBitmap(wx.ArtProvider.GetBitmap(wx.ART_FILE_OPEN))
 		# Disable TextCtrl
 		self.edtFile.Disable()
 		self.edtTests.Disable()

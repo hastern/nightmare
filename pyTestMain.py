@@ -46,12 +46,17 @@ from pyTestUtils import TermColor
 def main():
 	# Check whether wxpython is installed or not
 	try:
-		__import__('imp').find_module('wx')
+		import wx
+		# Has the exe been double clicked? -> Try GUI
+		# Allow at max 1 parameter if a testbench has been dropped onto the
+		# the exe.
+		if sys.argv[0].endswith(".exe") and len(sys.argv) < 2:
+			sys.argv.append("--gui")
 	except ImportError:
 		if "--no-gui" not in sys.argv:
 			sys.argv.append("--no-gui")
+	
 
-	TermColor.init()
 	if "--no-color" in sys.argv:
 		TermColor.active = False
 	if "--version" in sys.argv:
