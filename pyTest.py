@@ -343,7 +343,14 @@ class Test(object):
 				break
 	
 	def runCmd(self, command):
-		_cmd = Command(cmd=str(command).replace("$DUT", self.DUT))
+		if "$DUT" in command:
+			if self.DUT is None:
+				self.state = TestState.Error
+				return
+			else:
+				_cmd = Command(cmd=str(command).replace("$DUT", self.DUT))
+		else:
+			_cmd = Command(cmd=str(command))
 		cmdRet = _cmd.execute(self.timeout)
 		if cmdRet == TestState.Success:
 			self.output = _cmd.out.decode(encoding="utf8", errors="ignore")
@@ -403,7 +410,7 @@ class Test(object):
 			else:
 				self.state = TestState.Clean
 			return self.state
-		if self.cmd is not None and self.DUT is not None:
+		if self.cmd is not None:
 			if isinstance(self.cmd, list):
 				for cmd_ in self.cmd:
 					self.runCmd(cmd_)

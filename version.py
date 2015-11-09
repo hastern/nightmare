@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
+Build = 17
 Version = "2.0"
-Build = 16
 
 if __name__ == "__main__":
 	content = open("version.py", "r").read()
