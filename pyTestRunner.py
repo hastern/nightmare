@@ -311,7 +311,7 @@ class TestRunner(object):
 		"""
 		fHnd = open(fn,"w")
 		fHnd.write("#!/usr/bin/env python\n\n")
-		fHnd.write("# pyTest - Testbench\n")
+		fHnd.write("# nightmare - Testbench\n")
 		fHnd.write("# Saved at {}\n".format(time.strftime("%H:%M:%S")))
 		fHnd.write("# \n\n")
 		#fHnd.write("# Author: {}\n".format())
