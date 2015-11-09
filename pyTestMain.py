@@ -2,18 +2,16 @@
 # -*- coding:utf-8 -*-
 
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
-# @file pyTest                                                                 #
-# pyTest is a tool for testing commandline applications.                       #
-#                                                                              #
-# It can be run from the commandline or by using the integrated graphical user #
-# interface written with tkinter.                                              #
-#                                                                              #
-#                                                                              #
+# @file pyTestMain                                                             #
 # @author Hanno Sternberg <hanno@almostintelligent.de>                         #
+#                                                                              #
+# This file is the entry point for the application                             #
+#                                                                              #
+# @license MIT                                                                 #
 #                                                                              #
 # This software is licensed under the MIT License                              #
 #                                                                              #
-# Copyright (c) 2012-2013 Hanno Sternberg                                      #
+# Copyright (c) 2012-2015 Hanno Sternberg                                      #
 #                                                                              #
 # Permission is hereby granted, free of charge, to any person obtaining a copy #
 # of this software and associated documentation files (the "Software"), to     #
