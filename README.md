@@ -85,31 +85,31 @@ it is definitly one of the easiest ones.
 
 Here is a example for a minimal testbench.
 
-	#!/usr/bin/env python
+    #!/usr/bin/env python
 
-	# pyTest - Testsuite
-	# Saved at 21:12:26
-	#
+    # pyTest - Testsuite
+    # Saved at 21:12:26
+    #
 
-	# Device Under Test
-	DUT = "echo"
+    # Device Under Test
+    DUT = "echo"
 
-	# Test definitions
-	suite = [
-		Test (
-			name = "Test 1",
-			description = "A successfull run",
-			command = "$DUT pyTest",
-			stdout = "pyTest",
-			returnCode = 0
-		),
-		Test (
-			name = "Test 2",
-			description = "Testing output on stderr",
-			command = "$DUT pyTest 1>&2",
-			stderr = "pyTest"
-		)
-	]
+    # Test definitions
+    suite = [
+        Test (
+            name = "Test 1",
+            description = "A successfull run",
+            command = "$DUT pyTest",
+            stdout = "pyTest",
+            returnCode = 0
+        ),
+        Test (
+            name = "Test 2",
+            description = "Testing output on stderr",
+            command = "$DUT pyTest 1>&2",
+            stderr = "pyTest"
+        )
+    ]
 
 This example contains on testsuite name "suite" with two tests.
 I hope the syntax is selfexplanatory.
@@ -134,12 +134,12 @@ lambda functions for testing the output against an expectation.
 
 The following example shows a test using a lambda function:
 
-	Test (
-		name "Lambda",
-		description = "A test with lambda function",
-		command = "echo Hello World",
-		stdout = lambda x : x.find("o") > 0
-	)
+    Test (
+        name "Lambda",
+        description = "A test with lambda function",
+        command = "echo Hello World",
+        stdout = lambda x : x.find("o") > 0
+    )
 
 All expectation fields (stdout, stderr, returnCode) may contain lambda
 a lambda expression.
@@ -150,12 +150,53 @@ expression.
 
 The following example shows a test using a regular expression:
 
-	Test (
-		name "Regex",
-		description = "A test with regular expression",
-		command = "echo Hello World",
-		stdout = "regex:^[a-zA-Z ]+$"
-	)
+    Test (
+        name "Regex",
+        description = "A test with regular expression",
+        command = "echo Hello World",
+        stdout = "regex:^[a-zA-Z ]+$"
+    )
+
+In addition nightmare supports so called `Expecation`-objects as value
+for *stdout* and *stderr*.
+These classes must have a `__call__` method with a single argument,
+which is the output of the corresponding stream.
+The method should compare the output with the expectation and return
+a boolean value.
+
+Another special type are so called `Stringifier`-objects. They also must
+implement a `__call__` method, but their result is a 2-tuple containing
+2 lists of strings, that are passed onto nightmare's internal *diff*
+(`-u`) tool.
+
+There are three predefined Expectations/ Stringifiers:
+
+- `ExpectFile(filename)`: compares the output byte-wise with a given
+  file.
+
+        Test (
+            ...
+            stdout = ExpectFile("output.txt")
+        )
+
+- `Stringifier(object)`: compares the output with the
+  string-representation of the given object.
+
+        # Assumption: there exists a class Image
+        img = Image.read("image.png")
+
+        Test (
+            ...
+            stdout = Stringifier(img)
+        )
+
+- `StringifiedFile(filename)`: loads the contents of a text-file for
+  line by line comparison.
+
+        Test (
+            ...
+            stdout = StringifiedFile("output.txt")
+        )
 
 History / Background
 --------------------
