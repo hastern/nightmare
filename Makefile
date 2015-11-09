@@ -2,47 +2,59 @@
 # author: Hanno Sternberg
 # 
 
-PY	=python
-SETUP	=$(PY) setup.py
-DOC	=epydoc
-NAME 	=$(shell $(SETUP) --name)
+PY               =python
+DIST_DIR         =dist
+BUILD_DIR        =build
+SETUP            =$(PY) setup.py
+DOC              =epydoc
+NAME             =$(shell $(SETUP) --name)
 
-RES	=resource
+VALIDATION_BENCH =validation.py
+VALIDATION_SUITE =validateThisNightmare
+VALIDATION_FLAGS =-o
 
-SRC_EGG	=$(shell $(SETUP) --fullname)-py2.7.egg
+RES         =resource
 
-.PHONY: build egg exe dist clean doc profile license validate description info version icon
+DIST_EGG    =$(DIST_DIR)/$(shell $(SETUP) --fullname)-py2.7.egg
+DIST_EXE    =$(DIST_DIR)/$(NAME).exe
+
+.PHONY: build dist clean doc profile license validate description info version icon
 
 default: all
 
 all: build egg exe
 
 build: validate
-	$(SETUP) build
+	$(SETUP) build --build-base $(BUILD_DIR)
 
-egg: 
-	$(SETUP) bdist_egg
-	
-exe: 
-	$(SETUP) py2exe
-	
+egg: $(DIST_EGG)
+
+$(DIST_EGG):
+	$(SETUP) bdist_egg --dist-dir $(DIST_DIR)
+
+exe: $(DIST_EXE)
+
+$(DIST_EXE): 
+	$(SETUP) py2exe --dist-dir $(DIST_DIR)
+
+
 dist:
-	$(SETUP) sdist
-	
+	$(SETUP) sdist --dist-dir $(DIST_DIR)
+
 release: validate version egg exe
 
 doc:
 	$(PY) -c "from epydoc.cli import cli; cli()" --config=epydocfile
-	
+
 profile:
 	$(PY) -m cProfile -o profile.out pyTestMain.py
-	
+
 validate:
-	@$(PY) validation.py
-	
+	@$(PY) $(VALIDATION_BENCH)
+
 license:
 	@$(SETUP) --license
-	
+
 version:
 	@$(PY) version.py
 	
