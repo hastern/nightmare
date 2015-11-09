@@ -144,6 +144,18 @@ The following example shows a test using a lambda function:
 All expectation fields (stdout, stderr, returnCode) may contain lambda
 a lambda expression.
 
+In addition it is possible to use regular expression as expectation.
+This is done by a simple `"regex:"`-prefix followed by the regular
+expression.
+
+The following example shows a test using a regular expression:
+
+	Test (
+		name "Regex",
+		description = "A test with regular expression",
+		command = "echo Hello World",
+		stdout = "regex:^[a-zA-Z ]+$"
+	)
 
 History / Background
 --------------------
