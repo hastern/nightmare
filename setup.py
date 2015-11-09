@@ -67,7 +67,7 @@ MANIFEST_TEMPLATE = """
 </assembly>
 """    
     
-includes = ['pyTest','pyTestMain','pyTestSuite','pyTestRunner','pyTestGui','pyTestEditForm','pyTestUtils','__main__','arnold_converter','version']
+includes = ['pyTest','pyTestMain','pyTestSuite','pyTestRunner','pyTestGui','pyTestEditForm','pyTestUtils','__main__','arnold_converter','version', 'pyparsing']
 excludes = ['pyreadline','pyreadline.console', 'pyreadline.rlmain','unittest','email', 'email.Utils','calendar','_ssl','Tkinter',"Tkconstants", "tcl"]
 packages = ['pyparsing']
 icon_resources = [(1,"resource/nightmare.ico")]
@@ -120,7 +120,8 @@ setup(
 	install_requires=['pyparsing'],
 	options = options,
 	#console=[mainScript+'.py'],
-	windows=[GUI2Exe_Target],
+	#windows=[GUI2Exe_Target],
+	console=[GUI2Exe_Target],
 	data_files=[('',['resource/nightmare.ico'])],
 	#scripts=['pyTest.py'],
 	zipfile=None,

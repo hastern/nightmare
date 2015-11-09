@@ -7,7 +7,7 @@ You must really, really love to test!
 
 ---
 
-nightmare is a tool for automatic testing of non-interactive commandline 
+nightmare is a tool for automatic testing of non-interactive commandline
 applications.
 
     usage: nightmare-2.0-py2.7.egg [-h] [--bench BENCH] [--suite SUITE]
@@ -20,15 +20,15 @@ applications.
                                    [--error] [--ignoreEmptyLines] [--relative]
                                    [--cr] [--ln] [--crln] [--gui] [--no-gui]
                                    [--version]
-    
+
     A test tool for non-interactive commandline programms
-    
+
     optional arguments:
       -h, --help            show this help message and exit
       --gui                 Use the GUI (experimental and unstable).
       --no-gui              Don't use the GUI.
       --version             Display version information
-    
+
     Test selection:
       --bench BENCH         File which contains the testbench.
       --suite SUITE         Use testsuite SUITE from the testbench.
@@ -38,7 +38,7 @@ applications.
       --timeout TIMEOUT     Set a global timeout for all tests.
       --arnold, -a          Use the arnold mode (requires pyparsing module)
       --save FILE           Save the testsuite as FILE
-    
+
     Output Control:
       --limit LIMIT         Set a (soft) limit for a number of Bytes, after which
                             output piping will we stopped. Checks are made after
@@ -53,7 +53,7 @@ applications.
                             respective streams.
       --unify-fails, -u     Display the unified diff of output and expectation.
       --no-color            Don't use any colored output.
-    
+
     Test Flow:
       --continue, -c        Continuous mode (Don't halt on failed tests).
       --error, -e           Same as '-c', but will halt if an error occurs.
@@ -65,11 +65,11 @@ applications.
       --crln                Force the line separation character (Windows).
 
 
-Additional to the commandline interface there is a GUI using the 
+Additional to the commandline interface there is a GUI using the
 wxPython. The GUI is limited in its capabilities compared to the CLI,
 especially when it comes to testbench editing.
 
-Be careful when you save your testbench! You might loose data, if it originates 
+Be careful when you save your testbench! You might loose data, if it originates
 from a handwritten testbench.
 
 
@@ -86,10 +86,10 @@ it is definitly one of the easiest ones.
 Here is a example for a minimal testbench.
 
 	#!/usr/bin/env python
-	
+
 	# pyTest - Testsuite
 	# Saved at 21:12:26
-	# 
+	#
 
 	# Device Under Test
 	DUT = "echo"
@@ -110,7 +110,7 @@ Here is a example for a minimal testbench.
 			stderr = "pyTest"
 		)
 	]
-	
+
 This example contains on testsuite name "suite" with two tests.
 I hope the syntax is selfexplanatory.
 
@@ -126,10 +126,10 @@ Here's a list of all possible fields in a test definition:
 - *returnCode:* The expected returncode.
 - *timeout:* Time in seconds before the process gets automatically killed.
 
-Almost every field in the test is optional expect the command. The reason 
+Almost every field in the test is optional expect the command. The reason
 should be obvious.
 
-One reason for the testfiles to be real python script is the possibility to use 
+One reason for the testfiles to be real python script is the possibility to use
 lambda functions for testing the output against an expectation.
 
 The following example shows a test using a lambda function:
@@ -140,24 +140,24 @@ The following example shows a test using a lambda function:
 		command = "echo Hello World",
 		stdout = lambda x : x.find("o") > 0
 	)
-	
-All expectation fields (stdout, stderr, returnCode) may contain lambda 
+
+All expectation fields (stdout, stderr, returnCode) may contain lambda
 a lambda expression.
 
 
 History / Background
 --------------------
 
-The development started in 2012 at FH-Wedel as a addition / replacement to the 
-aging "[arnold](http://stud.fh-wedel.de/~arnold)"-tool, which is a tcl-script. 
-Since I'm a notorious windows user I was annoyed by the fact, that tcl/expect 
-barely works on windows. Being a fan of the python language I decided to 
-develop a new tool which fulfills the same requirements but by using a (in my 
+The development started in 2012 at FH-Wedel as a addition / replacement to the
+aging "[arnold](http://stud.fh-wedel.de/~arnold)"-tool, which is a tcl-script.
+Since I'm a notorious windows user I was annoyed by the fact, that tcl/expect
+barely works on windows. Being a fan of the python language I decided to
+develop a new tool which fulfills the same requirements but by using a (in my
 humble opinion) more modern language.
 
-As part of my job at the FH Wedel it was successfully used as the primary 
-testing tool, to check if the implementation of the programming exercise meet 
+As part of my job at the FH Wedel it was successfully used as the primary
+testing tool, to check if the implementation of the programming exercise meet
 the required specifications.
 Since "arnold" is an acronym, this tool's name needed to be equally ridiculous.
-The name "*nightmare*" was given as a consequence, because most of the students 
-in the exercises absolutely hated the strictness of my tests. 
+The name "*nightmare*" was given as a consequence, because most of the students
+in the exercises absolutely hated the strictness of my tests.
