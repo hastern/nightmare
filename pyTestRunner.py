@@ -81,7 +81,7 @@ class TestRunner(object):
 			+ TermColor.colorText("E", TermColor.Red, style = TermColor.Bold)
 			+ TermColor.colorText("ternally", TermColor.White)
 			)
-		logger.log("Welcome to nightmare Version {} #{}".format(version.Version, version.Build))
+		logger.log("Welcome to nightmare Version {}".format(version.Version))
 		if flush:
 			logger.flush(quiet = False)
 		self.options = dict()

@@ -57,10 +57,17 @@ license:
 
 version:
 	@$(PY) version.py
-	
+
+version-major:
+	@$(PY) version.py major
+version-minor:
+	@$(PY) version.py minor
+version-build:
+	@$(PY) version.py build
+
 description:
 	@$(SETUP) --long-description
-	
+
 info: license description
 
 icon:
