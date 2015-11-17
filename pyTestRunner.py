@@ -42,6 +42,7 @@ import itertools
 import struct
 import subprocess
 import collections
+import fractions
 
 try:
     import pyparsing
