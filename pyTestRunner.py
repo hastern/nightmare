@@ -210,6 +210,7 @@ class TestRunner(object):
                "itertools": itertools,
                "struct": struct,
                "collections": collections,
+               "fractions": fractions,
                # nightmare specific things
                "Test": Test,
                "Suite": TestSuite,
