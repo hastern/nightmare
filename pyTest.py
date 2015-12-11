@@ -158,7 +158,7 @@ class Expectation(object):
 
 class ExpectFile(Expectation):
     def __init__(self, fname):
-        self.exp = open(fname).read()
+        self.exp = open(fname, "rb").read()
 
     def __call__(self, out):
         return self.exp == out
