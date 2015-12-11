@@ -180,9 +180,16 @@ class Stringifier(object):
 
 
 class StringifiedFile(Stringifier):
-        def __init__(self, fname):
-            Stringifier.__init__(self, open(fname).read())
-
+    def __init__(self, fname):
+        Stringifier.__init__(self, open(fname).read())
+            
+class BytewiseCompare(Expectation):
+    def __init__(self, expect_file):
+        self.exp = expect_file
+        
+    def __call__(self, output):
+        exp = open(self.exp, "rb").read()
+        return exp == output
 
 class Test(object):
     """A single test"""
@@ -199,7 +206,8 @@ class Test(object):
                  outputOnFail=False,
                  pipe=False,
                  diff=None,
-                 state=TestState.Waiting):
+                 state=TestState.Waiting,
+                 binary=False):
         """
         Initalises a test
 
@@ -260,6 +268,8 @@ class Test(object):
         self.ignoreEmptyLines = False
         """Ignore empty lines Flag"""
         self.pipeLimit = 2000
+        """Work in binary mode"""
+        self.binary = binary
 
     def lineComparison(self, expLines, outLines, stream=""):
         same = True
@@ -373,8 +383,12 @@ class Test(object):
             _cmd = Command(cmd=str(command))
         cmdRet = _cmd.execute(self.timeout)
         if cmdRet == TestState.Success:
-            self.output = _cmd.out.decode(encoding="utf8", errors="ignore")
-            self.error  = _cmd.err.decode(encoding="utf8", errors="ignore")
+            if self.binary:
+                self.output = _cmd.out
+                self.error  = _cmd.err
+            else:
+                self.output = _cmd.out.decode(encoding="utf8", errors="ignore")
+                self.error  = _cmd.err.decode(encoding="utf8", errors="ignore")
             self.retCode = _cmd.ret
             if (self.check(self.expectRetCode, self.retCode) and
                     self.check(self.expectStdout, self.output, "stdout") and
