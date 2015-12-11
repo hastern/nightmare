@@ -184,6 +184,18 @@ class StringifiedFile(Stringifier):
             Stringifier.__init__(self, open(fname).read())
 
 
+class CompareFiles(Expectation):
+    def __init__(self, expect_file, out_file):
+        self.expect = expect_file
+        self.out = out_file
+
+    def __call__(self, whatever):
+        # Since we want to compare files, actual output is ignored
+        expect = open(self.expect, "rb").read()
+        out = open(self.out, "rb").read()
+        return expect == out
+
+
 class Test(object):
     """A single test"""
 
