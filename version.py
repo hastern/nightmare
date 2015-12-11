@@ -3,7 +3,7 @@
 
 Major = 2
 Minor = 0
-Build = 19
+Build = 20
 Version = "{}.{}.{}".format(Major, Minor, Build)
 
 if __name__ == "__main__":
