@@ -184,15 +184,6 @@ class StringifiedFile(Stringifier):
         Stringifier.__init__(self, open(fname).read())
 
 
-class BytewiseCompare(Expectation):
-    def __init__(self, expect_file):
-        self.exp = expect_file
-
-    def __call__(self, output):
-        exp = open(self.exp, "rb").read()
-        return exp == output
-
-
 class CompareFiles(Expectation):
     def __init__(self, expect_file, out_file):
         self.expect = expect_file
