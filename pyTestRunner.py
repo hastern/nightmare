@@ -221,6 +221,7 @@ class TestRunner(object):
                "ExpectFile": ExpectFile,
                "Stringifier": Stringifier,
                "StringifiedFile": StringifiedFile,
+               "BytewiseCompare": BytewiseCompare,
                # Helping functions
                "readFile": lambda fname: open(fname).read().rstrip() if os.path.exists(fname) else "File not found",
                }
