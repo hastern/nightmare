@@ -42,6 +42,7 @@ import itertools
 import struct
 import subprocess
 import collections
+import fractions
 
 try:
     import pyparsing
@@ -51,7 +52,8 @@ except:
 # from threading import Thread
 
 from pyTestUtils import TermColor, logger
-from pyTest import Test, TestState, Expectation, ExpectFile, Stringifier, StringifiedFile
+from pyTest import Test, TestState
+from pyTest import Expectation, ExpectFile, Stringifier, StringifiedFile, BytewiseCompare
 from pyTestSuite import TestSuite, TestSuiteMode
 from arnold_converter import syntax, buildTestList
 
@@ -220,6 +222,7 @@ class TestRunner(object):
                "ExpectFile": ExpectFile,
                "Stringifier": Stringifier,
                "StringifiedFile": StringifiedFile,
+               "BytewiseCompare": BytewiseCompare,
                # Helping functions
                "readFile": lambda fname: open(fname).read().rstrip() if os.path.exists(fname) else "File not found",
                }

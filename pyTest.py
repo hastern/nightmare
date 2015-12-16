@@ -158,7 +158,7 @@ class Expectation(object):
 
 class ExpectFile(Expectation):
     def __init__(self, fname):
-        self.exp = open(fname).read()
+        self.exp = open(fname, "rb").read()
 
     def __call__(self, out):
         return self.exp == out
@@ -180,8 +180,20 @@ class Stringifier(object):
 
 
 class StringifiedFile(Stringifier):
-        def __init__(self, fname):
-            Stringifier.__init__(self, open(fname).read())
+    def __init__(self, fname):
+        Stringifier.__init__(self, open(fname).read())
+
+
+class CompareFiles(Expectation):
+    def __init__(self, expect_file, out_file):
+        self.expect = expect_file
+        self.out = out_file
+
+    def __call__(self, whatever):
+        # Since we want to compare files, actual output is ignored
+        expect = open(self.expect, "rb").read()
+        out = open(self.out, "rb").read()
+        return expect == out
 
 
 class Test(object):
@@ -199,7 +211,8 @@ class Test(object):
                  outputOnFail=False,
                  pipe=False,
                  diff=None,
-                 state=TestState.Waiting):
+                 state=TestState.Waiting,
+                 binary=False):
         """
         Initalises a test
 
@@ -260,6 +273,8 @@ class Test(object):
         self.ignoreEmptyLines = False
         """Ignore empty lines Flag"""
         self.pipeLimit = 2000
+        """Work in binary mode"""
+        self.binary = binary
 
     def lineComparison(self, expLines, outLines, stream=""):
         same = True
@@ -373,8 +388,12 @@ class Test(object):
             _cmd = Command(cmd=str(command))
         cmdRet = _cmd.execute(self.timeout)
         if cmdRet == TestState.Success:
-            self.output = _cmd.out.decode(encoding="utf8", errors="ignore")
-            self.error  = _cmd.err.decode(encoding="utf8", errors="ignore")
+            if self.binary:
+                self.output = _cmd.out
+                self.error  = _cmd.err
+            else:
+                self.output = _cmd.out.decode(encoding="utf8", errors="ignore")
+                self.error  = _cmd.err.decode(encoding="utf8", errors="ignore")
             self.retCode = _cmd.ret
             if (self.check(self.expectRetCode, self.retCode) and
                     self.check(self.expectStdout, self.output, "stdout") and
