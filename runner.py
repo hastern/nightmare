@@ -52,7 +52,7 @@ except:
 # from threading import Thread
 
 from utils import TermColor, logger
-from case import Test, TestState
+from case import Test, TestState, TestGroup
 from case import Expectation, ExpectFile, Stringifier, StringifiedFile, CompareFiles
 from suite import TestSuite, TestSuiteMode
 from arnold_converter import syntax, buildTestList
@@ -215,6 +215,7 @@ class TestRunner(object):
                "fractions": fractions,
                # nightmare specific things
                "Test": Test,
+               "Group": TestGroup,
                "Suite": TestSuite,
                "Mode": TestSuiteMode,
                "State": TestState,

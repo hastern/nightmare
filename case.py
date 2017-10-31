@@ -477,3 +477,52 @@ class Test(object):
         if self.timeout is not None:
             fields.append("{}\ttimeout = {:.1f}".format(prefix, self.timeout))
         return "Test (\n{}\n{})".format(",\n".join(fields), prefix)
+
+class TestGroup:
+
+    def __init__(self, *tests, name=None):
+        self.tests = [t for t in tests]
+        self._name = name
+        self.state = TestState.Waiting
+
+    @property
+    def name(self):
+        if self._name is None:
+            return "Group of {} tests".format(len(self.tests))
+        return self._name
+
+    @property
+    def descr(self):
+        return None
+
+    @property
+    def cmd(self):
+        return " --> ".join(t.cmd for t in self.tests)
+
+    def run(self):
+        success = True
+        for nr, t in enumerate(self.tests):
+            if t.run() != TestState.Success:
+                success = False
+            if t.descr is not None:
+                logger.log("  {}[{: 03}] {} - {}: {}".format(TermColor.colorText("Test", TermColor.Purple), nr, t.name, t.descr, TestState.toString(t.state)))
+            else:
+                logger.log("  {}[{: 03}] {}: {}".format(TermColor.colorText("Test", TermColor.Purple), nr, t.name, TestState.toString(t.state)))
+        self.state = TestState.Success if success else TestState.Fail
+        return self.state
+
+
+    def toString(self, prefix="\t"):
+        """
+        Creates a textual representation of the testgroup.
+        The output can be saved to a file.
+        """
+        tests = [t.toString(prefix+"\t") for t in self.tests]
+        if (self._name is not None):
+            tests += ["name='{}'".format(self.name)]
+        return "Group(\n{}\t{}\n{})".format(
+            prefix,
+            ",\n{}\t".format(prefix).join(tests),
+            prefix,
+        )
+
