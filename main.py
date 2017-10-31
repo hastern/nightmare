@@ -35,10 +35,10 @@
 import os
 import sys
 
-from pyTest import TestState
-from pyTestSuite import TestSuite
-from pyTestRunner import TestRunner
-from pyTestUtils import TermColor
+from case import TestState
+from suite import TestSuite
+from runner import TestRunner
+from utils import TermColor
 
 
 def main():
@@ -60,7 +60,7 @@ def main():
         runner = TestRunner(flush=True)
     elif "--gui" in sys.argv:
         # Capt. Obvious: We're running the GUI
-        from pyTestGui import TestRunnerGui
+        from gui import TestRunnerGui
         if len(sys.argv) > 1 and not sys.argv[1].startswith("-") and os.path.exists(sys.argv[1]):
             sys.argv[1] = '--bench=' + sys.argv[1]
         gui = TestRunnerGui()
@@ -75,7 +75,7 @@ def main():
             for testcase in runner.run():
                 pass
             if not runner.options['info'] and not runner.options['length'] and not runner.options['quiet']:
-                print "{:2.2f}%".format(suite.getRate())
+                print("{:2.2f}%".format(suite.getRate()))
             sys.exit(suite.lastResult if suite.lastResult not in [TestState.Waiting, TestState.InfoOnly] else 0)
         else:
             sys.exit(1)

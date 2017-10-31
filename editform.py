@@ -32,8 +32,8 @@
 # IN THE SOFTWARE.                                                             #
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
-from pyTest import Test
-from pyTestRunner import TestRunner
+from case import Test
+from runner import TestRunner
 
 import wx
 

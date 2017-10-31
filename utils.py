@@ -52,9 +52,6 @@ def isLambda(v):
 
 
 class TermColor:
-    __slots__ = [
-        'Black', 'Red', 'Green', 'Yellow', 'Blue', 'Purple', 'Cyan', 'White',
-        'Normal', 'Bold', 'Dim', 'Background', 'Text', 'active']
     """ Print colored text """
     Black = 0
     """Black color code"""
@@ -96,11 +93,10 @@ class TermColor:
 
 @staticmethod
 def logPrinter(msg):
-    print msg
+    print(msg)
 
 
 class logger:
-    __slots__ = ['_buffer']
     """Logger class"""
     _buffer = []
     """Message buffer"""

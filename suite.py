@@ -33,8 +33,8 @@
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
 
-from pyTest import Test, TestState
-from pyTestUtils import logger, TermColor
+from case import Test, TestState
+from utils import logger, TermColor
 
 
 class TestSuiteMode:
@@ -129,7 +129,6 @@ class TestSuite(object):
     def __iter__(self):
         for test in self.testList:
             yield test
-        raise StopIteration()
 
     def __getitem__(self, key):
         return self.testList[key]
@@ -191,7 +190,7 @@ class TestSuite(object):
 
     def _getTests(self, tests):
         if len(tests) == 0:
-            tests = xrange(len(self))
+            tests = range(len(self))
         for t in tests:
             if t < len(self):
                 yield self[t]
@@ -237,7 +236,6 @@ class TestSuite(object):
                     break
                 if (self.mode == TestSuiteMode.BreakOnError) and (self.lastResult == TestState.Error):
                     break
-        raise StopIteration()
 
     def calcRate(self):
         self.rate = float(self.success) / float(len(self)) * 100

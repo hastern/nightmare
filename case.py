@@ -41,12 +41,10 @@ import subprocess
 
 from threading import Thread
 
-from pyTestUtils import isLambda, TermColor, logger
+from utils import isLambda, TermColor, logger
 
 
 class TestState:
-    # __slots__ = ["Success", "Fail", "Error", "Waiting", "Disabled", "InfoOnly", "Timeout"]
-
     """The test is waiting for execution"""
     Success = 0
     """The test was successful"""
@@ -104,10 +102,9 @@ class TestState:
         return TermColor.colorText(" UNKNOWN ", TermColor.Yellow)
 
 
-class Command():
-    # __slots__ = ['_cmd', '_process', '_thread', 'out', 'err', 'ret', 'killed']
+class Command:
     """Command execution"""
-    def __init__(self, cmd):
+    def __init__(self, cmd, binary=False):
         """
         Initialises the command
 
@@ -121,10 +118,11 @@ class Command():
         self.err = ""
         self.ret = 0
         self.killed = False
+        self.binary = binary
 
     def commandFunc(self):
         """command to be run in the thread"""
-        self.proc = subprocess.Popen(self.cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True, shell=True, cwd=os.getcwd())
+        self.proc = subprocess.Popen(self.cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=not self.binary, shell=True, cwd=os.getcwd())
         self.out, self.err = self.proc.communicate()
         self.ret = self.proc.wait()
 
@@ -285,18 +283,17 @@ class Test(object):
                 outLines.remove("")
         for line in difflib.unified_diff(expLines, outLines, stream, "expectation"):
             col = TermColor.White
-            uline = unicode(line, encoding="utf-8", errors="ignore") if type(line) is not unicode else line
-            if uline.startswith(" + "):
+            if line.startswith(" + "):
                 same = False
                 col = TermColor.Green
-            elif uline.startswith("-"):
+            elif line.startswith("-"):
                 same = False
                 col = TermColor.Red
-            elif uline.startswith("@"):
+            elif line.startswith("@"):
                 same = False
                 col = TermColor.Cyan
             if self.diff:
-                logger.log(TermColor.colorText(uline.rstrip(), col))
+                logger.log(TermColor.colorText(line.rstrip(), col))
         return same
 
     def check(self, exp, out, stream="returnCode"):
@@ -323,7 +320,9 @@ class Test(object):
             return self.checkList(exp, out)
         elif isinstance(exp, set):
             return self.checkSet(exp, out)
-        elif isinstance(exp, str) or isinstance(exp, unicode):
+        elif isinstance(exp, bytes):
+            return exp == out
+        elif isinstance(exp, str):
             if exp.startswith("lambda"):
                 f = eval(exp)
                 return f(out)
@@ -383,17 +382,13 @@ class Test(object):
                 self.state = TestState.Error
                 return
             else:
-                _cmd = Command(cmd=str(command).replace("$DUT", self.DUT))
+                _cmd = Command(cmd=str(command).replace("$DUT", self.DUT), binary=self.binary)
         else:
             _cmd = Command(cmd=str(command))
         cmdRet = _cmd.execute(self.timeout)
         if cmdRet == TestState.Success:
-            if self.binary:
-                self.output = _cmd.out
-                self.error  = _cmd.err
-            else:
-                self.output = _cmd.out.decode(encoding="utf8", errors="ignore")
-                self.error  = _cmd.err.decode(encoding="utf8", errors="ignore")
+            self.output = _cmd.out
+            self.error  = _cmd.err
             self.retCode = _cmd.ret
             if (self.check(self.expectRetCode, self.retCode) and
                     self.check(self.expectStdout, self.output, "stdout") and
@@ -419,16 +414,16 @@ class Test(object):
             return TestState.Disabled
         if self.state == TestState.InfoOnly:
             if self.descr is None:
-                print "{}".format(self.name)
+                print("{}".format(self.name))
             else:
-                print "{} - {}".format(self.name, self.descr)
+                print("{} - {}".format(self.name, self.descr))
             return TestState.InfoOnly
         if self.name == "Badword":
             # Bad Word Detection Mode
             # Description holds a matching file patterns
             # Recursive look through the directory of DUT
             # Treat command as a list of Badwords
-            words = map(lambda s: re.compile(s), self.cmd)
+            words = [re.compile(s) for s in self.cmd]
             searchpath = os.path.abspath(os.path.dirname(self.DUT))
             searchpattern = re.compile(self.descr)
             hits = []
@@ -436,12 +431,11 @@ class Test(object):
                 for file in filenames:
                     if searchpattern.match(file) is not None:
                         fname = os.path.join(dirpath, file)
-                        fHnd = open(fname, "rb")
-                        for nr, line in enumerate(fHnd.readlines()):
-                            for word in words:
-                                if word.search(line) is not None:
-                                    hits.append((os.path.relpath(fname), nr, line.rstrip(), word.pattern))
-                        fHnd.close()
+                        with open(fname, "r") as fHnd:
+                            for nr, line in enumerate(fHnd.readlines()):
+                                for word in words:
+                                    if word.search(line) is not None:
+                                        hits.append((os.path.relpath(fname), nr, line.rstrip(), word.pattern))
             if len(hits) > 0:
                 for file, lineno, text, pattern in hits:
                     logger.log("{} {}[{}]: '{}' matches '{}'".format(TestState.toString(TestState.BadWord), file, lineno, text, pattern))

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-Major = 2
+Major = 3
 Minor = 0
-Build = 21
-Version = "{}.{}.{}".format(Major, Minor, Build)
+Build = 0
+Version = "{}.{}.{:02d}".format(Major, Minor, Build)
 
 if __name__ == "__main__":
     import sys
@@ -18,5 +18,5 @@ if __name__ == "__main__":
     if "build" in sys.argv:
         content = content.replace("Build = {}".format(Build), "Build = {}".format(Build + 1))
         Build += 1
-    print "Version", Version
+    print("Version", Version)
     open("version.py", "w").write(content)

@@ -38,11 +38,11 @@ import time
 import threading
 import itertools
 
-from pyTest import TestState
-from pyTestSuite import TestSuiteMode
-from pyTestRunner import TestRunner
-from pyTestUtils import TermColor, logger
-from pyTestEditForm import TestEditForm
+from case import TestState
+from suite import TestSuiteMode
+from runner import TestRunner
+from utils import TermColor, logger
+from editform import TestEditForm
 
 import wx
 import wx.html
@@ -128,18 +128,18 @@ class TestRunnerGui(wx.App):
             self.prgGauge.SetRange(cnt - 1)
             self.prgGauge.SetValue(0)
         lastIdx = 0
-        for idx, test in itertools.izip(xrange(cnt), l):
+        for idx, test in zip(range(cnt), l):
             lastIdx = idx
             if gauge:
                 self.prgGauge.SetValue(idx)
                 self.prgGauge.Update()
             if idx < self.lstTests.GetItemCount() - 1:
-                self.lstTests.SetStringItem(idx + 1, 2, "RUNNING")
+                self.lstTests.SetItem(idx + 1, 2, "RUNNING")
                 self.lstTests.Update()
             f(idx, test)
             self.lstTests.Update()
         for i in range(lastIdx + 1, len(self.runner.getSuite())):
-            self.lstTests.SetStringItem(i, 2, "CANCELED")
+            self.lstTests.SetItem(i, 2, "CANCELED")
 
     def insertTest(self, idx, test):
         """Insert a new test into the test-list
@@ -149,7 +149,7 @@ class TestRunnerGui(wx.App):
         @type    test: pyTestCore.test.Test
         @param     test: The test to add
         """
-        self.lstTests.InsertStringItem(idx, test.name)
+        self.lstTests.InsertItem(idx, test.name)
         self.lstTests.CheckItem(idx)
         self.updateTest(idx, test)
 
@@ -175,9 +175,9 @@ class TestRunnerGui(wx.App):
         elif test.state == TestState.Disabled:
             self.lstTests.SetItemBackgroundColour(idx, 'gray')
         TermColor.active = False
-        self.lstTests.SetStringItem(idx, 0, test.name)
-        self.lstTests.SetStringItem(idx, 1, test.descr)
-        self.lstTests.SetStringItem(idx, 2, TestState.toString(test.state))
+        self.lstTests.SetItem(idx, 0, test.name)
+        self.lstTests.SetItem(idx, 1, test.descr)
+        self.lstTests.SetItem(idx, 2, TestState.toString(test.state))
 
     def setTestState(self, test, idx, state):
         """Update the state of one test, but only if the test is not enabled"""

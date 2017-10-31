@@ -51,10 +51,10 @@ except:
 
 # from threading import Thread
 
-from pyTestUtils import TermColor, logger
-from pyTest import Test, TestState
-from pyTest import Expectation, ExpectFile, Stringifier, StringifiedFile, CompareFiles
-from pyTestSuite import TestSuite, TestSuiteMode
+from utils import TermColor, logger
+from case import Test, TestState
+from case import Expectation, ExpectFile, Stringifier, StringifiedFile, CompareFiles
+from suite import TestSuite, TestSuiteMode
 from arnold_converter import syntax, buildTestList
 
 import version
@@ -227,7 +227,7 @@ class TestRunner(object):
                "readFile": lambda fname: open(fname).read().rstrip() if os.path.exists(fname) else "File not found",
                }
         ctx = {self.options['suite']: None, "DUT": None}
-        execfile(self.options['bench'], glb, ctx)
+        exec(open(self.options['bench']).read(), glb, ctx)
         if (self.options['suite'] in ctx):
             suite = None
             if 'DUT' in ctx and ctx['DUT'] is not None and self.options['dut'] is None:
@@ -293,7 +293,7 @@ class TestRunner(object):
     def run(self):
         """Thread run function"""
         if self.options['length']:
-            print len(self.runsuite.getTests())
+            print(len(self.runsuite.getTests()))
         elif len(self.options['save']) == 1:
             logger.log("Saving Suite to {}".format(self.options['save'][0]))
             self.saveToFile(self.options['save'][0])
@@ -306,7 +306,6 @@ class TestRunner(object):
         if self.finished is not None:
             self.finished()
         logger.flush(self.options['quiet'])
-        raise StopIteration()
 
     def countTests(self):
         return len(self.runsuite.testList)

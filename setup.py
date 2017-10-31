@@ -12,7 +12,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 from version import *
-    
+
 Name = "nightmare"
 Description = "NIGHTMARE is of Generous Help when Testing; May Arnold be Remembered Eternally"
 Author = "Hanno Sternberg"
@@ -21,12 +21,12 @@ Url = 'https://github.com/hastern/nightmare'
 Company = ''
 Copyright = ''
 
-    
+
 
 MANIFEST_TEMPLATE = """
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <assemblyIdentity 
+  <assemblyIdentity
     version="5.0.0.0"
     processorArchitecture="x86"
     name="%(prog)s"
@@ -65,21 +65,21 @@ MANIFEST_TEMPLATE = """
     </dependentAssembly>
   </dependency>
 </assembly>
-"""    
-    
-includes = ['pyTest','pyTestMain','pyTestSuite','pyTestRunner','pyTestGui','pyTestEditForm','pyTestUtils','__main__','arnold_converter','version', 'pyparsing']
+"""
+
+includes = ['__main__','main','case','suite','runner','gui','editform','utils','arnold_converter','version', 'pyparsing']
 excludes = ['pyreadline','pyreadline.console', 'pyreadline.rlmain','unittest','email', 'email.Utils','calendar','_ssl','Tkinter',"Tkconstants", "tcl"]
 packages = ['pyparsing']
 icon_resources = [(1,"resource/nightmare.ico")]
 bitmap_resources = []
 other_resources = [(24, 1, MANIFEST_TEMPLATE % dict(prog=Name, descr=Description))]
 dll_excludes = ['w9xpopen.exe',"MSVCP90.dll"]
-mainScript = 'pyTestMain'
+mainScript = '__main__'
 
 
 if py2exe is not None:
 	options = {"py2exe": {
-		"compressed": 1, 
+		"compressed": 1,
 		"optimize": 2,
 		"bundle_files": 1,
 		"includes": includes,
@@ -93,7 +93,7 @@ if py2exe is not None:
 	}
 else:
 	options = {}
-	
+
 GUI2Exe_Target = {
 	'script': mainScript + '.py',
 	'icon_resources': icon_resources,
@@ -123,7 +123,7 @@ setup(
 	#windows=[GUI2Exe_Target],
 	console=[GUI2Exe_Target],
 	data_files=[('',['resource/nightmare.ico'])],
-	#scripts=['pyTest.py'],
+	#scripts=['main.py'],
 	zipfile=None,
 	zip_safe=True,
 )
