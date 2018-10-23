@@ -194,7 +194,6 @@ class TestSuite(object):
         for t in tests:
             if t < len(self):
                 yield self[t]
-        raise StopIteration()
 
     def run(self, quiet=False, tests=[]):
         """
