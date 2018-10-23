@@ -78,8 +78,8 @@ class LogWindow(wx.Frame):
 class TestRunnerGui(wx.App):
     """Graphical User Interface"""
     modes = ["Continuous", "Halt on Fail", "Halt on Error"]
-    benchtypes = [('nightmare', 'py'), ('All Files', '*')]
-    duttypes = [('All Files', '*'), ('Executables', '*.exe')]
+    benchtypes = [('nightmare', '.py'), ('All Files', '')]
+    duttypes = [('All Files', ''), ('Executables', '.exe')]
 
     def suiteSave(self, fn):
         self.runner.saveToFile(fn)
@@ -264,7 +264,7 @@ class TestRunnerGui(wx.App):
         if fileTypes is None:
             wc = wx.FileSelectorDefaultWildcardStr
         else:
-            wc = " | ".join([descr + " (*" + ext + ") | *" + ext for descr, ext in fileTypes])
+            wc = "|".join(f"{descr} (*{ext}) | *{ext}" for descr, ext in fileTypes)
         diag = wx.FileDialog(self.wHnd, message, defaultDir=dir, wildcard=wc, style=mode)
         diag.ShowModal()
         return os.path.join(diag.Directory, path=diag.Filename) if diag.Filename != "" else None
