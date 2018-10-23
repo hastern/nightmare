@@ -4,7 +4,7 @@
 Major = 3
 Minor = 0
 Build = 0
-Version = "{}.{}.{:02d}".format(Major, Minor, Build)
+Version = "{}.{}.{}".format(Major, Minor, Build)
 
 if __name__ == "__main__":
     import sys
