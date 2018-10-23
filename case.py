@@ -478,12 +478,15 @@ class Test(object):
             fields.append("{}\ttimeout = {:.1f}".format(prefix, self.timeout))
         return "Test (\n{}\n{})".format(",\n".join(fields), prefix)
 
-class TestGroup:
 
-    def __init__(self, *tests, name=None):
+class TestGroup:
+    key = "Group"
+
+    def __init__(self, *tests, name=None, predicate=all):
         self.tests = [t for t in tests]
         self._name = name
         self.state = TestState.Waiting
+        self.predicate = predicate
 
     @property
     def name(self):
@@ -499,18 +502,19 @@ class TestGroup:
     def cmd(self):
         return " --> ".join(t.cmd for t in self.tests)
 
-    def run(self):
-        success = True
-        for nr, t in enumerate(self.tests):
-            if t.run() != TestState.Success:
-                success = False
-            if t.descr is not None:
-                logger.log("  {}[{: 03}] {} - {}: {}".format(TermColor.colorText("Test", TermColor.Purple), nr, t.name, t.descr, TestState.toString(t.state)))
-            else:
-                logger.log("  {}[{: 03}] {}: {}".format(TermColor.colorText("Test", TermColor.Purple), nr, t.name, TestState.toString(t.state)))
-        self.state = TestState.Success if success else TestState.Fail
-        return self.state
+    def log_test(self, t, nr=0):
+        if t.descr is not None:
+            logger.log("  {}[{: 03}] {} - {}: {}".format(TermColor.colorText("Test", TermColor.Purple), nr, t.name, t.descr, TestState.toString(t.state)))
+        else:
+            logger.log("  {}[{: 03}] {}: {}".format(TermColor.colorText("Test", TermColor.Purple), nr, t.name, TestState.toString(t.state)))
 
+    def run(self):
+        results = []
+        for nr, t in enumerate(self.tests):
+            results.append(t.run())
+            self.log_test(t, nr)
+        self.state = TestState.Success if self.predicate(result == TestState.Success for result in results) else TestState.Fail
+        return self.state
 
     def toString(self, prefix="\t"):
         """
@@ -520,9 +524,17 @@ class TestGroup:
         tests = [t.toString(prefix+"\t") for t in self.tests]
         if (self._name is not None):
             tests += ["name='{}'".format(self.name)]
+        tests += ["predicate={}".format(self.predicate.__name__)]
         return "Group(\n{}\t{}\n{})".format(
             prefix,
             ",\n{}\t".format(prefix).join(tests),
             prefix,
         )
 
+class TestAll(TestGroup):
+    def __init__(self, *tests, name=None):
+        super.__init__(self, *tests, name=name, predicate=all)
+
+class TestAny(TestGroup):
+    def __init__(self, *tests, name=None):
+        super.__init__(self, *tests, name=name, predicate=any)
