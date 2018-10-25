@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
-# @file pyTestGui                                                              #
+# @file gui.py                                                                 #
 # @author Hanno Sternberg <hanno@almostintelligent.de>                         #
 #                                                                              #
 # This file contains the GUI classes.                                          #
@@ -11,7 +11,7 @@
 #                                                                              #
 # This software is licensed under the MIT License                              #
 #                                                                              #
-# Copyright (c) 2012-2015 Hanno Sternberg                                      #
+# Copyright (c) 2012-2018 Hanno Sternberg                                      #
 #                                                                              #
 # Permission is hereby granted, free of charge, to any person obtaining a copy #
 # of this software and associated documentation files (the "Software"), to     #
