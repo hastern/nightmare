@@ -8,7 +8,7 @@ try:
     from pyTest import Test
 
     def syntax():
-        ParserElement.setDefaultWhitespaceChars(' \t')
+        ParserElement.setDefaultWhitespaceChars(" \t")
         LN = LineEnd().suppress()
         eqSym = Literal("=").suppress()
         lBrace, rBrace = Literal("{").suppress(), Literal("}").suppress()
@@ -38,6 +38,8 @@ try:
 
     def buildTestList(ast):
         return map(buildTest, ast)
+
+
 except:
     syntax = None
     buildTest = None

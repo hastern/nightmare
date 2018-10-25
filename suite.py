@@ -85,24 +85,28 @@ class TestSuite(object):
         @type    outputOnFail: Boolean
         @param    outputOnFail: Flag, set if the output streams should be piped on failed test
         """
-        self.options = {'mode': TestSuiteMode.BreakOnFail,
-                        'pipe': None,
-                        'outputOnFail': None,
-                        'timeout': None,
-                        'DUT': None,
-                        'ignoreEmptyLines': None,
-                        'commands': False,
-                        'pipeLimit': None}
+        self.options = {
+            "mode": TestSuiteMode.BreakOnFail,
+            "pipe": None,
+            "outputOnFail": None,
+            "timeout": None,
+            "DUT": None,
+            "ignoreEmptyLines": None,
+            "commands": False,
+            "pipeLimit": None,
+        }
         self.options.update(options)
-        self.setMode(self.options['mode'])
+        self.setMode(self.options["mode"])
         """The test suite mode"""
         self.testList = [t for t in tests]
-        self.setAll(pipe=self.options['pipe'],
-                    out=self.options['outputOnFail'],
-                    timeout=self.options['timeout'],
-                    ignoreEmptyLines=self.options['ignoreEmptyLines'],
-                    pipeLimit=self.options['pipeLimit'])
-        self.setDUT(self.options['DUT'])
+        self.setAll(
+            pipe=self.options["pipe"],
+            out=self.options["outputOnFail"],
+            timeout=self.options["timeout"],
+            ignoreEmptyLines=self.options["ignoreEmptyLines"],
+            pipeLimit=self.options["pipeLimit"],
+        )
+        self.setDUT(self.options["DUT"])
         """The collection of tests"""
         self.success = 0
         """The number of successful tests"""
@@ -170,7 +174,17 @@ class TestSuite(object):
     def getTests(self):
         return self.testList
 
-    def setAll(self, state=TestState.Waiting, pipe=None, out=None, diff=None, timeout=None, linesep=None, ignoreEmptyLines=None, pipeLimit=None):
+    def setAll(
+        self,
+        state=TestState.Waiting,
+        pipe=None,
+        out=None,
+        diff=None,
+        timeout=None,
+        linesep=None,
+        ignoreEmptyLines=None,
+        pipeLimit=None,
+    ):
         for t in self.testList:
             t.state = state
             if pipe is not None:
@@ -210,10 +224,18 @@ class TestSuite(object):
         for t in self._getTests(tests):
             self.lastResult = t.run()
             if t.descr is not None:
-                logger.log("{}[{: 03}] {} - {}: {}".format(TermColor.colorText("Test", TermColor.Purple), self.count, t.name, t.descr, TestState.toString(t.state)))
+                logger.log(
+                    "{}[{: 03}] {} - {}: {}".format(
+                        TermColor.colorText("Test", TermColor.Purple), self.count, t.name, t.descr, TestState.toString(t.state)
+                    )
+                )
             else:
-                logger.log("{}[{: 03}] {}: {}".format(TermColor.colorText("Test", TermColor.Purple), self.count, t.name, TestState.toString(t.state)))
-            if self.options['commands']:
+                logger.log(
+                    "{}[{: 03}] {}: {}".format(
+                        TermColor.colorText("Test", TermColor.Purple), self.count, t.name, TestState.toString(t.state)
+                    )
+                )
+            if self.options["commands"]:
                 logger.log(" --> {}".format(t.cmd), showTime=False)
             logger.flush(quiet)
             if self.lastResult in [TestState.Success, TestState.Clean]:
@@ -247,25 +269,27 @@ class TestSuite(object):
         @type    quiet: Boolean
         @param    quiet: Flag, passed along to the logger
         """
-        if (self.lastResult != TestState.InfoOnly):
+        if self.lastResult != TestState.InfoOnly:
             logger.log("I ran {} out of {} tests in total".format(self.count, len(self.testList)))
             fails = self.count - self.success
             logger.log(TermColor.colorText("\tSuccess: {}".format(self.success), TermColor.Green))
-            if (self.failed > 0):
+            if self.failed > 0:
                 logger.log(TermColor.colorText("\tFailed: {}".format(self.failed), TermColor.Red))
-            if (self.error > 0):
+            if self.error > 0:
                 logger.log(TermColor.colorText("\tErrors: {}".format(self.error), TermColor.Yellow))
-            if (self.assertions > 0):
+            if self.assertions > 0:
                 logger.log(TermColor.colorText("\tAssertions: {}".format(self.assertions), TermColor.Yellow))
-            if (self.segfaults > 0):
+            if self.segfaults > 0:
                 logger.log(TermColor.colorText("\tSegFaults: {}".format(self.segfaults), TermColor.Yellow))
 
-            if (self.timedout > 0):
+            if self.timedout > 0:
                 logger.log(TermColor.colorText("\tTimeouts: {}".format(self.timedout), TermColor.Purple))
             # A little bit of fun
-            if (self.success == len(self) and self.count > 3):
+            if self.success == len(self) and self.count > 3:
                 logger.log("\tCongratulations, you passed all tests!")
-                logger.log("\t`grep` yourself a refreshing " + TermColor.colorText("Beer", TermColor.Yellow, style=TermColor.Bold))
+                logger.log(
+                    "\t`grep` yourself a refreshing " + TermColor.colorText("Beer", TermColor.Yellow, style=TermColor.Bold)
+                )
                 logger.log("")
                 logger.log("              \033[1;37m,%%%%.\033[0m")
                 logger.log("              \033[1;37mi\033[36m====\033[1;37mi\033[1;36m_\033[0m")
@@ -273,7 +297,7 @@ class TestSuite(object):
                 logger.log("              \033[1;36m|\033[1;33m####\033[36m|-'\033[0m")
                 logger.log("              \033[1;36m`-==-'\033[0m")
                 logger.log("")
-            elif (self.success == 0 and self.count > 3 and self.failed > 0):
+            elif self.success == 0 and self.count > 3 and self.failed > 0:
                 logger.log("\tWhat is wrong with you, not even a single test?")
             elif fails > 0 and self.count > 3:
                 if self.assertions / fails > 0.6:
@@ -290,9 +314,9 @@ class TestSuite(object):
         self.toString(prefix="")
 
     def toString(self, prefix=""):
-        s = prefix + '[\n'
+        s = prefix + "[\n"
         for test in self:
             s += prefix
             s += test.toString("\t")
             s += ",\n"
-        s += prefix + ']\n'
+        s += prefix + "]\n"

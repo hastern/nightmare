@@ -48,11 +48,12 @@ def isLambda(v):
     @rtype:     Boolean
     @return:    True, if the value is a lambda function
     """
-    return isinstance(v, type(lambda: None)) and v.__name__ == '<lambda>'
+    return isinstance(v, type(lambda: None)) and v.__name__ == "<lambda>"
 
 
 class TermColor:
     """ Print colored text """
+
     Black = 0
     """Black color code"""
     Red = 1
@@ -85,7 +86,7 @@ class TermColor:
 
     @staticmethod
     def colorText(text, fg=7, bg=0, style=0):
-        if TermColor.active and (os.getenv('ANSI_COLORS_DISABLED') is None):
+        if TermColor.active and (os.getenv("ANSI_COLORS_DISABLED") is None):
             return u"\033[{:02};{:2};{:2}m{:s}\033[0m".format(style, fg + TermColor.Text, bg + TermColor.Background, text)
         else:
             return text
@@ -98,12 +99,14 @@ def logPrinter(msg):
 
 class logger:
     """Logger class"""
+
     _buffer = []
     """Message buffer"""
     autoflush = False
     """Autoflush logged messages"""
     logListener = logPrinter
     """Listener to redirect output"""
+
     @staticmethod
     def log(str, showTime=True):
         """
@@ -113,7 +116,10 @@ class logger:
         @param    str: Log message
         """
         if showTime:
-            msg = u"{0} {1}".format(TermColor.colorText("[{0}]".format(time.strftime("%H:%M:%S")), TermColor.Blue, style=TermColor.Dim), str.strip("\r\n"))
+            msg = u"{0} {1}".format(
+                TermColor.colorText("[{0}]".format(time.strftime("%H:%M:%S")), TermColor.Blue, style=TermColor.Dim),
+                str.strip("\r\n"),
+            )
         else:
             msg = u"           {0}".format(str.strip("\r\n"))
         if logger.autoflush:

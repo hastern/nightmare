@@ -58,15 +58,13 @@ class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin):
 
 class LogWindow(wx.Frame):
     """Window to show the log output"""
+
     def __init__(self, parent, prevLog=[]):
         wx.Frame.__init__(self, parent, size=(600, 400))
         self.log = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_RICH2 | wx.TE_READONLY)
         map(self.add, prevLog)
         id = wx.NewId()
-        self.acceleratorTable = wx.AcceleratorTable([
-            (wx.ACCEL_CTRL,  ord('l'), id),
-            (wx.ACCEL_CTRL,  ord('w'), id),
-        ])
+        self.acceleratorTable = wx.AcceleratorTable([(wx.ACCEL_CTRL, ord("l"), id), (wx.ACCEL_CTRL, ord("w"), id)])
         self.SetAcceleratorTable(self.acceleratorTable)
         self.Bind(wx.EVT_CLOSE, lambda e: self.Hide())
         self.Bind(wx.EVT_MENU, lambda e: self.Hide(), id=id)
@@ -77,18 +75,19 @@ class LogWindow(wx.Frame):
 
 class TestRunnerGui(wx.App):
     """Graphical User Interface"""
+
     modes = ["Continuous", "Halt on Fail", "Halt on Error"]
-    benchtypes = [('nightmare', '.py'), ('All Files', '')]
-    duttypes = [('All Files', ''), ('Executables', '.exe')]
+    benchtypes = [("nightmare", ".py"), ("All Files", "")]
+    duttypes = [("All Files", ""), ("Executables", ".exe")]
 
     def suiteSave(self, fn):
         self.runner.saveToFile(fn)
 
     def loadIcon(self, frame):
         try:
-            if sys.platform == 'win32':
+            if sys.platform == "win32":
                 exeName = sys.executable
-                icon = wx.Icon(exeName + ';0', wx.BITMAP_TYPE_ICO)
+                icon = wx.Icon(exeName + ";0", wx.BITMAP_TYPE_ICO)
                 frame.SetIcon(icon)
         except:
             pass
@@ -104,14 +103,14 @@ class TestRunnerGui(wx.App):
         fname = self.loadFileDialog(fileTypes=TestRunnerGui.benchtypes)
         if fname is not None:
             self.edtFile.SetValue(os.path.relpath(fname))
-            self.runner.options['bench'] = fname
+            self.runner.options["bench"] = fname
             self.updateFromRunner()
 
     def updateFromRunner(self):
         self.runner.loadSuite()
         self.lstTests.DeleteAllItems()
         self.applyToList(self.runner.getSuite().getTests(), self.insertTest)
-        self.edtDUT.SetValue(str(self.runner.options['dut']))
+        self.edtDUT.SetValue(str(self.runner.options["dut"]))
         self.edtTests.SetValue(str(self.runner.countTests()))
         self.grpMode.SetSelection(self.runner.getSuite().mode)
 
@@ -163,17 +162,17 @@ class TestRunnerGui(wx.App):
         """
         if test.state == TestState.Error:
             self.lstTests.CheckItem(idx, False)
-            self.lstTests.SetItemBackgroundColour(idx, 'yellow')
+            self.lstTests.SetItemBackgroundColour(idx, "yellow")
         elif test.state == TestState.Success:
-            self.lstTests.SetItemBackgroundColour(idx, 'green')
+            self.lstTests.SetItemBackgroundColour(idx, "green")
         elif test.state == TestState.Fail:
-            self.lstTests.SetItemBackgroundColour(idx, 'red')
+            self.lstTests.SetItemBackgroundColour(idx, "red")
         elif test.state == TestState.Timeout:
-            self.lstTests.SetItemBackgroundColour(idx, 'purple')
+            self.lstTests.SetItemBackgroundColour(idx, "purple")
         elif test.state == TestState.Waiting:
-            self.lstTests.SetItemBackgroundColour(idx, 'white')
+            self.lstTests.SetItemBackgroundColour(idx, "white")
         elif test.state == TestState.Disabled:
-            self.lstTests.SetItemBackgroundColour(idx, 'gray')
+            self.lstTests.SetItemBackgroundColour(idx, "gray")
         TermColor.active = False
         self.lstTests.SetItem(idx, 0, test.name)
         self.lstTests.SetItem(idx, 1, test.descr)
@@ -194,7 +193,9 @@ class TestRunnerGui(wx.App):
     def __runthread(self, testIdx=None):
         """Run tests"""
         if testIdx is None:
-            self.applyToList(self.runner.getSuite().getTests(), lambda i, t: self.setTestState(t, i, TestState.Waiting), gauge=False)
+            self.applyToList(
+                self.runner.getSuite().getTests(), lambda i, t: self.setTestState(t, i, TestState.Waiting), gauge=False
+            )
             self.applyToList(self.runner.run(), self.updateTest)
         else:
             test, = self.runner.getSuite().run(tests=[testIdx])
@@ -239,9 +240,9 @@ class TestRunnerGui(wx.App):
         self.log = []
         self.logForm = None
         self.runner = TestRunner()
-        self.runner.options['quiet'] = True
+        self.runner.options["quiet"] = True
         self.runner.parseArgv()
-        self.runner.options['mode'] = TestSuiteMode.Continuous
+        self.runner.options["mode"] = TestSuiteMode.Continuous
 
     def addLog(self, line):
         self.log.append(line)
@@ -269,13 +270,13 @@ class TestRunnerGui(wx.App):
         diag.ShowModal()
         return os.path.join(diag.Directory, path=diag.Filename) if diag.Filename != "" else None
 
-    def displayError(self, message, caption='An error occured'):
+    def displayError(self, message, caption="An error occured"):
         return self.messageDialog(message, caption, wx.OK | wx.ICON_ERROR) == wx.OK
 
-    def displayInformation(self, message, caption='Warning'):
+    def displayInformation(self, message, caption="Warning"):
         return self.messageDialog(message, caption, wx.OK | wx.ICON_INFORMATION) == wx.OK
 
-    def displayQuestion(self, message, caption='Question'):
+    def displayQuestion(self, message, caption="Question"):
         return self.messageDialog(message, caption, wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
 
     def loadFileDialog(self, message="Load File", fileTypes=None, dir=wx.EmptyString):
@@ -293,47 +294,47 @@ class TestRunnerGui(wx.App):
         panel = wx.Panel(self.wHnd)
         sizer = wx.GridBagSizer(3, 3)
         # Create Controls
-        self.btnLoad   = wx.Button(panel, label="Load", id=wx.ID_OPEN)
-        self.btnSave   = wx.Button(panel, label="Save", id=wx.ID_SAVE)
-        self.lblDUT    = wx.StaticText(panel, label="DUT")
-        self.lblFile   = wx.StaticText(panel, label="File")
-        self.lblTests  = wx.StaticText(panel, label="Tests")
-        self.edtDUT    = wx.TextCtrl(panel)
-        self.edtFile   = wx.TextCtrl(panel)
-        self.edtTests  = wx.TextCtrl(panel)
+        self.btnLoad = wx.Button(panel, label="Load", id=wx.ID_OPEN)
+        self.btnSave = wx.Button(panel, label="Save", id=wx.ID_SAVE)
+        self.lblDUT = wx.StaticText(panel, label="DUT")
+        self.lblFile = wx.StaticText(panel, label="File")
+        self.lblTests = wx.StaticText(panel, label="Tests")
+        self.edtDUT = wx.TextCtrl(panel)
+        self.edtFile = wx.TextCtrl(panel)
+        self.edtTests = wx.TextCtrl(panel)
         self.btnSelect = wx.Button(panel, label="...")
-        self.btnAdd    = wx.Button(panel, label=" + ", id=wx.ID_ADD)
-        self.grpMode   = wx.RadioBox(panel, choices=TestRunnerGui.modes, style=wx.RA_VERTICAL)
-        self.prgGauge  = wx.Gauge(panel)
-        self.btnRun    = wx.Button(panel, label="Run")
-        self.lstTests  = CheckListCtrl(panel)
+        self.btnAdd = wx.Button(panel, label=" + ", id=wx.ID_ADD)
+        self.grpMode = wx.RadioBox(panel, choices=TestRunnerGui.modes, style=wx.RA_VERTICAL)
+        self.prgGauge = wx.Gauge(panel)
+        self.btnRun = wx.Button(panel, label="Run")
+        self.lstTests = CheckListCtrl(panel)
         # Feature for wxPython 2.9 (currently in development)
-        if hasattr(self.btnSave, 'SetBitmap'):
+        if hasattr(self.btnSave, "SetBitmap"):
             self.btnSave.SetBitmap(wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE))
             self.btnLoad.SetBitmap(wx.ArtProvider.GetBitmap(wx.ART_FILE_OPEN))
         # Disable TextCtrl
         self.edtFile.Disable()
         self.edtTests.Disable()
         # Insert Columns into list and hook up the checkboxes
-        self.lstTests.InsertColumn(0, 'Test', width=140)
-        self.lstTests.InsertColumn(1, 'Description', width=220)
-        self.lstTests.InsertColumn(2, 'State', width=100)
+        self.lstTests.InsertColumn(0, "Test", width=140)
+        self.lstTests.InsertColumn(1, "Description", width=220)
+        self.lstTests.InsertColumn(2, "State", width=100)
         self.lstTests.OnCheckItem = self.onListCheck
         # Create Layout
-        sizer.Add(self.btnLoad,   pos=(0, 0), span=(3, 1), border=5, flag=wx.LEFT | wx.TOP | wx.EXPAND)
-        sizer.Add(self.btnSave,   pos=(0, 1), span=(3, 1), border=5, flag=wx.TOP | wx.EXPAND)
-        sizer.Add(self.lblDUT,    pos=(0, 2), span=(1, 1), border=5, flag=wx.RIGHT | wx.LEFT | wx.TOP | wx.EXPAND)
-        sizer.Add(self.lblFile,   pos=(1, 2), span=(1, 1), border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
-        sizer.Add(self.lblTests,  pos=(2, 2), span=(1, 1), border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
-        sizer.Add(self.edtDUT,    pos=(0, 3), span=(1, 1), border=5, flag=wx.TOP | wx.EXPAND)
-        sizer.Add(self.edtFile,   pos=(1, 3), span=(1, 1), border=5, flag=wx.EXPAND)
-        sizer.Add(self.edtTests,  pos=(2, 3), span=(1, 1), border=5, flag=wx.EXPAND)
+        sizer.Add(self.btnLoad, pos=(0, 0), span=(3, 1), border=5, flag=wx.LEFT | wx.TOP | wx.EXPAND)
+        sizer.Add(self.btnSave, pos=(0, 1), span=(3, 1), border=5, flag=wx.TOP | wx.EXPAND)
+        sizer.Add(self.lblDUT, pos=(0, 2), span=(1, 1), border=5, flag=wx.RIGHT | wx.LEFT | wx.TOP | wx.EXPAND)
+        sizer.Add(self.lblFile, pos=(1, 2), span=(1, 1), border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
+        sizer.Add(self.lblTests, pos=(2, 2), span=(1, 1), border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
+        sizer.Add(self.edtDUT, pos=(0, 3), span=(1, 1), border=5, flag=wx.TOP | wx.EXPAND)
+        sizer.Add(self.edtFile, pos=(1, 3), span=(1, 1), border=5, flag=wx.EXPAND)
+        sizer.Add(self.edtTests, pos=(2, 3), span=(1, 1), border=5, flag=wx.EXPAND)
         sizer.Add(self.btnSelect, pos=(0, 4), span=(1, 1), border=5, flag=wx.TOP)
-        sizer.Add(self.btnAdd,    pos=(2, 4), span=(1, 1), border=5, )
-        sizer.Add(self.grpMode,   pos=(0, 5), span=(3, 1), border=5, flag=wx.TOP | wx.RIGHT | wx.EXPAND)
-        sizer.Add(self.prgGauge,  pos=(3, 0), span=(1, 5), border=5, flag=wx.LEFT | wx.EXPAND)
-        sizer.Add(self.btnRun,    pos=(3, 5), span=(1, 1), border=5, flag=wx.RIGHT | wx.EXPAND)
-        sizer.Add(self.lstTests,  pos=(4, 0), span=(1, 6), border=5, flag=wx.ALL | wx.EXPAND)
+        sizer.Add(self.btnAdd, pos=(2, 4), span=(1, 1), border=5)
+        sizer.Add(self.grpMode, pos=(0, 5), span=(3, 1), border=5, flag=wx.TOP | wx.RIGHT | wx.EXPAND)
+        sizer.Add(self.prgGauge, pos=(3, 0), span=(1, 5), border=5, flag=wx.LEFT | wx.EXPAND)
+        sizer.Add(self.btnRun, pos=(3, 5), span=(1, 1), border=5, flag=wx.RIGHT | wx.EXPAND)
+        sizer.Add(self.lstTests, pos=(4, 0), span=(1, 6), border=5, flag=wx.ALL | wx.EXPAND)
         sizer.AddGrowableCol(3)
         sizer.AddGrowableRow(4)
         panel.SetSizerAndFit(sizer)
@@ -343,18 +344,22 @@ class TestRunnerGui(wx.App):
         self.wHnd.Bind(wx.EVT_BUTTON, lambda e: self.run(), id=self.btnRun.GetId())
         self.wHnd.Bind(wx.EVT_BUTTON, lambda e: self.selectDut(), id=self.btnSelect.GetId())
         self.wHnd.Bind(wx.EVT_BUTTON, lambda e: self.addTest(), id=self.btnAdd.GetId())
-        self.wHnd.Bind(wx.EVT_RADIOBOX, lambda e: self.runner.options.__setitem__("mode", self.grpMode.GetSelection()), id=self.grpMode.GetId())
+        self.wHnd.Bind(
+            wx.EVT_RADIOBOX,
+            lambda e: self.runner.options.__setitem__("mode", self.grpMode.GetSelection()),
+            id=self.grpMode.GetId(),
+        )
         self.wHnd.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         self.lstTests.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.selectTest, id=self.lstTests.GetId())
         # Some Shortcuts
         shortcuts = [
-            (wx.ACCEL_CTRL,  ord('q'), self.OnCloseWindow),
-            (wx.ACCEL_CTRL,  ord('r'), lambda e:self.run()),
-            (wx.ACCEL_CTRL,  ord('o'), lambda e:self.loadSuite()),
-            (wx.ACCEL_CTRL,  ord('d'), lambda e:self.selectDut()),
-            (wx.ACCEL_CTRL,  ord('n'), lambda e:self.addTest()),
-            (wx.ACCEL_CTRL,  ord('e'), lambda e:self.addTest()),
-            (wx.ACCEL_CTRL,  ord('l'), lambda e:self.showLog()),
+            (wx.ACCEL_CTRL, ord("q"), self.OnCloseWindow),
+            (wx.ACCEL_CTRL, ord("r"), lambda e: self.run()),
+            (wx.ACCEL_CTRL, ord("o"), lambda e: self.loadSuite()),
+            (wx.ACCEL_CTRL, ord("d"), lambda e: self.selectDut()),
+            (wx.ACCEL_CTRL, ord("n"), lambda e: self.addTest()),
+            (wx.ACCEL_CTRL, ord("e"), lambda e: self.addTest()),
+            (wx.ACCEL_CTRL, ord("l"), lambda e: self.showLog()),
         ]
         entries = []
         for special, key, func in shortcuts:
@@ -370,7 +375,7 @@ class TestRunnerGui(wx.App):
 
     def OnCloseWindow(self, e):
         """Handler to make sure the window doesn't gets close by accident"""
-        ret = self.displayQuestion('Are you sure, you want to quit?')
+        ret = self.displayQuestion("Are you sure, you want to quit?")
         if ret == wx.ID_YES:
             self.wHnd.Destroy()
         else:
@@ -380,6 +385,7 @@ class TestRunnerGui(wx.App):
         self.wHnd.Centre()
         self.wHnd.Show()
         self.MainLoop()
+
 
 if __name__ == "__main__":
     gui = TestRunnerGui()

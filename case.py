@@ -46,6 +46,7 @@ from utils import isLambda, TermColor, logger
 
 class TestState:
     """The test is waiting for execution"""
+
     Success = 0
     """The test was successful"""
     Fail = 1
@@ -104,6 +105,7 @@ class TestState:
 
 class Command:
     """Command execution"""
+
     def __init__(self, cmd, binary=False):
         """
         Initialises the command
@@ -122,7 +124,14 @@ class Command:
 
     def commandFunc(self):
         """command to be run in the thread"""
-        self.proc = subprocess.Popen(self.cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=not self.binary, shell=True, cwd=os.getcwd())
+        self.proc = subprocess.Popen(
+            self.cmd,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            universal_newlines=not self.binary,
+            shell=True,
+            cwd=os.getcwd(),
+        )
         self.out, self.err = self.proc.communicate()
         self.ret = self.proc.wait()
 
@@ -138,9 +147,11 @@ class Command:
         self.thread.join(timeout)
         if self.proc is not None and self.proc.poll() is None:
             if sys.platform == "win32":
-                subprocess.Popen(['taskkill', '/F', '/T', '/PID', str(self.proc.pid)]).communicate()
+                subprocess.Popen(["taskkill", "/F", "/T", "/PID", str(self.proc.pid)]).communicate()
             else:
-                childProc = int(subprocess.check_output("pgrep -P {}".format(self.proc.pid), shell=True, universal_newlines=True).strip())
+                childProc = int(
+                    subprocess.check_output("pgrep -P {}".format(self.proc.pid), shell=True, universal_newlines=True).strip()
+                )
                 os.kill(childProc, signal.SIGKILL)
                 if self.proc.poll() is None:
                     os.kill(self.proc.pid, signal.SIGTERM)
@@ -197,20 +208,22 @@ class CompareFiles(Expectation):
 class Test(object):
     """A single test"""
 
-    def __init__(self,
-                 DUT=None,
-                 name="",
-                 description="",
-                 command=None,
-                 stdout=None,
-                 stderr=None,
-                 returnCode=None,
-                 timeout=5.0,
-                 outputOnFail=False,
-                 pipe=False,
-                 diff=None,
-                 state=TestState.Waiting,
-                 binary=False):
+    def __init__(
+        self,
+        DUT=None,
+        name="",
+        description="",
+        command=None,
+        stdout=None,
+        stderr=None,
+        returnCode=None,
+        timeout=5.0,
+        outputOnFail=False,
+        pipe=False,
+        diff=None,
+        state=TestState.Waiting,
+        binary=False,
+    ):
         """
         Initalises a test
 
@@ -328,7 +341,7 @@ class Test(object):
                 return f(out)
             if exp.startswith("regex:"):
                 patCode = re.compile(exp[6:].replace("$n", self.linesep), re.IGNORECASE)
-                return (patCode.match(str(out)) != None)
+                return patCode.match(str(out)) != None
             else:
                 expLines = exp.replace("$n", self.linesep).splitlines()
                 outLines = str(out).rstrip().splitlines()
@@ -388,16 +401,23 @@ class Test(object):
         cmdRet = _cmd.execute(self.timeout)
         if cmdRet == TestState.Success:
             self.output = _cmd.out
-            self.error  = _cmd.err
+            self.error = _cmd.err
             self.retCode = _cmd.ret
-            if (self.check(self.expectRetCode, self.retCode) and
-                    self.check(self.expectStdout, self.output, "stdout") and
-                    self.check(self.expectStderr, self.error, "stderr")):
+            if (
+                self.check(self.expectRetCode, self.retCode)
+                and self.check(self.expectStdout, self.output, "stdout")
+                and self.check(self.expectStderr, self.error, "stderr")
+            ):
                 self.state = TestState.Success
             else:
-                if 'Assertion' in self.error or 'assertion' in self.error:
+                if "Assertion" in self.error or "assertion" in self.error:
                     self.state = TestState.Assertion
-                elif "stackdump" in self.error or "coredump" in self.error or "Segmentation Fault" in self.error or self.retCode < 0:
+                elif (
+                    "stackdump" in self.error
+                    or "coredump" in self.error
+                    or "Segmentation Fault" in self.error
+                    or self.retCode < 0
+                ):
                     self.state = TestState.SegFault
                 else:
                     self.state = TestState.Fail
@@ -438,7 +458,11 @@ class Test(object):
                                         hits.append((os.path.relpath(fname), nr, line.rstrip(), word.pattern))
             if len(hits) > 0:
                 for file, lineno, text, pattern in hits:
-                    logger.log("{} {}[{}]: '{}' matches '{}'".format(TestState.toString(TestState.BadWord), file, lineno, text, pattern))
+                    logger.log(
+                        "{} {}[{}]: '{}' matches '{}'".format(
+                            TestState.toString(TestState.BadWord), file, lineno, text, pattern
+                        )
+                    )
                 self.state = TestState.BadWord
             else:
                 self.state = TestState.Clean
@@ -469,11 +493,11 @@ class Test(object):
             fields.append("{}\tdescription = '{:s}'".format(prefix, self.descr))
         fields.append("{}\tcommand = '{:s}'".format(prefix, self.cmd))
         if self.expectStdout is not None:
-            fields.append("{}\tstdout = \"\"\"{}\"\"\"".format(prefix, self.expectStdout))
+            fields.append('{}\tstdout = """{}"""'.format(prefix, self.expectStdout))
         if self.expectStderr is not None:
-            fields.append("{}\tstderr = \"\"\"{}\"\"\"".format(prefix, self.expectStderr))
+            fields.append('{}\tstderr = """{}"""'.format(prefix, self.expectStderr))
         if self.expectRetCode is not None:
-            fields.append("{}\treturnCode = \"{}\"".format(prefix, self.expectRetCode))
+            fields.append('{}\treturnCode = "{}"'.format(prefix, self.expectRetCode))
         if self.timeout is not None:
             fields.append("{}\ttimeout = {:.1f}".format(prefix, self.timeout))
         return "Test (\n{}\n{})".format(",\n".join(fields), prefix)
@@ -504,9 +528,17 @@ class TestGroup:
 
     def log_test(self, t, nr=0):
         if t.descr is not None:
-            logger.log("  {}[{: 03}] {} - {}: {}".format(TermColor.colorText("Test", TermColor.Purple), nr, t.name, t.descr, TestState.toString(t.state)))
+            logger.log(
+                "  {}[{: 03}] {} - {}: {}".format(
+                    TermColor.colorText("Test", TermColor.Purple), nr, t.name, t.descr, TestState.toString(t.state)
+                )
+            )
         else:
-            logger.log("  {}[{: 03}] {}: {}".format(TermColor.colorText("Test", TermColor.Purple), nr, t.name, TestState.toString(t.state)))
+            logger.log(
+                "  {}[{: 03}] {}: {}".format(
+                    TermColor.colorText("Test", TermColor.Purple), nr, t.name, TestState.toString(t.state)
+                )
+            )
 
     def run(self):
         results = []
@@ -521,19 +553,17 @@ class TestGroup:
         Creates a textual representation of the testgroup.
         The output can be saved to a file.
         """
-        tests = [t.toString(prefix+"\t") for t in self.tests]
-        if (self._name is not None):
+        tests = [t.toString(prefix + "\t") for t in self.tests]
+        if self._name is not None:
             tests += ["name='{}'".format(self.name)]
         tests += ["predicate={}".format(self.predicate.__name__)]
-        return "Group(\n{}\t{}\n{})".format(
-            prefix,
-            ",\n{}\t".format(prefix).join(tests),
-            prefix,
-        )
+        return "Group(\n{}\t{}\n{})".format(prefix, ",\n{}\t".format(prefix).join(tests), prefix)
+
 
 class TestAll(TestGroup):
     def __init__(self, *tests, name=None):
         super.__init__(self, *tests, name=name, predicate=all)
+
 
 class TestAny(TestGroup):
     def __init__(self, *tests, name=None):
