@@ -78,7 +78,7 @@ def main():
                 pass
             if not runner.options["info"] and not runner.options["length"] and not runner.options["quiet"]:
                 print(f"{suite.getRate():2.2f}%")
-            sys.exit(suite.lastResult if suite.lastResult not in [TestState.Waiting, TestState.InfoOnly] else 0)
+            sys.exit(int(suite.lastResult) if suite.lastResult not in [TestState.Waiting, TestState.InfoOnly] else 0)
         else:
             sys.exit(1)
 

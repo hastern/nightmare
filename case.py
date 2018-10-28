@@ -40,11 +40,12 @@ import difflib
 import subprocess
 
 from threading import Thread
+from enum import Enum
 
 from utils import isLambda, TermColor, logger
 
 
-class TestState:
+class TestState(Enum):
     """The test is waiting for execution"""
 
     Success = 0
@@ -70,37 +71,25 @@ class TestState:
     BadWord = 11
     """A BadWord was detected"""
 
-    @staticmethod
-    def toString(state):
-        """
-        Converts the enumeration value into a string
+    def __str__(self):
+        return {
+            TestState.Waiting: TermColor.colorText(" WAITING ", TermColor.White),
+            TestState.Success: TermColor.colorText(" SUCCESS ", fg=TermColor.Black, bg=TermColor.Green),
+            TestState.Fail: TermColor.colorText(" FAIL ", fg=TermColor.Black, bg=TermColor.Red),
+            TestState.Error: TermColor.colorText(" ERROR ", fg=TermColor.Black, bg=TermColor.Red, style=TermColor.Bold),
+            TestState.SegFault: TermColor.colorText(" SEGFAULT ", fg=TermColor.Black, bg=TermColor.Yellow),
+            TestState.Assertion: TermColor.colorText(
+                " ASSERTION ", fg=TermColor.Black, bg=TermColor.Yellow, style=TermColor.Bold
+            ),
+            TestState.InfoOnly: TermColor.colorText(" INFO ", TermColor.White),
+            TestState.Timeout: TermColor.colorText(" TIMEOUT ", TermColor.Purple),
+            TestState.Disabled: TermColor.colorText(" DISABLED ", TermColor.Blue),
+            TestState.Clean: TermColor.colorText(" CLEAN ", fg=TermColor.White, bg=TermColor.Green, style=TermColor.Bold),
+            TestState.BadWord: TermColor.colorText(" BADWORD ", fg=TermColor.Yellow, bg=TermColor.Red, style=TermColor.Bold),
+        }.get(self, TermColor.colorText(" UNKNOWN ", TermColor.Yellow))
 
-        @type    state: int
-        @param    state: Enumeration value
-        """
-        if state == TestState.Waiting:
-            return TermColor.colorText(" WAITING ", TermColor.White)
-        if state == TestState.Success:
-            return TermColor.colorText(" SUCCESS ", fg=TermColor.Black, bg=TermColor.Green)
-        if state == TestState.Fail:
-            return TermColor.colorText(" FAIL ", fg=TermColor.Black, bg=TermColor.Red)
-        if state == TestState.Error:
-            return TermColor.colorText(" ERROR ", fg=TermColor.Black, bg=TermColor.Red, style=TermColor.Bold)
-        if state == TestState.SegFault:
-            return TermColor.colorText(" SEGFAULT ", fg=TermColor.Black, bg=TermColor.Yellow)
-        if state == TestState.Assertion:
-            return TermColor.colorText(" ASSERTION ", fg=TermColor.Black, bg=TermColor.Yellow, style=TermColor.Bold)
-        if state == TestState.InfoOnly:
-            return TermColor.colorText(" INFO ", TermColor.White)
-        if state == TestState.Timeout:
-            return TermColor.colorText(" TIMEOUT ", TermColor.Purple)
-        if state == TestState.Disabled:
-            return TermColor.colorText(" DISABLED ", TermColor.Blue)
-        if state == TestState.Clean:
-            return TermColor.colorText(" CLEAN ", fg=TermColor.White, bg=TermColor.Green, style=TermColor.Bold)
-        if state == TestState.BadWord:
-            return TermColor.colorText(" BADWORD ", fg=TermColor.Yellow, bg=TermColor.Red, style=TermColor.Bold)
-        return TermColor.colorText(" UNKNOWN ", TermColor.Yellow)
+    def __int__(self):
+        return int(self.value)
 
 
 class Command:
@@ -458,7 +447,7 @@ class Test(object):
                                         hits.append((os.path.relpath(fname), nr, line.rstrip(), word.pattern))
             if len(hits) > 0:
                 for file, lineno, text, pattern in hits:
-                    logger.log(f"{TestState.toString(TestState.BadWord)} {file}[{lineno}]: '{text}' matches '{pattern}'")
+                    logger.log(f"{TestState.BadWord} {file}[{lineno}]: '{text}' matches '{pattern}'")
                 self.state = TestState.BadWord
             else:
                 self.state = TestState.Clean
@@ -524,9 +513,9 @@ class TestGroup:
 
     def log_test(self, t, nr=0):
         if t.descr is not None:
-            logger.log(f"  {TermColor.colorText('Test', TermColor.Purple)}[{nr: 03}] {t.name} - {t.descr}: {TestState.toString(t.state)}")
+            logger.log(f"  {TermColor.colorText('Test', TermColor.Purple)}[{nr: 03}] {t.name} - {t.descr}: {t.state}")
         else:
-            logger.log(f"  {TermColor.colorText('Test', TermColor.Purple)}[{nr: 03}] {t.name}: {TestState.toString(t.state)}")
+            logger.log(f"  {TermColor.colorText('Test', TermColor.Purple)}[{nr: 03}] {t.name}: {t.state}")
 
     def run(self):
         results = []

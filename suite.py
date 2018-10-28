@@ -33,13 +33,15 @@
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
 
+from enum import Enum
+
 from case import Test, TestState
 from utils import logger, TermColor
 
 
-class TestSuiteMode:
-    # __slots__ = ['Continuous', 'BreakOnFail', 'BreakOnError']
+class TestSuiteMode(Enum):
     """Enumeration for testsuite modes """
+
     BreakOnFail = 0
     """Halt on first failed test"""
     BreakOnError = 1
@@ -47,22 +49,15 @@ class TestSuiteMode:
     Continuous = 2
     """Run all test"""
 
-    @staticmethod
-    def toString(mode):
-        """
-        Converts the enumeration value into a string
+    def __str__(self):
+        return {
+            TestSuiteMode.BreakOnFail: "Break On Fail",
+            TestSuiteMode.Continuous: "Continuous",
+            TestSuiteMode.BreakOnError: "Break on Error",
+        }.get(self, "Unknown mode")
 
-        @type    mode: int
-        @param    mode: Enumeration value
-        """
-        if mode == TestSuiteMode.BreakOnFail:
-            return "Break On Fail"
-        if mode == TestSuiteMode.Continuous:
-            return "Continuous"
-        if mode == TestSuiteMode.BreakOnError:
-            return "Break on Error"
-        return "Unknown mode"
-
+    def __int__(self):
+        return int(self.value)
 
 class TestSuite(object):
     """A testsuite is a collection of tests"""
@@ -224,9 +219,9 @@ class TestSuite(object):
         for t in self._getTests(tests):
             self.lastResult = t.run()
             if t.descr is not None:
-                logger.log(f"{TermColor.colorText('Test', TermColor.Purple)}[{self.count: 03}] {t.name} - {t.descr}: {TestState.toString(t.state)}")
+                logger.log(f"{TermColor.colorText('Test', TermColor.Purple)}[{self.count: 03}] {t.name} - {t.descr}: {t.state}")
             else:
-                logger.log(f"{TermColor.colorText('Test', TermColor.Purple)}[{self.count: 03}] {t.name}: {TestState.toString(t.state)}")
+                logger.log(f"{TermColor.colorText('Test', TermColor.Purple)}[{self.count: 03}] {t.name}: {t.state}")
             if self.options["commands"]:
                 logger.log(f" --> {t.cmd}", showTime=False)
             logger.flush(quiet)

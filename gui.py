@@ -176,7 +176,7 @@ class TestRunnerGui(wx.App):
         TermColor.active = False
         self.lstTests.SetItem(idx, 0, test.name)
         self.lstTests.SetItem(idx, 1, test.descr)
-        self.lstTests.SetItem(idx, 2, TestState.toString(test.state))
+        self.lstTests.SetItem(idx, 2, test.state)
 
     def setTestState(self, test, idx, state):
         """Update the state of one test, but only if the test is not enabled"""
