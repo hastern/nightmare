@@ -5,7 +5,7 @@
 # @file runner.py                                                              #
 # @author Hanno Sternberg <hanno@almostintelligent.de>                         #
 #                                                                              #
-# This file the TestRunner that manages the test runs.                         #
+# This file contains the TestRunner that manages the test runs.                #
 #                                                                              #
 # @license MIT                                                                 #
 #                                                                              #

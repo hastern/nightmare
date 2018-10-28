@@ -5,7 +5,7 @@
 # @file utils.py                                                               #
 # @author Hanno Sternberg <hanno@almostintelligent.de>                         #
 #                                                                              #
-# This file contains an asorted collection of utilities:                       #
+# This file contains an assorted collection of utilities:                      #
 #     - Terminal coloring                                                      #
 #     - A custom logger                                                        #
 #                                                                              #
@@ -72,7 +72,7 @@ class TermColor:
     """Change text color"""
 
     active = True
-    """activate colourful output"""
+    """activate colorful output"""
 
     @staticmethod
     def colorText(text, fg=7, bg=0, style=0):
