@@ -84,7 +84,7 @@ class TestRunner(object):
             + TermColor.colorText("E", TermColor.Red, style=TermColor.Bold)
             + TermColor.colorText("ternally", TermColor.White)
         )
-        logger.log("Welcome to nightmare Version {}".format(version.Version))
+        logger.log(f"Welcome to nightmare Version {version.Version}")
         if flush:
             logger.flush(quiet=False)
         self.options = dict()
@@ -265,11 +265,11 @@ class TestRunner(object):
                 if v == TestSuiteMode.BreakOnError
                 else "I will halt on first fail.",
             ),
-            ("suite", lambda v: "I'm using the testsuite '{}'".format(v)),
-            ("test", lambda v: "I'm only running test {}".format(v) if len(v) > 0 else ""),
-            ("bench", lambda v: "I'm using testbench '{}'".format(v)),
-            ("timeout", lambda v: "Setting global timeout to {}".format(v)),
-            ("dut", lambda v: "Device under Test is: {}".format(v)),
+            ("suite", lambda v: f"I'm using the testsuite '{v}'"),
+            ("test", lambda v: f"I'm only running test {v}" if len(v) > 0 else ""),
+            ("bench", lambda v: f"I'm using testbench '{v}'"),
+            ("timeout", lambda v: f"Setting global timeout to {v}"),
+            ("dut", lambda v: f"Device under Test is: {v}"),
             ("commands", lambda v: "I will print every command I'll exceute." if v else ""),
             ("length", lambda v: "I will only print the number of tests" if v else ""),
             ("info", lambda v: "I will only print the test information." if v else ""),
@@ -281,7 +281,7 @@ class TestRunner(object):
             if self.options[option] is not None:
                 msg = msgFunc(self.options[option])
                 if len(msg) > 0:
-                    logger.log("\t{}".format(msg))
+                    logger.log(f"\t{msg}")
         logger.flush(self.options["quiet"])
 
     def addTest(self):
@@ -365,12 +365,12 @@ class TestRunner(object):
                 else:
                     suite = TestSuite(*ctx[self.options["suite"]], **{"DUT": self.options["dut"], "mode": self.options["mode"]})
             else:
-                logger.log("Sorry, but I can't find any tests inside the suite '{}'".format(self.options["suite"]))
+                logger.log(f"Sorry, but I can't find any tests inside the suite '{self.options['suite']}'")
         else:
             logger.log("Sorry, but there was no test-suite in the file")
         return suite
 
-    def loadSuite(self, fname=None):
+    def loadSuite(self, fname: os.PathLike = None) -> TestSuite:
         """Loads a python based suite from a file"""
         if fname is not None:
             self.options["bench"] = fname
@@ -378,7 +378,7 @@ class TestRunner(object):
             logger.log("\nReading testfile ...")
             if self.options["relative"]:
                 os.chdir(os.path.dirname(os.path.abspath(self.options["bench"])))
-                logger.log("Current Working Dir is: {}".format(os.getcwd()))
+                logger.log(f"Current Working Dir is: {os.getcwd()}")
                 self.options["bench"] = os.path.basename(self.options["bench"])
             if self.options["arnold"]:
                 self.runsuite = self.loadArnold()
@@ -396,12 +396,12 @@ class TestRunner(object):
                     ignoreEmptyLines=self.options["ignoreEmptyLines"],
                 )
                 self.testCount = len(self.runsuite.testList)
-                logger.log("I have loaded {} Testcase{}".format(self.testCount, "s" if self.testCount > 0 else ""))
+                logger.log(f"I have loaded {self.testCount} Testcase{'s' if self.testCount > 0 else ''}")
 
             else:
                 logger.log("Sorry, but I failed to load the requested suite")
         else:
-            logger.log("Sorry, but I couldn't find the file '{}'".format(self.options["bench"]))
+            logger.log(f"Sorry, but I couldn't find the file '{self.options['bench']}'")
         logger.flush(self.options["quiet"])
         return self.runsuite
 
@@ -416,7 +416,7 @@ class TestRunner(object):
         if self.options["length"]:
             print(len(self.runsuite.getTests()))
         elif len(self.options["save"]) == 1:
-            logger.log("Saving Suite to {}".format(self.options["save"][0]))
+            logger.log(f"Saving Suite to {self.options['save'][0]}")
             self.saveToFile(self.options["save"][0])
         else:
             logger.flush(self.options["quiet"])
@@ -447,17 +447,17 @@ class TestRunner(object):
         fHnd = open(fn, "w")
         fHnd.write("#!/usr/bin/env python\n\n")
         fHnd.write("# nightmare - Testbench\n")
-        fHnd.write("# Saved at {}\n".format(time.strftime("%H:%M:%S")))
+        fHnd.write(f"# Saved at {time.strftime('%H:%M:%S')}\n")
         fHnd.write("# \n\n")
-        # fHnd.write("# Author: {}\n".format())
+        # fHnd.write("# Author: {}\n")
         if self.options["dut"] is not None:
             fHnd.write("# Device Under Test\n")
-            fHnd.write('DUT = "{}"\n\n'.format(os.path.relpath(self.options["dut"])))
+            fHnd.write(f"DUT = \"{os.path.relpath(self.options['dut'])}\"\n\n")
         fHnd.write("# Test definitions\n")
-        fHnd.write("{} = [\n".format(self.options["suite"]))
+        fHnd.write(f"{self.options['suite']} = [\n")
         tests = []
         for test in self.getSuite().getTests():
-            tests.append("\t{}".format(test.toString()))
+            tests.append(f"\t{test.toString()}")
         fHnd.write(",\n".join(tests))
         fHnd.write("\n]\n")
         fHnd.close()

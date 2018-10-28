@@ -150,7 +150,7 @@ class Command:
                 subprocess.Popen(["taskkill", "/F", "/T", "/PID", str(self.proc.pid)]).communicate()
             else:
                 childProc = int(
-                    subprocess.check_output("pgrep -P {}".format(self.proc.pid), shell=True, universal_newlines=True).strip()
+                    subprocess.check_output(f"pgrep -P {self.proc.pid}", shell=True, universal_newlines=True).strip()
                 )
                 os.kill(childProc, signal.SIGKILL)
                 if self.proc.poll() is None:
@@ -386,7 +386,7 @@ class Test(object):
             bytes += len(line)
             stream.write(TermColor.colorText(line + " ", fg=color) + "\n")
             if bytes > self.pipeLimit:
-                stream.write(TermColor.colorText("Stopped after {} Bytes".format(bytes), fg=TermColor.Yellow) + "\n")
+                stream.write(TermColor.colorText(f"Stopped after {bytes} Bytes", fg=TermColor.Yellow) + "\n")
                 break
 
     def runCmd(self, command):
@@ -422,7 +422,7 @@ class Test(object):
                 else:
                     self.state = TestState.Fail
             if (self.pipe) or (self.outputOnFail and self.state is TestState.Fail):
-                sys.stdout.write(TermColor.colorText("{}".format(self.retCode), fg=TermColor.Yellow) + " ")
+                sys.stdout.write(TermColor.colorText(f"{self.retCode}", fg=TermColor.Yellow) + " ")
                 self.pipeOutputStream(sys.stdout, self.output.splitlines(), TermColor.Green)
                 self.pipeOutputStream(sys.stderr, self.error.splitlines(), TermColor.Red)
         else:
@@ -434,9 +434,9 @@ class Test(object):
             return TestState.Disabled
         if self.state == TestState.InfoOnly:
             if self.descr is None:
-                print("{}".format(self.name))
+                print(f"{self.name}")
             else:
-                print("{} - {}".format(self.name, self.descr))
+                print(f"{self.name} - {self.descr}")
             return TestState.InfoOnly
         if self.name == "Badword":
             # Bad Word Detection Mode
@@ -458,11 +458,7 @@ class Test(object):
                                         hits.append((os.path.relpath(fname), nr, line.rstrip(), word.pattern))
             if len(hits) > 0:
                 for file, lineno, text, pattern in hits:
-                    logger.log(
-                        "{} {}[{}]: '{}' matches '{}'".format(
-                            TestState.toString(TestState.BadWord), file, lineno, text, pattern
-                        )
-                    )
+                    logger.log(f"{TestState.toString(TestState.BadWord)} {file}[{lineno}]: '{text}' matches '{pattern}'")
                 self.state = TestState.BadWord
             else:
                 self.state = TestState.Clean
@@ -488,19 +484,19 @@ class Test(object):
         @rtype:     String
         """
         fields = []
-        fields.append("{}\tname = '{:s}'".format(prefix, self.name))
+        fields.append(f"{prefix}\tname = '{self.name:s}'")
         if self.descr is not None and self.descr != "":
-            fields.append("{}\tdescription = '{:s}'".format(prefix, self.descr))
-        fields.append("{}\tcommand = '{:s}'".format(prefix, self.cmd))
+            fields.append(f"{prefix}\tdescription = '{self.descr:s}'")
+        fields.append(f"{prefix}\tcommand = '{self.cmd:s}'")
         if self.expectStdout is not None:
-            fields.append('{}\tstdout = """{}"""'.format(prefix, self.expectStdout))
+            fields.append(f'{prefix}\tstdout = """{self.expectStdout}"""')
         if self.expectStderr is not None:
-            fields.append('{}\tstderr = """{}"""'.format(prefix, self.expectStderr))
+            fields.append(f'{prefix}\tstderr = """{self.expectStderr}"""')
         if self.expectRetCode is not None:
-            fields.append('{}\treturnCode = "{}"'.format(prefix, self.expectRetCode))
+            fields.append(f'{prefix}\treturnCode = "{self.expectRetCode}"')
         if self.timeout is not None:
-            fields.append("{}\ttimeout = {:.1f}".format(prefix, self.timeout))
-        return "Test (\n{}\n{})".format(",\n".join(fields), prefix)
+            fields.append(f"{prefix}\ttimeout = {self.timeout:.1f}")
+        return ",\n".join(["Test ("] + fields + [prefix + ")"])
 
 
 class TestGroup:
@@ -515,7 +511,7 @@ class TestGroup:
     @property
     def name(self):
         if self._name is None:
-            return "Group of {} tests".format(len(self.tests))
+            return f"Group of {len(self.tests)} tests"
         return self._name
 
     @property
@@ -528,17 +524,9 @@ class TestGroup:
 
     def log_test(self, t, nr=0):
         if t.descr is not None:
-            logger.log(
-                "  {}[{: 03}] {} - {}: {}".format(
-                    TermColor.colorText("Test", TermColor.Purple), nr, t.name, t.descr, TestState.toString(t.state)
-                )
-            )
+            logger.log(f"  {TermColor.colorText('Test', TermColor.Purple)}[{nr: 03}] {t.name} - {t.descr}: {TestState.toString(t.state)}")
         else:
-            logger.log(
-                "  {}[{: 03}] {}: {}".format(
-                    TermColor.colorText("Test", TermColor.Purple), nr, t.name, TestState.toString(t.state)
-                )
-            )
+            logger.log(f"  {TermColor.colorText('Test', TermColor.Purple)}[{nr: 03}] {t.name}: {TestState.toString(t.state)}")
 
     def run(self):
         results = []
@@ -555,9 +543,9 @@ class TestGroup:
         """
         tests = [t.toString(prefix + "\t") for t in self.tests]
         if self._name is not None:
-            tests += ["name='{}'".format(self.name)]
-        tests += ["predicate={}".format(self.predicate.__name__)]
-        return "Group(\n{}\t{}\n{})".format(prefix, ",\n{}\t".format(prefix).join(tests), prefix)
+            tests += [f"name='{self.name}'"]
+        tests += [f"predicate={self.predicate.__name__}"]
+        return f"Group(\n{prefix}\t" + ",\n{prefix}\t".join(tests) + f"\n{prefix})"
 
 
 class TestAll(TestGroup):

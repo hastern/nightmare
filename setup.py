@@ -114,7 +114,7 @@ setup(
 	long_description=read('README.md'),
 	entry_points={
 		'setuptools.installation':[
-			"eggsecutable = {}:main".format(mainScript)
+			f"eggsecutable = {mainScript}:main"
 		]
 	},
 	install_requires=['pyparsing'],

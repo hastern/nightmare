@@ -87,7 +87,7 @@ class TermColor:
     @staticmethod
     def colorText(text, fg=7, bg=0, style=0):
         if TermColor.active and (os.getenv("ANSI_COLORS_DISABLED") is None):
-            return u"\033[{:02};{:2};{:2}m{:s}\033[0m".format(style, fg + TermColor.Text, bg + TermColor.Background, text)
+            return f"\033[{style:02};{fg + TermColor.Text:2};{bg + TermColor.Background:2}m{text:s}\033[0m"
         else:
             return text
 
@@ -116,12 +116,13 @@ class logger:
         @param    str: Log message
         """
         if showTime:
-            msg = u"{0} {1}".format(
-                TermColor.colorText("[{0}]".format(time.strftime("%H:%M:%S")), TermColor.Blue, style=TermColor.Dim),
-                str.strip("\r\n"),
+            msg = (
+                TermColor.colorText(f"[{time.strftime('%H:%M:%S')}]", TermColor.Blue, style=TermColor.Dim)
+                + " "
+                + str.strip("\r\n")
             )
         else:
-            msg = u"           {0}".format(str.strip("\r\n"))
+            msg = "           " + str.strip("\r\n")
         if logger.autoflush:
             logger.logListener(msg)
         else:

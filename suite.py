@@ -224,19 +224,11 @@ class TestSuite(object):
         for t in self._getTests(tests):
             self.lastResult = t.run()
             if t.descr is not None:
-                logger.log(
-                    "{}[{: 03}] {} - {}: {}".format(
-                        TermColor.colorText("Test", TermColor.Purple), self.count, t.name, t.descr, TestState.toString(t.state)
-                    )
-                )
+                logger.log(f"{TermColor.colorText('Test', TermColor.Purple)}[{self.count: 03}] {t.name} - {t.descr}: {TestState.toString(t.state)}")
             else:
-                logger.log(
-                    "{}[{: 03}] {}: {}".format(
-                        TermColor.colorText("Test", TermColor.Purple), self.count, t.name, TestState.toString(t.state)
-                    )
-                )
+                logger.log(f"{TermColor.colorText('Test', TermColor.Purple)}[{self.count: 03}] {t.name}: {TestState.toString(t.state)}")
             if self.options["commands"]:
-                logger.log(" --> {}".format(t.cmd), showTime=False)
+                logger.log(f" --> {t.cmd}", showTime=False)
             logger.flush(quiet)
             if self.lastResult in [TestState.Success, TestState.Clean]:
                 self.success += 1
@@ -270,20 +262,20 @@ class TestSuite(object):
         @param    quiet: Flag, passed along to the logger
         """
         if self.lastResult != TestState.InfoOnly:
-            logger.log("I ran {} out of {} tests in total".format(self.count, len(self.testList)))
+            logger.log(f"I ran {self.count} out of {len(self.testList)} tests in total")
             fails = self.count - self.success
-            logger.log(TermColor.colorText("\tSuccess: {}".format(self.success), TermColor.Green))
+            logger.log(TermColor.colorText(f"\tSuccess: {self.success}", TermColor.Green))
             if self.failed > 0:
-                logger.log(TermColor.colorText("\tFailed: {}".format(self.failed), TermColor.Red))
+                logger.log(TermColor.colorText(f"\tFailed: {self.failed}", TermColor.Red))
             if self.error > 0:
-                logger.log(TermColor.colorText("\tErrors: {}".format(self.error), TermColor.Yellow))
+                logger.log(TermColor.colorText(f"\tErrors: {self.error}", TermColor.Yellow))
             if self.assertions > 0:
-                logger.log(TermColor.colorText("\tAssertions: {}".format(self.assertions), TermColor.Yellow))
+                logger.log(TermColor.colorText(f"\tAssertions: {self.assertions}", TermColor.Yellow))
             if self.segfaults > 0:
-                logger.log(TermColor.colorText("\tSegFaults: {}".format(self.segfaults), TermColor.Yellow))
+                logger.log(TermColor.colorText(f"\tSegFaults: {self.segfaults}", TermColor.Yellow))
 
             if self.timedout > 0:
-                logger.log(TermColor.colorText("\tTimeouts: {}".format(self.timedout), TermColor.Purple))
+                logger.log(TermColor.colorText(f"\tTimeouts: {self.timedout}", TermColor.Purple))
             # A little bit of fun
             if self.success == len(self) and self.count > 3:
                 logger.log("\tCongratulations, you passed all tests!")
