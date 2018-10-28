@@ -130,7 +130,6 @@ class TestRunner(object):
         group.add_argument(
             "--limit",
             action="store",
-            nargs=1,
             type=int,
             default=2000,
             help="Set a (soft) limit for a number of Bytes, after which output piping will we stopped. Checks are made after each line.",
