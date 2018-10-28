@@ -42,7 +42,7 @@ import subprocess
 from threading import Thread
 from enum import Enum
 
-from utils import isLambda, TermColor, logger
+from utils import TermColor, logger
 
 
 class TestState(Enum):
@@ -312,7 +312,7 @@ class Test(object):
         """
         if exp is None:
             return True
-        elif isLambda(exp) or isinstance(exp, Expectation):
+        elif callable(exp) or isinstance(exp, Expectation):
             return exp(out)
         elif isinstance(exp, Stringifier):
             return self.lineComparison(*(exp(out)), stream=stream)

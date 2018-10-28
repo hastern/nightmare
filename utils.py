@@ -39,18 +39,6 @@ import os
 import time
 
 
-def isLambda(v):
-    """
-    Test if a given value is a lambda function
-
-    @type        v: Anything (preferable a lambda function)
-    @param        v: Some value
-    @rtype:     Boolean
-    @return:    True, if the value is a lambda function
-    """
-    return isinstance(v, type(lambda: None)) and v.__name__ == "<lambda>"
-
-
 class TermColor:
     """ Print colored text """
 
