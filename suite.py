@@ -59,27 +59,11 @@ class TestSuiteMode(Enum):
     def __int__(self):
         return int(self.value)
 
-class TestSuite(object):
+
+class TestSuite:
     """A testsuite is a collection of tests"""
 
-    def __init__(self, *tests, **options):
-        """
-        Initialises a test suite
-
-        @type    tests: List
-        @param    tests: List of tests, default is an empty list
-
-        @type    mode: TestSuiteMode
-        @param    mode: The initial mode of the testsuite
-        @type    DUT: str
-        @param     DUT: The path to the Device Under Test
-        @type    timeout: float
-        @param    timeout: The time out be before the DUT gets killed
-        @type    pipe: Boolean
-        @param    pipe: Flag, set if the output streams should be piped
-        @type    outputOnFail: Boolean
-        @param    outputOnFail: Flag, set if the output streams should be piped on failed test
-        """
+    def __init__(self, *tests: Test, **options):
         self.options = {
             "mode": TestSuiteMode.BreakOnFail,
             "pipe": None,
@@ -157,13 +141,7 @@ class TestSuite(object):
         else:
             self.DUT = None
 
-    def addTest(self, test):
-        """
-        Adds a test to the suite
-
-        @type    test: Test
-        @param    test: Test to add
-        """
+    def addTest(self, test: Test):
         self.testList.append(test)
 
     def getTests(self):
@@ -205,12 +183,6 @@ class TestSuite(object):
                 yield self[t]
 
     def run(self, quiet=False, tests=[]):
-        """
-        Runs the whole suite of tests
-
-        @type    quiet: Boolean
-        @param    quiet: Flag, passed along to the logger
-        """
         self.success = 0
         self.failed = 0
         self.count = 0
@@ -250,12 +222,6 @@ class TestSuite(object):
         return self.rate
 
     def stats(self, quiet=False):
-        """
-        Generate and write the stats
-
-        @type    quiet: Boolean
-        @param    quiet: Flag, passed along to the logger
-        """
         if self.lastResult != TestState.InfoOnly:
             logger.log(f"I ran {self.count} out of {len(self.testList)} tests in total")
             fails = self.count - self.success
@@ -268,7 +234,6 @@ class TestSuite(object):
                 logger.log(TermColor.colorText(f"\tAssertions: {self.assertions}", TermColor.Yellow))
             if self.segfaults > 0:
                 logger.log(TermColor.colorText(f"\tSegFaults: {self.segfaults}", TermColor.Yellow))
-
             if self.timedout > 0:
                 logger.log(TermColor.colorText(f"\tTimeouts: {self.timedout}", TermColor.Purple))
             # A little bit of fun

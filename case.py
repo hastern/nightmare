@@ -32,6 +32,8 @@
 # IN THE SOFTWARE.                                                             #
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
+from typing import Optional, Union, List, Set, Tuple, Callable
+
 import os
 import re
 import sys
@@ -39,8 +41,9 @@ import signal
 import difflib
 import subprocess
 
-from threading import Thread
 from enum import Enum
+
+import threading
 
 from utils import TermColor, logger
 
@@ -95,16 +98,8 @@ class TestState(Enum):
 class Command:
     """Command execution"""
 
-    def __init__(self, cmd, binary=False):
-        """
-        Initialises the command
-
-        @type    cmd: str
-        @param    cmd: Command
-        """
+    def __init__(self, cmd: str, binary=False):
         self.cmd = cmd
-        self.proc = None
-        self.thread = None
         self.out = ""
         self.err = ""
         self.ret = 0
@@ -124,14 +119,9 @@ class Command:
         self.out, self.err = self.proc.communicate()
         self.ret = self.proc.wait()
 
-    def execute(self, timeout):
-        """
-        executes the command
-
-        @type    timeout: float
-        @param    timeout: Timeout in seconds
-        """
-        self.thread = Thread(target=self.commandFunc)
+    def execute(self, timeout: float) -> TestState:
+        self.proc = None
+        self.thread = threading.Thread(target=self.commandFunc)
         self.thread.start()
         self.thread.join(timeout)
         if self.proc is not None and self.proc.poll() is None:
@@ -150,15 +140,15 @@ class Command:
 
 
 class Expectation(object):
-    def __call__(self):
+    def __call__(self, *args, **kwargs) -> bool:
         return True
 
 
 class ExpectFile(Expectation):
-    def __init__(self, fname):
+    def __init__(self, fname: os.PathLike):
         self.exp = open(fname, "rb").read()
 
-    def __call__(self, out):
+    def __call__(self, out: str) -> bool:
         return self.exp == out
 
     def __str__(self):
@@ -166,10 +156,10 @@ class ExpectFile(Expectation):
 
 
 class Stringifier(object):
-    def __init__(self, expectation):
+    def __init__(self, expectation: str):
         self.exp = expectation.encode("utf8", errors="ignore")
 
-    def __call__(self, output):
+    def __call__(self, output: str) -> Tuple[List[bytes], List[bytes]]:
         out = output.encode("utf8", errors="ignore")
         return self.exp.strip().splitlines(), out.strip().splitlines()
 
@@ -178,12 +168,12 @@ class Stringifier(object):
 
 
 class StringifiedFile(Stringifier):
-    def __init__(self, fname):
+    def __init__(self, fname: os.PathLike):
         Stringifier.__init__(self, open(fname).read())
 
 
 class CompareFiles(Expectation):
-    def __init__(self, expect_file, out_file):
+    def __init__(self, expect_file: os.PathLike, out_file: os.PathLike):
         self.expect = expect_file
         self.out = out_file
 
@@ -192,6 +182,9 @@ class CompareFiles(Expectation):
         expect = open(self.expect, "rb").read()
         out = open(self.out, "rb").read()
         return expect == out
+
+
+ExpectationT = Optional[Union[Expectation, Stringifier, Callable, List["ExpectationT"], Set["ExpectationT"], str]]
 
 
 class Test(object):
@@ -213,30 +206,6 @@ class Test(object):
         state=TestState.Waiting,
         binary=False,
     ):
-        """
-        Initalises a test
-
-        @type    DUT: str
-        @param     DUT: The path to the Device Under Test
-        @type    name: str
-        @param    name: The name of the test case
-        @type    description: str
-        @param    description: The description of the test case
-        @type    command: str
-        @param    command: The command to be executed by the test case
-        @type    stdout: str
-        @param    stdout: The expected output on stdout
-        @type    stderr: str
-        @param    stderr: The expected output on stderr
-        @type    returnCode: int
-        @param    returnCode: The expected return code
-        @type    timeout: float
-        @param    timeout: The time out be before the DUT gets killed
-        @type    pipe: Boolean
-        @param    pipe: Flag, set if the output streams should be piped
-        @type    outputOnFail: Boolean
-        @param    outputOnFail: Flag, set if the output streams should be piped on failed test
-        """
         self.name = name
         """The name of the test"""
         self.descr = description
@@ -276,7 +245,7 @@ class Test(object):
         """Work in binary mode"""
         self.binary = binary
 
-    def lineComparison(self, expLines, outLines, stream=""):
+    def lineComparison(self, expLines: List[str], outLines: List[str], stream="") -> bool:
         same = True
         if self.ignoreEmptyLines:
             while expLines.count("") > 0:
@@ -298,17 +267,11 @@ class Test(object):
                 logger.log(TermColor.colorText(line.rstrip(), col))
         return same
 
-    def check(self, exp, out, stream="returnCode"):
+    def check(self, exp: ExpectationT, out: Optional[Union[str, int]], stream="returnCode") -> bool:
         """
         Test an expectation against an output
         If it's a lambda function, it will be executed with the output
         If it's a string, it will be treated as a regular expression.
-        @type    exp: String, lambda
-        @param    exp: Expected result
-        @type     out: String
-        @param    out: output The output
-        @rtype:    Boolean
-        @return: Result of the comparison
         """
         if exp is None:
             return True
@@ -337,39 +300,27 @@ class Test(object):
                 return self.lineComparison(expLines, outLines, stream)
         return False
 
-    def checkList(self, lst, out):
+    def checkList(self, lst: List[ExpectationT], out: Optional[Union[str, int]]) -> bool:
         """
         Tests a list of expectations against an output
         all elements in the list must match to be successful
-        @type    lst: List
-        @param    lst: List with expectation
-        @type     out: String, Int
-        @param    out: output The output
-        @rtype:    Boolean
-        @return: Result of the comparison
         """
         for exp in lst:
             if not self.check(exp, out):
                 return False
         return True
 
-    def checkSet(self, st, out):
+    def checkSet(self, st: Set[ExpectationT], out: Optional[Union[str, int]]) -> bool:
         """
         Tests a set of expectations against an output
         one element in the set must match to be successful
-        @type    lst: List
-        @param    lst: List with expectation
-        @type     out: String, Int
-        @param    out: output The output
-        @rtype:    Boolean
-        @return: Result of the comparison
         """
         for exp in st:
             if self.check(exp, out):
                 return True
         return False
 
-    def pipeOutputStream(self, stream, lines, color):
+    def pipeOutputStream(self, stream, lines: List[str], color: int):
         bytes = 0
         for line in lines:
             bytes += len(line)
@@ -378,7 +329,7 @@ class Test(object):
                 stream.write(TermColor.colorText(f"Stopped after {bytes} Bytes", fg=TermColor.Yellow) + "\n")
                 break
 
-    def runCmd(self, command):
+    def runCmd(self, command: str):
         if "$DUT" in command:
             if self.DUT is None:
                 self.state = TestState.Error
@@ -417,8 +368,7 @@ class Test(object):
         else:
             self.state = cmdRet
 
-    def run(self):
-        """Runs the test"""
+    def run(self) -> TestState:
         if self.state == TestState.Disabled:
             return TestState.Disabled
         if self.state == TestState.InfoOnly:
@@ -465,12 +415,10 @@ class Test(object):
     def __str__(self):
         return self.toString(prefix="")
 
-    def toString(self, prefix="\t"):
+    def toString(self, prefix="\t") -> str:
         """
         Creates a textual representation of the test.
         The output can be saved to a file.
-
-        @rtype:     String
         """
         fields = []
         fields.append(f"{prefix}\tname = '{self.name:s}'")
@@ -491,24 +439,24 @@ class Test(object):
 class TestGroup:
     key = "Group"
 
-    def __init__(self, *tests, name=None, predicate=all):
+    def __init__(self, *tests: Test, name: str = None, predicate=all):
         self.tests = [t for t in tests]
         self._name = name
         self.state = TestState.Waiting
         self.predicate = predicate
 
     @property
-    def name(self):
+    def name(self) -> str:
         if self._name is None:
             return f"Group of {len(self.tests)} tests"
         return self._name
 
     @property
-    def descr(self):
+    def descr(self) -> Optional[str]:
         return None
 
     @property
-    def cmd(self):
+    def cmd(self) -> Optional[str]:
         return " --> ".join(t.cmd for t in self.tests)
 
     def log_test(self, t, nr=0):
@@ -517,7 +465,7 @@ class TestGroup:
         else:
             logger.log(f"  {TermColor.colorText('Test', TermColor.Purple)}[{nr: 03}] {t.name}: {t.state}")
 
-    def run(self):
+    def run(self) -> TestState:
         results = []
         for nr, t in enumerate(self.tests):
             results.append(t.run())
@@ -525,7 +473,7 @@ class TestGroup:
         self.state = TestState.Success if self.predicate(result == TestState.Success for result in results) else TestState.Fail
         return self.state
 
-    def toString(self, prefix="\t"):
+    def toString(self, prefix="\t") -> str:
         """
         Creates a textual representation of the testgroup.
         The output can be saved to a file.
@@ -538,10 +486,10 @@ class TestGroup:
 
 
 class TestAll(TestGroup):
-    def __init__(self, *tests, name=None):
+    def __init__(self, *tests: List[Test], name: str = None):
         super.__init__(self, *tests, name=name, predicate=all)
 
 
 class TestAny(TestGroup):
-    def __init__(self, *tests, name=None):
+    def __init__(self, *tests: List[Test], name: str = None):
         super.__init__(self, *tests, name=name, predicate=any)

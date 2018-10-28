@@ -34,6 +34,8 @@
 # IN THE SOFTWARE.                                                             #
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
+from typing import List
+
 import sys
 import os
 import time
@@ -88,10 +90,10 @@ def logPrinter(msg):
 class logger:
     """Logger class"""
 
-    _buffer = []
+    _buffer: List[str] = []
     """Message buffer"""
     autoflush = False
-    """Autoflush logged messages"""
+    """Auto flush logged messages"""
     logListener = logPrinter
     """Listener to redirect output"""
 

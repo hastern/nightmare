@@ -32,6 +32,8 @@
 # IN THE SOFTWARE.                                                             #
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
+from typing import List
+
 import os
 import re
 import sys
@@ -92,18 +94,15 @@ class TestRunner(object):
         self.runsuite = None
         self.finished = None
 
-    def setDUT(self, DUT):
+    def setDUT(self, DUT: str):
         """
         set the Device under Test
-
-        @type    DUT: String
-        @param    DUT: Device Under Test
         """
         self.options["dut"] = DUT
         if self.runsuite is not None:
             self.runsuite.setDUT(DUT)
 
-    def getSuite(self):
+    def getSuite(self) -> TestSuite:
         """Returns the suite. If none is loaded a new one will be created"""
         if self.runsuite is None:
             self.runsuite = TestSuite(DUT=self.options["dut"], mode=self.options["mode"])
@@ -284,7 +283,7 @@ class TestRunner(object):
                     logger.log(f"\t{msg}")
         logger.flush(self.options["quiet"])
 
-    def addTest(self):
+    def addTest(self) -> Test:
         test = Test(name="New Test", description="Add a description", DUT=self.options["dut"])
         test.pipe = self.options["pipe"]
         test.outputOnFail = self.options["output"]
@@ -292,7 +291,7 @@ class TestRunner(object):
         self.getSuite().addTest(test)
         return test
 
-    def loadArnold(self):
+    def loadArnold(self) -> TestSuite:
         if syntax is not None:
             logger.log("\t...using Arnold-Mode")
             syn = syntax()
@@ -319,7 +318,7 @@ class TestRunner(object):
             suite = None
         return suite
 
-    def loadPython(self):
+    def loadPython(self) -> TestSuite:
         glb = {
             "__builtins__": __builtins__,
             # External / Standard libraries
@@ -437,12 +436,9 @@ class TestRunner(object):
     def toString(self):
         s = self.options["suite"] + " = " + self.runsuite.toString()
 
-    def saveToFile(self, fn):
+    def saveToFile(self, fn: str):
         """
         Save the testsuite into a file
-
-        @type    fn: String
-        @param     fn: The filename
         """
         fHnd = open(fn, "w")
         fHnd.write("#!/usr/bin/env python\n\n")
