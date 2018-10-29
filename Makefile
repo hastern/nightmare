@@ -6,7 +6,6 @@ PY               =python
 DIST_DIR         =dist
 BUILD_DIR        =build
 SETUP            =$(PY) setup.py
-DOC              =epydoc
 NAME             =$(shell $(SETUP) --name)
 
 VALIDATION_BENCH =validation.py
@@ -43,7 +42,7 @@ dist:
 release: validate version egg exe
 
 doc:
-	$(PY) -c "from epydoc.cli import cli; cli()" --config=epydocfile
+	cd docs && sphinx-build . _build/html
 
 profile:
 	$(PY) -m cProfile -o profile.out pyTestMain.py

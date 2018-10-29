@@ -61,6 +61,7 @@ from .arnold_converter import syntax, buildTestList
 
 import nightmare
 
+
 class TestRunner(object):
     """Testrunner. Reads a testbench file and executes the testrun"""
 
@@ -290,6 +291,9 @@ class TestRunner(object):
         return test
 
     def loadArnold(self) -> TestSuite:
+        """
+        Loads a test suite in the Arnold file format.
+        """
         if syntax is not None:
             logger.log("\t...using Arnold-Mode")
             syn = syntax()
@@ -317,6 +321,14 @@ class TestRunner(object):
         return suite
 
     def loadPython(self) -> TestSuite:
+        """
+        Executes a python script and reads the suite from the resulting
+        namespace.
+
+        THIS WILL EXECUTE FOREIGN CODE BY USING EVAL.
+
+        You have been warned!
+        """
         glb = {
             "__builtins__": __builtins__,
             # External / Standard libraries

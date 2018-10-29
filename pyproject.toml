@@ -1,7 +1,7 @@
 
 [build-system]
 # Minimum requirements for the build system to execute.
-requires = ["setuptools", "wheel"]  # PEP 508 specifications.
+requires = ["setuptools", "wheel", "sphinx"]  # PEP 508 specifications.
 
 
 [tool.black]

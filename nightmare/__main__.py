@@ -41,6 +41,17 @@ from .runner import TestRunner
 from .utils import TermColor
 
 
+"""
+Provides the entry point for the software.
+
+Attempts to parse arguments provided at the command line.
+If not arguments are given, will launch a GUI.
+Imports for the GUI (namely wxPython) will only be made if the GUI is
+actually used. This allows the program to run, even if no wxPython is
+present on the system.
+"""
+
+
 def main():
     # Check whether wxpython is installed or not
     try:

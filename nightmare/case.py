@@ -32,6 +32,10 @@
 # IN THE SOFTWARE.                                                             #
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
+"""
+Specification for a single Test-Case. (see :py:class:`Test`)
+"""
+
 from typing import Optional, Union, List, Set, Tuple, Callable
 
 import os
@@ -50,7 +54,9 @@ from .utils import TermColor, logger
 
 
 class TestState(Enum):
-    """The test is waiting for execution"""
+    """
+    Enumeration of all possible states of a :py:class:`Case`
+    """
 
     Success = 0
     """The test was successful"""
@@ -97,7 +103,11 @@ class TestState(Enum):
 
 
 class Command:
-    """Command execution"""
+    """
+    Wrapper for shell commands.
+
+    Executes and buffers the output of a shell command.
+    """
 
     def __init__(self, cmd: str, binary=False):
         self.cmd = cmd
@@ -108,7 +118,9 @@ class Command:
         self.binary = binary
 
     def commandFunc(self):
-        """command to be run in the thread"""
+        """
+        Creates a new subprocess and buffers stdout and stderr.
+        """
         self.proc = subprocess.Popen(
             self.cmd,
             stderr=subprocess.PIPE,
@@ -121,6 +133,12 @@ class Command:
         self.ret = self.proc.wait()
 
     def execute(self, timeout: float) -> TestState:
+        """
+        Executes the command in a new thread.
+
+        If the process takes longer than the specified timeout,
+        the process will be killed.
+        """
         self.proc = None
         self.thread = threading.Thread(target=self.commandFunc)
         self.thread.start()
@@ -140,12 +158,27 @@ class Command:
         return TestState.Success
 
 
-class Expectation(object):
+class Expectation:
+    """
+    More complex test cases can be constructed by using a specialized
+    Expectation. Instead of comparing two strings, the Expectation is
+    called as a function with a single argument: the output.
+
+    The Expectation can then run whatever check necessary to validate
+    the output. An Expectation should return a boolean value, indicating
+    whether the output is valid or not.
+    """
+
     def __call__(self, *args, **kwargs) -> bool:
         return True
 
 
 class ExpectFile(Expectation):
+    """
+    Standard Expectation to compare the output against the contents of
+    a file.
+    """
+
     def __init__(self, fname: os.PathLike):
         self.exp = open(fname, "rb").read()
 
@@ -156,7 +189,16 @@ class ExpectFile(Expectation):
         return self.exp
 
 
-class Stringifier(object):
+class Stringifier:
+    """
+    To give the user better information where the output isn't valid
+    a line by line difference can be generated.
+
+    Stringifiers split both the expectation as well as the output at
+    line-breaks and return two lists of strings, which are then passed
+    into the difference builder.
+    """
+
     def __init__(self, expectation: str):
         self.exp = expectation.encode("utf8", errors="ignore")
 
@@ -169,11 +211,21 @@ class Stringifier(object):
 
 
 class StringifiedFile(Stringifier):
+    """
+    Stringifier for files. Works for text files only.
+    """
+
     def __init__(self, fname: os.PathLike):
         Stringifier.__init__(self, open(fname).read())
 
 
 class CompareFiles(Expectation):
+    """
+    If the DUT creates a file, this Expectation can be used to compare
+    the generated file against another.
+    The comparison will be binary.
+    """
+
     def __init__(self, expect_file: os.PathLike, out_file: os.PathLike):
         self.expect = expect_file
         self.out = out_file
@@ -185,11 +237,34 @@ class CompareFiles(Expectation):
         return expect == out
 
 
-ExpectationT = Optional[Union[Expectation, Stringifier, Callable, List["ExpectationT"], Set["ExpectationT"], str]]
+ExpectationT = Optional[Union[Expectation, Stringifier, Callable[[str], bool], List["ExpectationT"], Set["ExpectationT"], str]]
+"""
+Try to formulate a type for a valid Expectation that can be handled by
+:py:class:`Test`.
+
+Currently the following types can be handled:
+
+- Expectation
+- Stringifier
+- plain string
+- A lambda function taking a single string parameter, returning a boolean
+- A List or set of all of the above (recursive)
+"""
 
 
-class Test(object):
-    """A single test"""
+class Test:
+    """
+    A Test executes a single shell command (the DUT) and compares the
+    output against an expectation.
+
+    The easiest form of expectation are simple strings, which must
+    match. Leading and trailing whitespace will be ignored.
+    If needed the Test can generate the difference between output
+    and expectation.
+
+    More complex expectations can be modelled by using a custom
+    :py:class:`Expectation`.
+    """
 
     def __init__(
         self,
@@ -212,9 +287,9 @@ class Test(object):
         self.descr = description
         """The description of the test"""
         self.cmd = command
-        """The description of the game"""
+        """The shell command to be executed"""
         self.expectStdout = stdout
-        """The description of the game"""
+        """The expected output on stdout"""
         self.expectStderr = stderr
         """The expected output on stderr"""
         self.expectRetCode = returnCode
@@ -223,20 +298,20 @@ class Test(object):
         self.DUT = DUT
         """The Device under Test - could be None"""
         self.output = ""
-        """The stdout"""
+        """The actual output from stdout"""
         self.error = ""
-        """The stderr"""
+        """The actual output from stderr"""
         self.retCode = 0
-        """The return code"""
+        """The actual return code"""
         self.state = TestState.Waiting
         """The state of the game"""
-        self.pipe = pipe
+        self.pipe: bool = pipe
         """Flag, set if the output streams should be piped"""
         self.outputOnFail = outputOnFail
         """Flag, set if the output streams should be piped on failed test"""
-        self.diff = diff
+        self.diff: bool = diff
         """Flag, show comparison between input and string-expectation"""
-        self.timeout = timeout
+        self.timeout: float = timeout
         """Timeout after the DUT gets killed"""
         self.linesep = os.linesep
         """Force a specific line ending"""
@@ -244,9 +319,14 @@ class Test(object):
         """Ignore empty lines Flag"""
         self.pipeLimit = 2000
         """Work in binary mode"""
-        self.binary = binary
+        self.binary: bool = binary
 
     def lineComparison(self, expLines: List[str], outLines: List[str], stream="") -> bool:
+        """
+        Compares to lines of strings.
+
+        Outputs a colored unified diff on stdout.
+        """
         same = True
         if self.ignoreEmptyLines:
             while expLines.count("") > 0:
@@ -270,9 +350,22 @@ class Test(object):
 
     def check(self, exp: ExpectationT, out: Optional[Union[str, int]], stream="returnCode") -> bool:
         """
-        Test an expectation against an output
-        If it's a lambda function, it will be executed with the output
-        If it's a string, it will be treated as a regular expression.
+        Test an output against an expectation.
+
+        - Strings will be compared directly
+        - Strings prefixed with 'regex:' will be interpreted as a
+          regular expression. The output is valid, if it matches the
+          expression.
+        - lambda functions and custom :py:class:`Expectation` will be
+          executed. The function should return a boolean value
+          indicating the validity of the output.
+        - Stringifiers will trigger a line by line comparison
+        - For lists, each item will be checked individually.
+          The output must be valid for all items. (AND)
+        - For sets, each item will be checked individually.
+          The output must be valid for at least one item. (OR)
+
+
         """
         if exp is None:
             return True
@@ -331,6 +424,17 @@ class Test(object):
                 break
 
     def runCmd(self, command: str):
+        """
+        Runs the DUT shell command and performs individual checks for
+        stdout, stderr and the returncode.
+
+        If requested the output of the command will be piped through
+        their respective streams.
+
+        If the execution of the command fails, a detection for
+        assertions or segmentation faults will deduce whether or not the
+        program terminated correctly or not.
+        """
         if "$DUT" in command:
             if self.DUT is None:
                 self.state = TestState.Error
@@ -370,6 +474,9 @@ class Test(object):
             self.state = cmdRet
 
     def run(self) -> TestState:
+        """
+        Execute this test case.
+        """
         if self.state == TestState.Disabled:
             return TestState.Disabled
         if self.state == TestState.InfoOnly:
@@ -434,9 +541,19 @@ class Test(object):
 
 
 class TestGroup:
+    """
+    Groups multiple tests to be counted as a single one.
+
+    This is mainly used for bundleing less important tests, if the
+    results of multiple tests are weighted.
+
+    By specifing a predicate, the behavior when deciding if the group
+    was successful or not can be adjusted. Default is `all`.
+    """
+
     key = "Group"
 
-    def __init__(self, *tests: Test, name: str = None, predicate=all):
+    def __init__(self, *tests: Test, name: str = None, predicate: Callable[[List[TestState]], bool] = all):
         self.tests = [t for t in tests]
         self._name = name
         self.state = TestState.Waiting
@@ -463,6 +580,11 @@ class TestGroup:
             logger.log(f"  {TermColor.colorText('Test', TermColor.Purple)}[{nr: 03}] {t.name}: {t.state}")
 
     def run(self) -> TestState:
+        """
+        Runs all Test in the group.
+
+        If all
+        """
         results = []
         for nr, t in enumerate(self.tests):
             results.append(t.run())

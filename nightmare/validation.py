@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
-# Since nightmare is a test tool, it should be possible to validate it's own
-# functionality, after a new version is build this test should run without
-# any errors. It should also show of the feature set of nightmare, and replace
-# the examples in the future.
-#
-# The GUI is not part of this automated test, due to the difficulty
+"""
+Since nightmare is a test tool, it should be possible to validate it's own
+functionality, after a new version is build this test should run without
+any errors. It should also show of the feature set of nightmare, and replace
+the examples in the future.
+
+The GUI is not part of this automated test, due to the difficulty
+"""
 
 DUT = "python -m nightmare"
 

@@ -32,6 +32,7 @@
 # IN THE SOFTWARE.                                                             #
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
+from typing import List
 
 from enum import Enum
 
@@ -126,9 +127,6 @@ class TestSuite:
     def setMode(self, mode):
         """
         Sets the mode of the testsuite
-
-        @type    mode: TestSuiteMode
-        @param    mode: New mode
         """
         self.mode = mode
 
@@ -158,6 +156,9 @@ class TestSuite:
         ignoreEmptyLines=None,
         pipeLimit=None,
     ):
+        """
+        Applies the suite options to all tests in the suite.
+        """
         for t in self.testList:
             t.state = state
             if pipe is not None:
@@ -182,7 +183,12 @@ class TestSuite:
             if t < len(self):
                 yield self[t]
 
-    def run(self, quiet=False, tests=[]):
+    def run(self, quiet=False, tests: List[int] = []):
+        """
+        Runs the tests in the suite.
+
+        If no tests are selected, all tests will be run.
+        """
         self.success = 0
         self.failed = 0
         self.count = 0
@@ -218,10 +224,18 @@ class TestSuite:
                     break
 
     def calcRate(self):
+        """
+        Calculate the success rate of a test run.
+        """
         self.rate = float(self.success) / float(len(self)) * 100
         return self.rate
 
     def stats(self, quiet=False):
+        """
+        Displays the statistics of the test run on stdout.
+
+        Might add a (possibly mean) comment on the overall result.
+        """
         if self.lastResult != TestState.InfoOnly:
             logger.log(f"I ran {self.count} out of {len(self.testList)} tests in total")
             fails = self.count - self.success
