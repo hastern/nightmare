@@ -40,6 +40,7 @@ import sys
 import signal
 import difflib
 import subprocess
+import pathlib
 
 from enum import Enum
 
@@ -383,18 +384,14 @@ class Test(object):
             # Recursive look through the directory of DUT
             # Treat command as a list of Badwords
             words = [re.compile(s) for s in self.cmd]
-            searchpath = os.path.abspath(os.path.dirname(self.DUT))
-            searchpattern = re.compile(self.descr)
+            searchpath = pathlib.Path(self.DUT).parent
             hits = []
-            for dirpath, dirnames, filenames in os.walk(searchpath):
-                for file in filenames:
-                    if searchpattern.match(file) is not None:
-                        fname = os.path.join(dirpath, file)
-                        with open(fname, "r") as fHnd:
-                            for nr, line in enumerate(fHnd.readlines()):
-                                for word in words:
-                                    if word.search(line) is not None:
-                                        hits.append((os.path.relpath(fname), nr, line.rstrip(), word.pattern))
+            for fname in searchpath.glob(self.descr):
+                with open(fname, "r") as fHnd:
+                    for nr, line in enumerate(fHnd.readlines()):
+                        for word in words:
+                            if word.search(line) is not None:
+                                hits.append((os.path.relpath(fname), nr, line.rstrip(), word.pattern))
             if len(hits) > 0:
                 for file, lineno, text, pattern in hits:
                     logger.log(f"{TestState.BadWord} {file}[{lineno}]: '{text}' matches '{pattern}'")

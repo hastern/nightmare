@@ -181,7 +181,7 @@ else:
     badwordTests = [
         Test(
             name="Badword",
-            description="validation.py",
+            description="*.py",
             command=["Test\("]
         ),
         Test(
