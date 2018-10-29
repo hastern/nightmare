@@ -38,11 +38,11 @@ import time
 import threading
 import itertools
 
-from case import TestState
-from suite import TestSuiteMode
-from runner import TestRunner
-from utils import TermColor, logger
-from editform import TestEditForm
+from .case import TestState
+from .suite import TestSuiteMode
+from .runner import TestRunner
+from .utils import TermColor, logger
+from .editform import TestEditForm
 
 import wx
 import wx.html

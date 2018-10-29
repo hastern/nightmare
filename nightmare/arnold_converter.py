@@ -5,7 +5,7 @@ import sys
 
 try:
     from pyparsing import *
-    from pyTest import Test
+    from .case import Test
 
     def syntax():
         ParserElement.setDefaultWhitespaceChars(" \t")

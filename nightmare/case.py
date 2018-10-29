@@ -46,7 +46,7 @@ from enum import Enum
 
 import threading
 
-from utils import TermColor, logger
+from .utils import TermColor, logger
 
 
 class TestState(Enum):

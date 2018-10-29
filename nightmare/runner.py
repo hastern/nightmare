@@ -53,14 +53,13 @@ except:
 
 # from threading import Thread
 
-from utils import TermColor, logger
-from case import Test, TestState, TestGroup, TestAny, TestAll
-from case import Expectation, ExpectFile, Stringifier, StringifiedFile, CompareFiles
-from suite import TestSuite, TestSuiteMode
-from arnold_converter import syntax, buildTestList
+from .utils import TermColor, logger
+from .case import Test, TestState, TestGroup, TestAny, TestAll
+from .case import Expectation, ExpectFile, Stringifier, StringifiedFile, CompareFiles
+from .suite import TestSuite, TestSuiteMode
+from .arnold_converter import syntax, buildTestList
 
-import version
-
+import nightmare
 
 class TestRunner(object):
     """Testrunner. Reads a testbench file and executes the testrun"""
@@ -86,7 +85,7 @@ class TestRunner(object):
             + TermColor.colorText("E", TermColor.Red, style=TermColor.Bold)
             + TermColor.colorText("ternally", TermColor.White)
         )
-        logger.log(f"Welcome to nightmare Version {version.Version}")
+        logger.log(f"Welcome to nightmare Version {nightmare.__version__}")
         if flush:
             logger.flush(quiet=False)
         self.options = dict()

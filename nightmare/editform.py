@@ -32,8 +32,8 @@
 # IN THE SOFTWARE.                                                             #
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- #
 
-from case import Test
-from runner import TestRunner
+from .case import Test
+from .runner import TestRunner
 
 import wx
 

@@ -35,8 +35,8 @@
 
 from enum import Enum
 
-from case import Test, TestState
-from utils import logger, TermColor
+from .case import Test, TestState
+from .utils import logger, TermColor
 
 
 class TestSuiteMode(Enum):

@@ -1,6 +1,6 @@
 # pyTest creation makefile
 # author: Hanno Sternberg
-# 
+#
 
 PY               =python
 DIST_DIR         =dist
@@ -34,9 +34,8 @@ $(DIST_EGG):
 
 exe: $(DIST_EXE)
 
-$(DIST_EXE): 
+$(DIST_EXE):
 	$(SETUP) py2exe --dist-dir $(DIST_DIR)
-
 
 dist:
 	$(SETUP) sdist --dist-dir $(DIST_DIR)
@@ -55,16 +54,6 @@ validate:
 license:
 	@$(SETUP) --license
 
-version:
-	@$(PY) version.py
-
-version-major:
-	@$(PY) version.py major
-version-minor:
-	@$(PY) version.py minor
-version-build:
-	@$(PY) version.py build
-
 description:
 	@$(SETUP) --long-description
 
@@ -77,7 +66,7 @@ clean:
 	$(SETUP) clean
 	rm -rf build dist $(shell $(SETUP) --fullname).egg-info doc
 	rm -f *.pyc
-	
-	
+
+
 
 
