@@ -382,9 +382,9 @@ class Test:
                 expLines.remove("")
             while outLines.count("") > 0:
                 outLines.remove("")
-        for line in difflib.unified_diff(expLines, outLines, stream, "expectation"):
+        for line in difflib.unified_diff(outLines, expLines, stream, "expectation"):
             col = TermColor.White
-            if line.startswith(" + "):
+            if line.startswith("+"):
                 same = False
                 col = TermColor.Green
             elif line.startswith("-"):

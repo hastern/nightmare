@@ -144,36 +144,16 @@ else:
         Test(name="Example 1", description="This test should be a success", command="$DUT success", stdout="success"),
         Test(name="Example 2", description="This test is doomed to fail", command="$DUT FAIL", stdout="failed"),
         Test(name="Example 3", description="This test will produce an error"),
-        Test(
-            name="Example 4",
-            description="Lambda expression fail",
-            command="$DUT Some more text",
-            stdout=Contains("test"),
-        ),
-        Test(
-            name="Example 5",
-            description="Lambda expression success",
-            command="$DUT Some more text",
-            stdout=Contains("text"),
-        ),
+        Test(name="Example 4", description="Lambda expression fail", command="$DUT Some more text", stdout=Contains("test")),
+        Test(name="Example 5", description="Lambda expression success", command="$DUT Some more text", stdout=Contains("text")),
     )
 
     suiteWithOptions = Suite(
         Test(name="Example 1", description="This test should be a success", command="$DUT success", stdout="success"),
         Test(name="Example 2", description="This test is doomed to fail", command="$DUT FAIL", stdout="failed"),
         Test(name="Example 3", description="This test will produce an error"),
-        Test(
-            name="Example 4",
-            description="Lambda expression fail",
-            command="$DUT Some more text",
-            stdout=Contains("test"),
-        ),
-        Test(
-            name="Example 5",
-            description="Lambda expression success",
-            command="$DUT Some more text",
-            stdout=Contains("text"),
-        ),
+        Test(name="Example 4", description="Lambda expression fail", command="$DUT Some more text", stdout=Contains("test")),
+        Test(name="Example 5", description="Lambda expression success", command="$DUT Some more text", stdout=Contains("text")),
         pipe=True,
         mode=Mode.Continuous,
     )
@@ -188,16 +168,32 @@ else:
             )
             for nr in range(10)
         ],
-        DUT="echo"
+        DUT="echo",
     )
 
+    stringifierTests = [
+        Test(
+            name="Stringifier 01",
+            description="This test splits the output into two lines, both match",
+            command="echo ham&& echo eggs",
+            stdout=Stringifier("ham\r\neggs"),
+        ),
+        Test(
+            name="Stringifier 02",
+            description="This test splits the output into two lines with a mismatch",
+            command="echo spam&& echo eggs",
+            stdout=Stringifier("ham\r\neggs\r\n"),
+        )
+    ]
 
     validateThisNightmare = [
         Test(
             name="CLI-01",
             description="All possible comparisons for success, dut from command line",
             command='$DUT --no-gui --bench nightmare/validation.py --dut "$DUT" --suite successTests',
-            stdout=Contains(f"I ran {len(successTests)} out of {len(successTests)} tests in total", f"Success: {len(successTests)}"),
+            stdout=Contains(
+                f"I ran {len(successTests)} out of {len(successTests)} tests in total", f"Success: {len(successTests)}"
+            ),
             returnCode=0,
         ),
         Test(
@@ -211,7 +207,9 @@ else:
             name="CLI-03",
             description="All possible comparisons for success, dut from testbench",
             command="$DUT --no-gui --bench nightmare/validation.py --suite successTests",
-            stdout=Contains(f"I ran {len(successTests)} out of {len(successTests)} tests in total", f"Success: {len(successTests)}"),
+            stdout=Contains(
+                f"I ran {len(successTests)} out of {len(successTests)} tests in total", f"Success: {len(successTests)}"
+            ),
             returnCode=0,
         ),
         Test(
@@ -231,24 +229,42 @@ else:
             name="CLI-06",
             description="Timeout Tests",
             command="$DUT --no-gui --bench nightmare/validation.py --suite timeoutTests -c",
-            stdout=Contains(f"I ran {len(timeoutTests)} out of {len(timeoutTests)} tests in total", "Timeouts: 1", "Success: 1"),
+            stdout=Contains(
+                f"I ran {len(timeoutTests)} out of {len(timeoutTests)} tests in total", "Timeouts: 1", "Success: 1"
+            ),
         ),
         Test(
             name="CLI-07",
             description="Suite Instance",
             command="$DUT --no-gui --bench nightmare/validation.py --suite suiteInstance --dut echo -c",
-            stdout=Contains(f"I ran {len(suiteInstance)} out of {len(suiteInstance)} tests in total", "Errors: 1", "Success: 2", "Failed: 2"),
+            stdout=Contains(
+                f"I ran {len(suiteInstance)} out of {len(suiteInstance)} tests in total", "Errors: 1", "Success: 2", "Failed: 2"
+            ),
         ),
         Test(
             name="CLI-08",
             description="Suite Instance with Options",
             command="$DUT --no-gui --bench nightmare/validation.py --suite suiteWithOptions --dut echo",
-            stdout=Contains(f"I ran {len(suiteWithOptions)} out of {len(suiteWithOptions)} tests in total", "Errors: 1", "Success: 2", "Failed: 2", "Some more text"),
+            stdout=Contains(
+                f"I ran {len(suiteWithOptions)} out of {len(suiteWithOptions)} tests in total",
+                "Errors: 1",
+                "Success: 2",
+                "Failed: 2",
+                "Some more text",
+            ),
         ),
         Test(
             name="CLI-09",
             description="Suite Instance with python code",
             command="$DUT --no-gui --bench nightmare/validation.py --suite suiteWithPython -c",
-            stdout=Contains(f"I ran {len(suiteWithPython)} out of {len(suiteWithPython)} tests in total", f"Success: {len(suiteWithPython)}"),
+            stdout=Contains(
+                f"I ran {len(suiteWithPython)} out of {len(suiteWithPython)} tests in total", f"Success: {len(suiteWithPython)}"
+            ),
+        ),
+        Test(
+            name="CLI-10",
+            description="Stringifier Tests",
+            command="$DUT --no-gui --bench nightmare/validation.py --suite stringifierTests -c -u",
+            stdout=Contains(f"I ran {len(stringifierTests)} out of {len(stringifierTests)} tests in total", "Success: 1", "-spam", "+ham"),
         ),
     ]
