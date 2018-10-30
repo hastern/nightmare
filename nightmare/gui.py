@@ -80,11 +80,17 @@ class TestRunnerGui(wx.App):
 
     def updateFromRunner(self):
         self.runner.loadSuite()
+        self.edtSuite.Clear()
+        self.edtDUT.SetValue(str(self.runner.options["dut"]))
+        self.edtSuite.AppendItems(list(self.runner.suites.keys()))
+        self.edtSuite.SetValue(str(self.runner.options["suite"]))
+        self.grpMode.SetSelection(self.runner.getSuite().mode)
+        self.updateTestList()
+
+    def updateTestList(self):
         self.lstTests.DeleteAllItems()
         self.applyToList(self.runner.getSuite().getTests(), self.insertTest)
-        self.edtDUT.SetValue(str(self.runner.options["dut"]))
         self.edtTests.SetValue(str(self.runner.countTests()))
-        self.grpMode.SetSelection(self.runner.getSuite().mode)
 
     def selectDut(self):
         """Show file dialog and set the result as DUT"""
@@ -92,6 +98,11 @@ class TestRunnerGui(wx.App):
         if fname is not None:
             self.runner.setDUT(fname)
             self.edtDUT.SetValue(os.path.relpath(fname))
+
+    def selectSuite(self):
+        self.runner.options['suite'] = self.edtSuite.GetValue()
+        self.runner.runsuite = self.runner.select_suite(self.runner.options['suite'])
+        self.updateTestList()
 
     def applyToList(self, l, f, gauge=True):
         cnt = self.runner.countTests()
@@ -261,9 +272,11 @@ class TestRunnerGui(wx.App):
         self.btnLoad = wx.Button(panel, label="Load", id=wx.ID_OPEN)
         self.btnSave = wx.Button(panel, label="Save", id=wx.ID_SAVE)
         self.lblDUT = wx.StaticText(panel, label="DUT")
+        self.lblSuite = wx.StaticText(panel, label="Suite")
         self.lblFile = wx.StaticText(panel, label="File")
         self.lblTests = wx.StaticText(panel, label="Tests")
         self.edtDUT = wx.TextCtrl(panel)
+        self.edtSuite = wx.ComboBox(panel)
         self.edtFile = wx.TextCtrl(panel)
         self.edtTests = wx.TextCtrl(panel)
         self.btnSelect = wx.Button(panel, label="...")
@@ -285,28 +298,31 @@ class TestRunnerGui(wx.App):
         self.lstTests.InsertColumn(2, "State", width=100)
         self.lstTests.OnCheckItem = self.onListCheck
         # Create Layout
-        sizer.Add(self.btnLoad, pos=(0, 0), span=(3, 1), border=5, flag=wx.LEFT | wx.TOP | wx.EXPAND)
-        sizer.Add(self.btnSave, pos=(0, 1), span=(3, 1), border=5, flag=wx.TOP | wx.EXPAND)
+        sizer.Add(self.btnLoad, pos=(0, 0), span=(4, 1), border=5, flag=wx.LEFT | wx.TOP | wx.EXPAND)
+        sizer.Add(self.btnSave, pos=(0, 1), span=(4, 1), border=5, flag=wx.TOP | wx.EXPAND)
         sizer.Add(self.lblDUT, pos=(0, 2), span=(1, 1), border=5, flag=wx.RIGHT | wx.LEFT | wx.TOP | wx.EXPAND)
-        sizer.Add(self.lblFile, pos=(1, 2), span=(1, 1), border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
-        sizer.Add(self.lblTests, pos=(2, 2), span=(1, 1), border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
+        sizer.Add(self.lblSuite, pos=(1, 2), span=(1, 1), border=5, flag=wx.RIGHT | wx.LEFT | wx.TOP | wx.EXPAND)
+        sizer.Add(self.lblFile, pos=(2, 2), span=(1, 1), border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
+        sizer.Add(self.lblTests, pos=(3, 2), span=(1, 1), border=5, flag=wx.RIGHT | wx.LEFT | wx.EXPAND)
         sizer.Add(self.edtDUT, pos=(0, 3), span=(1, 1), border=5, flag=wx.TOP | wx.EXPAND)
-        sizer.Add(self.edtFile, pos=(1, 3), span=(1, 1), border=5, flag=wx.EXPAND)
-        sizer.Add(self.edtTests, pos=(2, 3), span=(1, 1), border=5, flag=wx.EXPAND)
+        sizer.Add(self.edtSuite, pos=(1, 3), span=(1, 1), border=5, flag=wx.EXPAND)
+        sizer.Add(self.edtFile, pos=(2, 3), span=(1, 1), border=5, flag=wx.EXPAND)
+        sizer.Add(self.edtTests, pos=(3, 3), span=(1, 1), border=5, flag=wx.EXPAND)
         sizer.Add(self.btnSelect, pos=(0, 4), span=(1, 1), border=5, flag=wx.TOP)
         sizer.Add(self.btnAdd, pos=(2, 4), span=(1, 1), border=5)
-        sizer.Add(self.grpMode, pos=(0, 5), span=(3, 1), border=5, flag=wx.TOP | wx.RIGHT | wx.EXPAND)
-        sizer.Add(self.prgGauge, pos=(3, 0), span=(1, 5), border=5, flag=wx.LEFT | wx.EXPAND)
-        sizer.Add(self.btnRun, pos=(3, 5), span=(1, 1), border=5, flag=wx.RIGHT | wx.EXPAND)
-        sizer.Add(self.lstTests, pos=(4, 0), span=(1, 6), border=5, flag=wx.ALL | wx.EXPAND)
+        sizer.Add(self.grpMode, pos=(0, 5), span=(4, 1), border=5, flag=wx.TOP | wx.RIGHT | wx.EXPAND)
+        sizer.Add(self.prgGauge, pos=(4, 0), span=(1, 5), border=5, flag=wx.LEFT | wx.EXPAND)
+        sizer.Add(self.btnRun, pos=(4, 5), span=(1, 1), border=5, flag=wx.RIGHT | wx.EXPAND)
+        sizer.Add(self.lstTests, pos=(5, 0), span=(1, 6), border=5, flag=wx.ALL | wx.EXPAND)
         sizer.AddGrowableCol(3)
-        sizer.AddGrowableRow(4)
+        sizer.AddGrowableRow(5)
         panel.SetSizerAndFit(sizer)
         # Hook up window events
         self.wHnd.Bind(wx.EVT_BUTTON, lambda e: self.loadSuite(), id=self.btnLoad.GetId())
         self.wHnd.Bind(wx.EVT_BUTTON, lambda e: self.saveSuite(), id=self.btnSave.GetId())
         self.wHnd.Bind(wx.EVT_BUTTON, lambda e: self.run(), id=self.btnRun.GetId())
         self.wHnd.Bind(wx.EVT_BUTTON, lambda e: self.selectDut(), id=self.btnSelect.GetId())
+        self.wHnd.Bind(wx.EVT_COMBOBOX, lambda e: self.selectSuite(), id=self.edtSuite.GetId())
         self.wHnd.Bind(wx.EVT_BUTTON, lambda e: self.addTest(), id=self.btnAdd.GetId())
         self.wHnd.Bind(
             wx.EVT_RADIOBOX,

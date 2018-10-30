@@ -61,6 +61,7 @@ class TestRunner(object):
             logger.flush(quiet=False)
         self.options = dict()
         self.testCount = 0
+        self.suites = {}
         self.runsuite = None
         self.finished = None
 
@@ -290,6 +291,16 @@ class TestRunner(object):
             suite = None
         return suite
 
+    def select_suite(self, name) -> Optional[TestSuite]:
+        suite = self.suites[name]
+        if suite.DUT is None:
+            suite.setDUT(self.options["dut"])
+        if self.options["mode"] is None:
+            self.options["mode"] = suite.mode
+        elif suite.mode is None:
+            suite.mode = self.options["mode"]
+        return suite
+
     def loadPython(self) -> Optional[TestSuite]:
         """
         Executes a python script and reads the suite from the resulting
@@ -299,6 +310,7 @@ class TestRunner(object):
 
         You have been warned!
         """
+        self.suites.clear()
         glb = {
             "__builtins__": __builtins__,
             # External / Standard libraries
@@ -340,15 +352,14 @@ class TestRunner(object):
             suite = None
             if "DUT" in ctx and ctx["DUT"] is not None and self.options["dut"] is None:
                 self.setDUT(ctx["DUT"])
+            for key, value in ctx.items():
+                if isinstance(value, TestSuite):
+                    self.suites[key] = value
+                if isinstance(value, list) and all(isinstance(item, Test) for item in value):
+                    self.suites[key] = TestSuite(*value, **{"DUT": self.options["dut"], "mode": self.options["mode"]})
             if ctx[self.options["suite"]] is not None:
                 if isinstance(ctx[self.options["suite"]], TestSuite):
-                    suite = ctx[self.options["suite"]]
-                    if suite.DUT is None:
-                        suite.setDUT(self.options["dut"])
-                    if self.options["mode"] is None:
-                        self.options["mode"] = suite.mode
-                    elif suite.mode is None:
-                        suite.mode = self.options["mode"]
+                    suite = self.select_suite(self.options["suite"])
                 elif isinstance(ctx[self.options["suite"]], list):
                     suite = TestSuite(*ctx[self.options["suite"]], **{"DUT": self.options["dut"], "mode": self.options["mode"]})
             else:
