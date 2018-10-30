@@ -30,67 +30,6 @@ if __name__ == "__main__":
             for testcase in runner.run():
                 pass
 else:
-    validateThisNightmare = [
-        Test(
-            name="CLI-01",
-            description="All possible comparisons for success, dut from command line",
-            command='$DUT --no-gui --bench nightmare/validation.py --dut "$DUT" --suite successTests',
-            stdout=Contains("I ran 6 out of 6 tests in total", "Success: 6"),
-            returnCode=0,
-        ),
-        Test(
-            name="CLI-02",
-            description="All possible comparisons for failure, dut from command line",
-            command='$DUT --no-gui --bench nightmare/validation.py --dut "$DUT" --suite failTests -c',
-            stdout=Contains("I ran 6 out of 6 tests in total", "Failed: 6"),
-            returnCode=NonZero(),
-        ),
-        Test(
-            name="CLI-03",
-            description="All possible comparisons for success, dut from testbench",
-            command="$DUT --no-gui --bench nightmare/validation.py --suite successTests",
-            stdout=Contains("I ran 6 out of 6 tests in total", "Success: 6"),
-            returnCode=0,
-        ),
-        Test(
-            name="CLI-04",
-            description="All possible comparisons for failure, dut from testbench",
-            command="$DUT --no-gui --bench nightmare/validation.py --suite failTests -c",
-            stdout=Contains("I ran 6 out of 6 tests in total", "Failed: 6"),
-            returnCode=NonZero(),
-        ),
-        Test(
-            name="CLI-05",
-            description="Badword Tests",
-            command="$DUT --no-gui --bench nightmare/validation.py --suite badwordTests -c",
-            stdout=Contains("I ran 2 out of 2 tests in total", "BADWORD", "CLEAN"),
-        ),
-        Test(
-            name="CLI-06",
-            description="Timeout Tests",
-            command="$DUT --no-gui --bench nightmare/validation.py --suite timeoutTests -c",
-            stdout=Contains("I ran 2 out of 2 tests in total", "Timeouts: 1", "Success: 1"),
-        ),
-        Test(
-            name="CLI-07",
-            description="Suite Instance",
-            command="$DUT --no-gui --bench nightmare/validation.py --suite suiteInstance --dut echo -c",
-            stdout=Contains("I ran 5 out of 5 tests in total", "Errors: 1", "Success: 2", "Failed: 2"),
-        ),
-        Test(
-            name="CLI-08",
-            description="Suite Instance with Options",
-            command="$DUT --no-gui --bench nightmare/validation.py --suite suiteWithOptions --dut echo",
-            stdout=Contains("I ran 5 out of 5 tests in total", "Errors: 1", "Success: 2", "Failed: 2", "Some more text"),
-        ),
-        Test(
-            name="CLI-09",
-            description="Suite Instance with python code",
-            command="$DUT --no-gui --bench nightmare/validation.py --suite suiteWithPython -c",
-            stdout=Contains("I ran 10 out of 10 tests in total", "Success: 10"),
-        ),
-    ]
-
     successTests = [
         Test(
             name="stdout String",
@@ -251,3 +190,65 @@ else:
         ],
         DUT="echo"
     )
+
+
+    validateThisNightmare = [
+        Test(
+            name="CLI-01",
+            description="All possible comparisons for success, dut from command line",
+            command='$DUT --no-gui --bench nightmare/validation.py --dut "$DUT" --suite successTests',
+            stdout=Contains(f"I ran {len(successTests)} out of {len(successTests)} tests in total", f"Success: {len(successTests)}"),
+            returnCode=0,
+        ),
+        Test(
+            name="CLI-02",
+            description="All possible comparisons for failure, dut from command line",
+            command='$DUT --no-gui --bench nightmare/validation.py --dut "$DUT" --suite failTests -c',
+            stdout=Contains(f"I ran {len(failTests)} out of {len(failTests)} tests in total", f"Failed: {len(failTests)}"),
+            returnCode=NonZero(),
+        ),
+        Test(
+            name="CLI-03",
+            description="All possible comparisons for success, dut from testbench",
+            command="$DUT --no-gui --bench nightmare/validation.py --suite successTests",
+            stdout=Contains(f"I ran {len(successTests)} out of {len(successTests)} tests in total", f"Success: {len(successTests)}"),
+            returnCode=0,
+        ),
+        Test(
+            name="CLI-04",
+            description="All possible comparisons for failure, dut from testbench",
+            command="$DUT --no-gui --bench nightmare/validation.py --suite failTests -c",
+            stdout=Contains(f"I ran {len(failTests)} out of {len(failTests)} tests in total", f"Failed: {len(failTests)}"),
+            returnCode=NonZero(),
+        ),
+        Test(
+            name="CLI-05",
+            description="Badword Tests",
+            command="$DUT --no-gui --bench nightmare/validation.py --suite badwordTests -c",
+            stdout=Contains(f"I ran {len(badwordTests)} out of {len(badwordTests)} tests in total", "BADWORD", "CLEAN"),
+        ),
+        Test(
+            name="CLI-06",
+            description="Timeout Tests",
+            command="$DUT --no-gui --bench nightmare/validation.py --suite timeoutTests -c",
+            stdout=Contains(f"I ran {len(timeoutTests)} out of {len(timeoutTests)} tests in total", "Timeouts: 1", "Success: 1"),
+        ),
+        Test(
+            name="CLI-07",
+            description="Suite Instance",
+            command="$DUT --no-gui --bench nightmare/validation.py --suite suiteInstance --dut echo -c",
+            stdout=Contains(f"I ran {len(suiteInstance)} out of {len(suiteInstance)} tests in total", "Errors: 1", "Success: 2", "Failed: 2"),
+        ),
+        Test(
+            name="CLI-08",
+            description="Suite Instance with Options",
+            command="$DUT --no-gui --bench nightmare/validation.py --suite suiteWithOptions --dut echo",
+            stdout=Contains(f"I ran {len(suiteWithOptions)} out of {len(suiteWithOptions)} tests in total", "Errors: 1", "Success: 2", "Failed: 2", "Some more text"),
+        ),
+        Test(
+            name="CLI-09",
+            description="Suite Instance with python code",
+            command="$DUT --no-gui --bench nightmare/validation.py --suite suiteWithPython -c",
+            stdout=Contains(f"I ran {len(suiteWithPython)} out of {len(suiteWithPython)} tests in total", f"Success: {len(suiteWithPython)}"),
+        ),
+    ]
