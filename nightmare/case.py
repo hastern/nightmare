@@ -77,10 +77,10 @@ The output of a program is either a string (for stdout and stderr)
 or an integer (for the return code).
 If no output is captured, it may also be None.
 """
-Stringified = Union[List[bytes], List[str]]
+Stringified = List[str]
 """
 Stringified data are multiple lines of text, represented as a
-list of bytes (encoding UTF-8 strings).
+list of strings.
 """
 ExpectationFunc = Callable[[StreamOutput], bool]
 """
@@ -199,11 +199,10 @@ class Stringifier:
     """
 
     def __init__(self, expectation: str):
-        self.exp = expectation.encode("utf8", errors="ignore")
+        self.exp = expectation
 
     def __call__(self, output: StreamOutput) -> Tuple[Stringified, Stringified]:
-        out = output.encode("utf8", errors="ignore")
-        return self.exp.strip().splitlines(), out.strip().splitlines()
+        return self.exp.strip().splitlines(), output.strip().splitlines()
 
     def __str__(self):
         return self.exp
