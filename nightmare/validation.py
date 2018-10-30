@@ -35,59 +35,59 @@ else:
             name="CLI-01",
             description="All possible comparisons for success, dut from command line",
             command='$DUT --no-gui --bench nightmare/validation.py --dut "$DUT" --suite successTests',
-            stdout='lambda r: r.find("I ran 6 out of 6 tests in total") > 0 and r.find("Success: 6") > 0',
+            stdout=Contains("I ran 6 out of 6 tests in total", "Success: 6"),
             returnCode=0,
         ),
         Test(
             name="CLI-02",
             description="All possible comparisons for failure, dut from command line",
             command='$DUT --no-gui --bench nightmare/validation.py --dut "$DUT" --suite failTests -c',
-            stdout='lambda r: r.find("I ran 6 out of 6 tests in total") > 0 and r.find("Failed: 6") > 0',
-            returnCode=1,
+            stdout=Contains("I ran 6 out of 6 tests in total", "Failed: 6"),
+            returnCode=NonZero(),
         ),
         Test(
             name="CLI-03",
             description="All possible comparisons for success, dut from testbench",
             command="$DUT --no-gui --bench nightmare/validation.py --suite successTests",
-            stdout='lambda r: r.find("I ran 6 out of 6 tests in total") > 0 and r.find("Success: 6") > 0',
+            stdout=Contains("I ran 6 out of 6 tests in total", "Success: 6"),
             returnCode=0,
         ),
         Test(
             name="CLI-04",
             description="All possible comparisons for failure, dut from testbench",
             command="$DUT --no-gui --bench nightmare/validation.py --suite failTests -c",
-            stdout='lambda r: r.find("I ran 6 out of 6 tests in total") > 0 and r.find("Failed: 6") > 0',
-            returnCode=1,
+            stdout=Contains("I ran 6 out of 6 tests in total", "Failed: 6"),
+            returnCode=NonZero(),
         ),
         Test(
             name="CLI-05",
             description="Badword Tests",
             command="$DUT --no-gui --bench nightmare/validation.py --suite badwordTests -c",
-            stdout='lambda r: r.find("I ran 2 out of 2 tests in total") > 0 and r.find("BADWORD") > 0 and r.find("CLEAN") > 0',
+            stdout=Contains("I ran 2 out of 2 tests in total", "BADWORD", "CLEAN"),
         ),
         Test(
             name="CLI-06",
             description="Timeout Tests",
             command="$DUT --no-gui --bench nightmare/validation.py --suite timeoutTests -c",
-            stdout='lambda r: r.find("I ran 2 out of 2 tests in total") > 0 and r.find("Timeouts: 1") > 0 and r.find("Success: 1") > 0',
+            stdout=Contains("I ran 2 out of 2 tests in total", "Timeouts: 1", "Success: 1"),
         ),
         Test(
             name="CLI-07",
             description="Suite Instance",
             command="$DUT --no-gui --bench nightmare/validation.py --suite suiteInstance --dut echo -c",
-            stdout='lambda r: r.find("I ran 5 out of 5 tests in total") > 0 and r.find("Errors: 1") > 0 and r.find("Success: 2") > 0 and r.find("Failed: 2") > 0',
+            stdout=Contains("I ran 5 out of 5 tests in total", "Errors: 1", "Success: 2", "Failed: 2"),
         ),
         Test(
             name="CLI-08",
             description="Suite Instance with Options",
             command="$DUT --no-gui --bench nightmare/validation.py --suite suiteWithOptions --dut echo",
-            stdout='lambda r: r.find("I ran 5 out of 5 tests in total") > 0 and r.find("Errors: 1") > 0 and r.find("Success: 2") > 0 and r.find("Failed: 2") > 0 and r.find("Some more text") > 0',
+            stdout=Contains("I ran 5 out of 5 tests in total", "Errors: 1", "Success: 2", "Failed: 2", "Some more text"),
         ),
         Test(
             name="CLI-09",
             description="Suite Instance with python code",
             command="$DUT --no-gui --bench nightmare/validation.py --suite suiteWithPython -c",
-            stdout='lambda r: r.find("I ran 10 out of 10 tests in total") > 0 and r.find("Success: 10") > 0',
+            stdout=Contains("I ran 10 out of 10 tests in total", "Success: 10"),
         ),
     ]
 
@@ -102,7 +102,7 @@ else:
             name="stdout Regular Expression",
             description="Test if the comparison with regular expressions works correctly",
             command="echo this should be a success",
-            stdout="regex:^this [a-z]+ [a-z ]+s.c*.s*$",
+            stdout=Regex("^this [a-z]+ [a-z ]+s.c*.s*$"),
         ),
         Test(
             name="stdout lambda",
@@ -122,7 +122,7 @@ else:
             name="stderr Regular Expression",
             description="Test if the comparison with regular expressions works correctly",
             command="echo this should be a success 1>&2",
-            stderr="regex:^this [a-z]+ [a-z ]+s.c*.s*$",
+            stderr=Regex("^this [a-z]+ [a-z ]+s.c*.s*$"),
         ),
         Test(
             name="stderr lambda",
@@ -189,8 +189,15 @@ else:
     ]
 
     badwordTests = [
-        Test(name="Badword", description="nightmare/*.py", command=["Test\("]),
-        Test(name="Badword", description="nightmare/validation.py", command=["system\("]),
+        BadWord(
+            name="There should be a 'Test()' in one of the python files", path="nightmare/", pattern="*.py", words=["Test\("]
+        ),
+        BadWord(
+            name="There should be a system call in the validation",
+            path="nightmare/",
+            pattern="validation.py",
+            words=["system\("],
+        ),
     ]
 
     # Ported over the old example tests
@@ -202,13 +209,13 @@ else:
             name="Example 4",
             description="Lambda expression fail",
             command="$DUT Some more text",
-            stdout="lambda x: x.find('test') > 0",
+            stdout=Contains("test"),
         ),
         Test(
             name="Example 5",
             description="Lambda expression success",
             command="$DUT Some more text",
-            stdout="lambda x: x.find('text') > 0",
+            stdout=Contains("text"),
         ),
     )
 
@@ -220,13 +227,13 @@ else:
             name="Example 4",
             description="Lambda expression fail",
             command="$DUT Some more text",
-            stdout="lambda x: x.find('test') > 0",
+            stdout=Contains("test"),
         ),
         Test(
             name="Example 5",
             description="Lambda expression success",
             command="$DUT Some more text",
-            stdout="lambda x: x.find('text') > 0",
+            stdout=Contains("text"),
         ),
         pipe=True,
         mode=Mode.Continuous,

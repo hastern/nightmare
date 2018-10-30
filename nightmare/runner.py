@@ -25,6 +25,7 @@ except:
 from .utils import TermColor, logger
 from .case import Test, TestState, TestGroup, TestAny, TestAll
 from .case import Expectation, ExpectFile, Stringifier, StringifiedFile, CompareFiles
+from .case import BadWord, Regex, NonZero, Negative, Contains, ContainsNot, Startswith
 from .suite import TestSuite, TestSuiteMode
 from .arnold_converter import syntax, buildTestList
 
@@ -311,6 +312,7 @@ class TestRunner(object):
             "fractions": fractions,
             # nightmare specific things
             "Test": Test,
+            "BadWord": BadWord,
             "Group": TestGroup,
             "Any": TestAny,
             "All": TestAll,
@@ -322,6 +324,13 @@ class TestRunner(object):
             "Stringifier": Stringifier,
             "StringifiedFile": StringifiedFile,
             "CompareFiles": CompareFiles,
+            # "Syntactic sugar"
+            "Regex": Regex,
+            "NonZero": NonZero,
+            "Negative": Negative,
+            "Contains": Contains,
+            "ContainsNot": ContainsNot,
+            "Startswith": Startswith,
             # Helping functions
             "readFile": lambda fname: open(fname).read().rstrip() if os.path.exists(fname) else "File not found",
         }

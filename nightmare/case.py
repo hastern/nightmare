@@ -188,6 +188,72 @@ class ExpectFile(Expectation):
         return self.exp
 
 
+class Regex(Expectation):
+    """
+    Syntactic sugar Expectation to represent a regular expression.
+    """
+
+    def __init__(self, regex: str):
+        self.regex = re.compile(regex, re.IGNORECASE)
+
+    def __call__(self, out: StreamOutput) -> bool:
+        return self.regex.match(str(out)) != None
+
+
+class Contains(Expectation):
+    """
+    Syntactic sugar Expectation for finding multiple texts in the output
+    """
+
+    def __init__(self, *texts: str):
+        self.texts = texts
+
+    def __call__(self, out: StreamOutput) -> bool:
+        return all(text in out for text in self.texts)
+
+
+class ContainsNot(Expectation):
+    """
+    Syntactic sugar Expectation for finding multiple texts in the output
+    """
+
+    def __init__(self, *texts: str):
+        self.texts = texts
+
+    def __call__(self, out: StreamOutput) -> bool:
+        return all(text not in out for text in self.texts)
+
+
+class Startswith(Expectation):
+    """
+    Syntactic sugar Expectation for finding multiple texts in the output
+    """
+
+    def __init__(self, text: str):
+        self.text = text
+
+    def __call__(self, out: StreamOutput) -> bool:
+        return out.startswith(self.text)
+
+
+class NonZero(Expectation):
+    """
+    Syntactic sugar Expectation for return code checking
+    """
+
+    def __call__(self, out: StreamOutput) -> bool:
+        return int(out) != 0
+
+
+class Negative(Expectation):
+    """
+    Syntactic sugar Expectation for return code checking
+    """
+
+    def __call__(self, out: StreamOutput) -> bool:
+        return int(out) < 0
+
+
 class Stringifier:
     """
     To give the user better information where the output isn't valid
@@ -519,6 +585,61 @@ class Test:
         if self.timeout is not None:
             fields.append(f"{prefix}\ttimeout = {self.timeout:.1f}")
         return ",\n".join(["Test ("] + fields + [prefix + ")"])
+
+
+class BadWord(Test):
+    def __init__(self, name, description="", path : os.PathLike = None, pattern="", words: List[str] = []):
+        self.name = name
+        self.descr = description
+        self.pattern = pattern
+        self.path = path
+        self.words = words
+
+    def run(self) -> TestState:
+        words = [re.compile(s) for s in self.words]
+        if self.path is None:
+            searchpath = pathlib.Path(self.path)
+        elif hasattr(self, "DUT"):
+            searchpath = pathlib.Path(self.DUT).parent
+        else:
+            searchpath = pathlib.Path(".")
+        hits = []
+        for fname in searchpath.glob(self.pattern):
+            with open(fname, "r") as fHnd:
+                for nr, line in enumerate(fHnd.readlines()):
+                    for word in words:
+                        if word.search(line) is not None:
+                            hits.append((os.path.relpath(fname), nr, line.rstrip(), word.pattern))
+        if len(hits) > 0:
+            for file, lineno, text, pattern in hits:
+                logger.log(f"{TestState.BadWord} {file}[{lineno}]: '{text}' matches '{pattern}'")
+            self.state = TestState.BadWord
+        else:
+            self.state = TestState.Clean
+        return self.state
+
+    def __str__(self):
+        return self.toString(prefix="")
+
+    def toString(self, prefix="\t") -> str:
+        """
+        Creates a textual representation of the test.
+        The output can be saved to a file.
+        """
+        fields = []
+        fields.append(f"{prefix}\tname = '{self.name:s}'")
+        if self.descr is not None and self.descr != "":
+            fields.append(f"{prefix}\tdescription = '{self.descr:s}'")
+        fields.append(f"{prefix}\tcommand = '{self.cmd:s}'")
+        if self.expectStdout is not None:
+            fields.append(f'{prefix}\tstdout = """{self.expectStdout}"""')
+        if self.expectStderr is not None:
+            fields.append(f'{prefix}\tstderr = """{self.expectStderr}"""')
+        if self.expectRetCode is not None:
+            fields.append(f'{prefix}\treturnCode = "{self.expectRetCode}"')
+        if self.timeout is not None:
+            fields.append(f"{prefix}\ttimeout = {self.timeout:.1f}")
+        return ",\n".join(["BadWord ("] + fields + [prefix + ")"])
 
 
 class TestGroup:
