@@ -140,7 +140,7 @@ class TestRunnerGui(wx.App):
         TermColor.active = False
         self.lstTests.SetItem(idx, 0, test.name)
         self.lstTests.SetItem(idx, 1, test.descr)
-        self.lstTests.SetItem(idx, 2, test.state)
+        self.lstTests.SetItem(idx, 2, str(test.state))
 
     def setTestState(self, test: Test, idx: int, state: TestState):
         """Update the state of one test, but only if the test is not enabled"""
@@ -232,7 +232,7 @@ class TestRunnerGui(wx.App):
             wc = "|".join(f"{descr} (*{ext}) | *{ext}" for descr, ext in fileTypes)
         diag = wx.FileDialog(self.wHnd, message, defaultDir=dir, wildcard=wc, style=mode)
         diag.ShowModal()
-        return os.path.join(diag.Directory, path=diag.Filename) if diag.Filename != "" else None
+        return os.path.join(diag.Directory, diag.Filename) if diag.Filename != "" else None
 
     def displayError(self, message, caption="An error occured"):
         return self.messageDialog(message, caption, wx.OK | wx.ICON_ERROR) == wx.OK

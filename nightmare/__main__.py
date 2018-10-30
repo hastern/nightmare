@@ -41,7 +41,7 @@ def main():
         runner = TestRunner(flush=True)
     elif "--gui" in sys.argv:
         # Capt. Obvious: We're running the GUI
-        from gui import TestRunnerGui
+        from .gui import TestRunnerGui
 
         if len(sys.argv) > 1 and not sys.argv[1].startswith("-") and os.path.exists(sys.argv[1]):
             sys.argv[1] = "--bench=" + sys.argv[1]
