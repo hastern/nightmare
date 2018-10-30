@@ -45,7 +45,7 @@ doc:
 	cd docs && sphinx-build . _build/html
 
 validate:
-	@$(PY) $(VALIDATION_BENCH)
+	@$(PY) -m nightmare --no-gui --bench nightmare/$(VALIDATION_BENCH) --dut "$(PY) -m nightmare" --suite $(VALIDATION_SUITE) $(VALIDATION_FLAGS)
 
 icon:
 	@png2ico $(RES)/$(NAME).ico $(RES)/$(NAME).png $(RES)/$(NAME)128.png $(RES)/$(NAME)48.png $(RES)/$(NAME)32.png $(RES)/$(NAME)16.png

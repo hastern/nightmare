@@ -20,10 +20,15 @@ if __name__ == "__main__":
 
         time.sleep(0.5)
     else:
-        from main import main
+        from .runner import TestRunner
 
         sys.argv = ["--no-gui", "--bench", "nightmare/validation.py", "--dut", DUT, "--suite", "validateThisNightmare", "-o"]
-        main()
+        runner = TestRunner()
+        runner.parseArgv()
+        suite = runner.loadSuite()
+        if suite is not None:
+            for testcase in runner.run():
+                pass
 else:
     validateThisNightmare = [
         Test(
