@@ -31,5 +31,8 @@ setup(
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
     install_requires=["pyparsing"],
+    extras_require = {
+        'gui': ["wxpython"]
+    },
     data_files=[("", ["resource/nightmare.ico"])],
 )
