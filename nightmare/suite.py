@@ -65,7 +65,7 @@ class TestSuite:
         self.count = 0
         """A counter for the executed tests"""
         self.error = 0
-        """The number of errors occured during the testrun"""
+        """The number of errors occurred during the testrun"""
         self.timedout = 0
         """The total number of timed out tests"""
         self.assertions = 0
@@ -75,7 +75,7 @@ class TestSuite:
         self.lastResult = TestState.Waiting
         """The result of the last test"""
         self.rate = 0
-        """The successrate of the testrun"""
+        """The success rate of the testrun"""
 
     def __len__(self):
         return len(self.testList)

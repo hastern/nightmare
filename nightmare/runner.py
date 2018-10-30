@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
-from typing import List
+from typing import List, Optional
 
 import os
 import re
@@ -32,10 +32,10 @@ import nightmare
 
 
 class TestRunner(object):
-    """Testrunner. Reads a testbench file and executes the testrun"""
+    """Testrunner. Reads a testbench file and executes the test run"""
 
     def __init__(self, flush=False):
-        """Initialises the test runner"""
+        """Initializes the test runner"""
         # Thread.__init__(self)
         logger.log(
             TermColor.colorText("NIGHTMARE I", TermColor.Red, style=TermColor.Bold)
@@ -79,7 +79,7 @@ class TestRunner(object):
 
     def parseArgv(self):
         """Parses the argument vector"""
-        args = argparse.ArgumentParser(description="A test tool for non-interactive commandline programms")
+        args = argparse.ArgumentParser(description="A test tool for non-interactive command line programs")
         group = args.add_argument_group("Test selection")
         group.add_argument("--bench", action="store", nargs=1, help="File which contains the testbench.")
         group.add_argument("--suite", action="store", nargs=1, help="Use testsuite SUITE from the testbench.", metavar="SUITE")
@@ -237,7 +237,7 @@ class TestRunner(object):
             ("bench", lambda v: f"I'm using testbench '{v}'"),
             ("timeout", lambda v: f"Setting global timeout to {v}"),
             ("dut", lambda v: f"Device under Test is: {v}"),
-            ("commands", lambda v: "I will print every command I'll exceute." if v else ""),
+            ("commands", lambda v: "I will print every command I'll execute." if v else ""),
             ("length", lambda v: "I will only print the number of tests" if v else ""),
             ("info", lambda v: "I will only print the test information." if v else ""),
             ("pipe", lambda v: "I will pipe all tests outputs to their respective streams" if v else ""),
@@ -259,7 +259,7 @@ class TestRunner(object):
         self.getSuite().addTest(test)
         return test
 
-    def loadArnold(self) -> TestSuite:
+    def loadArnold(self) -> Optional[TestSuite]:
         """
         Loads a test suite in the Arnold file format.
         """
@@ -289,7 +289,7 @@ class TestRunner(object):
             suite = None
         return suite
 
-    def loadPython(self) -> TestSuite:
+    def loadPython(self) -> Optional[TestSuite]:
         """
         Executes a python script and reads the suite from the resulting
         namespace.
@@ -331,8 +331,8 @@ class TestRunner(object):
             suite = None
             if "DUT" in ctx and ctx["DUT"] is not None and self.options["dut"] is None:
                 self.setDUT(ctx["DUT"])
-            if ctx[self.options["suite"]] != None:
-                if ctx[self.options["suite"]].__class__ == TestSuite:
+            if ctx[self.options["suite"]] is not None:
+                if isinstance(ctx[self.options["suite"]], TestSuite):
                     suite = ctx[self.options["suite"]]
                     if suite.DUT is None:
                         suite.setDUT(self.options["dut"])
@@ -340,7 +340,7 @@ class TestRunner(object):
                         self.options["mode"] = suite.mode
                     elif suite.mode is None:
                         suite.mode = self.options["mode"]
-                else:
+                elif isinstance(ctx[self.options["suite"]], list):
                     suite = TestSuite(*ctx[self.options["suite"]], **{"DUT": self.options["dut"], "mode": self.options["mode"]})
             else:
                 logger.log(f"Sorry, but I can't find any tests inside the suite '{self.options['suite']}'")
@@ -348,7 +348,7 @@ class TestRunner(object):
             logger.log("Sorry, but there was no test-suite in the file")
         return suite
 
-    def loadSuite(self, fname: os.PathLike = None) -> TestSuite:
+    def loadSuite(self, fname: os.PathLike = None) -> Optional[TestSuite]:
         """Loads a python based suite from a file"""
         if fname is not None:
             self.options["bench"] = fname

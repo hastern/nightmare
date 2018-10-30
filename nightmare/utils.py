@@ -71,21 +71,18 @@ class logger:
     """Listener to redirect output"""
 
     @staticmethod
-    def log(str, showTime=True):
+    def log(msg: str, showTime=True):
         """
         Writes a log message to the buffer
-
-        @type    str: String
-        @param    str: Log message
         """
         if showTime:
             msg = (
                 TermColor.colorText(f"[{time.strftime('%H:%M:%S')}]", TermColor.Blue, style=TermColor.Dim)
                 + " "
-                + str.strip("\r\n")
+                + msg.strip("\r\n")
             )
         else:
-            msg = "           " + str.strip("\r\n")
+            msg = "           " + msg.strip("\r\n")
         if logger.autoflush:
             logger.logListener(msg)
         else:
@@ -95,9 +92,6 @@ class logger:
     def flush(quiet=False):
         """
         flushes the message buffer
-
-        @type    quiet: Boolean
-        @param    quiet: Flag if the buffer should be printed or not
         """
         if not quiet:
             for b in logger._buffer:

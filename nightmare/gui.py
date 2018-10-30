@@ -2,13 +2,15 @@
 # -*- coding:utf-8 -*-
 
 
+from typing import List, Optional
+
 import os
 import sys
 import time
 import threading
 import itertools
 
-from .case import TestState
+from .case import Test, TestState
 from .suite import TestSuiteMode
 from .runner import TestRunner
 from .utils import TermColor, logger
@@ -63,7 +65,7 @@ class TestRunnerGui(wx.App):
             pass
 
     def saveSuite(self):
-        """ Savedialog execution before saving the suite"""
+        """ Save dialog execution before saving the suite"""
         fname = self.saveFileDialog(fileTypes=TestRunnerGui.benchtypes)
         if fname is not None:
             self.suiteSave(fname)
@@ -85,7 +87,7 @@ class TestRunnerGui(wx.App):
         self.grpMode.SetSelection(self.runner.getSuite().mode)
 
     def selectDut(self):
-        """Show filedialog and set the result as DUT"""
+        """Show file dialog and set the result as DUT"""
         fname = self.loadFileDialog(fileTypes=TestRunnerGui.duttypes)
         if fname is not None:
             self.runner.setDUT(fname)
@@ -110,25 +112,17 @@ class TestRunnerGui(wx.App):
         for i in range(lastIdx + 1, len(self.runner.getSuite())):
             self.lstTests.SetItem(i, 2, "CANCELED")
 
-    def insertTest(self, idx, test):
-        """Insert a new test into the test-list
-
-        @type    idx: int
-        @param     idx: The index of the test to add
-        @type    test: pyTestCore.test.Test
-        @param     test: The test to add
+    def insertTest(self, idx: int, test: Test):
+        """
+        Insert a new test into the test-list
         """
         self.lstTests.InsertItem(idx, test.name)
         self.lstTests.CheckItem(idx)
         self.updateTest(idx, test)
 
-    def updateTest(self, idx, test):
-        """Update the information on one test in the test-list
-
-        @type    idx: int
-        @param     idx: The index of the test to change
-        @type    test: pyTestCore.test.Test
-        @param     test: The test to change
+    def updateTest(self, idx: int, test: Test):
+        """
+        Update the information on one test in the test-list
         """
         if test.state == TestState.Error:
             self.lstTests.CheckItem(idx, False)
@@ -148,19 +142,19 @@ class TestRunnerGui(wx.App):
         self.lstTests.SetItem(idx, 1, test.descr)
         self.lstTests.SetItem(idx, 2, test.state)
 
-    def setTestState(self, test, idx, state):
+    def setTestState(self, test: Test, idx: int, state: TestState):
         """Update the state of one test, but only if the test is not enabled"""
         if test.state != TestState.Disabled:
             test.state = state
         self.updateTest(idx, test)
 
-    def onListCheck(self, idx, flag):
-        """Eventhandler for changes on the checkboxes in the list"""
+    def onListCheck(self, idx: int, flag):
+        """Event handler for changes on the checkboxes in the list"""
         test = self.runner.getSuite()[idx]
         test.state = TestState.Waiting if flag else TestState.Disabled
         self.updateTest(idx, test)
 
-    def __runthread(self, testIdx=None):
+    def __runthread(self, testIdx: int = None):
         """Run tests"""
         if testIdx is None:
             self.applyToList(
@@ -173,7 +167,7 @@ class TestRunnerGui(wx.App):
         self.testthread = None
         """Unset yourself for further processing"""
 
-    def run(self, testIdx=None):
+    def run(self, testIdx: int = None):
         """start running thread"""
         if self.testthread is None:
             self.testthread = threading.Thread(target=self.__runthread, args=(testIdx,))
@@ -200,13 +194,13 @@ class TestRunnerGui(wx.App):
         self.editForm.Show()
 
     def __init__(self):
-        """Initialise the gui"""
+        """Initialize the gui"""
         wx.App.__init__(self, redirect=False, useBestVisual=True)
         logger.logListener = self.addLog
         TermColor.active = False
         self.wHnd = None
-        self.testthread = None
-        self.editForm = None
+        self.testthread : Optional[threading.Thread] = None
+        self.editForm : Optional[TestEditForm] = None
         self.log = []
         self.logForm = None
         self.runner = TestRunner()

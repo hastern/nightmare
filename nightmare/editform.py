@@ -10,21 +10,9 @@ import wx
 class TestEditForm(wx.Frame):
     """Form for editing one test"""
 
-    def __init__(self, parent, idx, test, runner, gui):
+    def __init__(self, parent, idx: int, test: Test, runner: TestRunner, gui):
         """
-        Initialises the form
-
-        @type    idx: int
-        @param    idx: Number of the test
-
-        @type    test: pyTestcore.test.Test
-        @param     test: The test to be edited
-
-        @type    runner: pyTestRunner.TestRunner
-        @param    runner: The test runner
-
-        @type    gui: pyTestGui.TestRunnerGui
-        @param    gui: The gui
+        Initializes the form
         """
         wx.Frame.__init__(self, parent, size=(600, 400))
         # self.title("Edit test {}".format(test.name))
@@ -141,7 +129,7 @@ class TestEditForm(wx.Frame):
         self.gui.run(self.idx)
         self.updateValues()
 
-    def updateTest(self, newIdx):
+    def updateTest(self, newIdx: int):
         self.idx = min(max(0, newIdx), len(self.gui.runner.getSuite()) - 1)
         if self.idx == 0:
             self.btnPrevious.Disable()

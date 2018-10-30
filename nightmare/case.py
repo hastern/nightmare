@@ -71,6 +71,36 @@ class TestState(Enum):
         return int(self.value)
 
 
+StreamOutput = Optional[Union[str, int]]
+"""
+The output of a program is either a string (for stdout and stderr)
+or an integer (for the return code).
+If no output is captured, it may also be None.
+"""
+Stringified = Union[List[bytes], List[str]]
+"""
+Stringified data are multiple lines of text, represented as a
+list of bytes (encoding UTF-8 strings).
+"""
+ExpectationFunc = Callable[[StreamOutput], bool]
+"""
+An expectation function takes the output of a stream and validates it.
+"""
+ExpectationT = Optional[Union["Expectation", "Stringifier", ExpectationFunc, List["ExpectationT"], Set["ExpectationT"], str]]
+"""
+Try to formulate a type for a valid Expectation that can be handled by
+:py:class:`Test`.
+
+Currently the following types can be handled:
+
+- Expectation object
+- Stringifier object
+- plain string
+- A lambda function taking a single string parameter, returning a boolean
+- A List or a set of all of the above (recursive)
+"""
+
+
 class Command:
     """
     Wrapper for shell commands.
@@ -138,7 +168,7 @@ class Expectation:
     whether the output is valid or not.
     """
 
-    def __call__(self, *args, **kwargs) -> bool:
+    def __call__(self, out: StreamOutput) -> bool:
         return True
 
 
@@ -151,7 +181,7 @@ class ExpectFile(Expectation):
     def __init__(self, fname: os.PathLike):
         self.exp = open(fname, "rb").read()
 
-    def __call__(self, out: str) -> bool:
+    def __call__(self, out: StreamOutput) -> bool:
         return self.exp == out
 
     def __str__(self):
@@ -171,7 +201,7 @@ class Stringifier:
     def __init__(self, expectation: str):
         self.exp = expectation.encode("utf8", errors="ignore")
 
-    def __call__(self, output: str) -> Tuple[List[bytes], List[bytes]]:
+    def __call__(self, output: StreamOutput) -> Tuple[Stringified, Stringified]:
         out = output.encode("utf8", errors="ignore")
         return self.exp.strip().splitlines(), out.strip().splitlines()
 
@@ -199,26 +229,11 @@ class CompareFiles(Expectation):
         self.expect = expect_file
         self.out = out_file
 
-    def __call__(self, whatever):
+    def __call__(self, out: StreamOutput) -> bool:
         # Since we want to compare files, actual output is ignored
         expect = open(self.expect, "rb").read()
         out = open(self.out, "rb").read()
         return expect == out
-
-
-ExpectationT = Optional[Union[Expectation, Stringifier, Callable[[str], bool], List["ExpectationT"], Set["ExpectationT"], str]]
-"""
-Try to formulate a type for a valid Expectation that can be handled by
-:py:class:`Test`.
-
-Currently the following types can be handled:
-
-- Expectation
-- Stringifier
-- plain string
-- A lambda function taking a single string parameter, returning a boolean
-- A List or set of all of the above (recursive)
-"""
 
 
 class Test:
@@ -290,7 +305,7 @@ class Test:
         """Work in binary mode"""
         self.binary: bool = binary
 
-    def lineComparison(self, expLines: List[str], outLines: List[str], stream="") -> bool:
+    def lineComparison(self, expLines: Stringified, outLines: Stringified, stream="") -> bool:
         """
         Compares to lines of strings.
 
@@ -333,15 +348,13 @@ class Test:
           The output must be valid for all items. (AND)
         - For sets, each item will be checked individually.
           The output must be valid for at least one item. (OR)
-
-
         """
         if exp is None:
             return True
-        elif callable(exp) or isinstance(exp, Expectation):
-            return exp(out)
         elif isinstance(exp, Stringifier):
             return self.lineComparison(*(exp(out)), stream=stream)
+        elif callable(exp) or isinstance(exp, Expectation):
+            return exp(out)
         elif isinstance(exp, int) and isinstance(out, int):
             return exp == out
         elif isinstance(exp, list):
@@ -522,7 +535,7 @@ class TestGroup:
 
     key = "Group"
 
-    def __init__(self, *tests: Test, name: str = None, predicate: Callable[[List[TestState]], bool] = all):
+    def __init__(self, *tests: Test, name: str = None, predicate: Callable[[List[bool]], bool] = all):
         self.tests = [t for t in tests]
         self._name = name
         self.state = TestState.Waiting
