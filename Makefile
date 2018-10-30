@@ -17,7 +17,7 @@ RES         =resource
 DIST_EGG    =$(DIST_DIR)/$(shell $(SETUP) --fullname)-py2.7.egg
 DIST_EXE    =$(DIST_DIR)/$(NAME).exe
 
-.PHONY: build dist clean doc profile license validate description info version icon
+.PHONY: build dist egg exe clean doc validate info icon
 
 default: all
 
@@ -39,24 +39,13 @@ $(DIST_EXE):
 dist:
 	$(SETUP) sdist --dist-dir $(DIST_DIR)
 
-release: validate version egg exe
+release: validate egg exe
 
 doc:
 	cd docs && sphinx-build . _build/html
 
-profile:
-	$(PY) -m cProfile -o profile.out pyTestMain.py
-
 validate:
 	@$(PY) $(VALIDATION_BENCH)
-
-license:
-	@$(SETUP) --license
-
-description:
-	@$(SETUP) --long-description
-
-info: license description
 
 icon:
 	@png2ico $(RES)/$(NAME).ico $(RES)/$(NAME).png $(RES)/$(NAME)128.png $(RES)/$(NAME)48.png $(RES)/$(NAME)32.png $(RES)/$(NAME)16.png
@@ -65,7 +54,3 @@ clean:
 	$(SETUP) clean
 	rm -rf build dist $(shell $(SETUP) --fullname).egg-info doc
 	rm -f *.pyc
-
-
-
-
