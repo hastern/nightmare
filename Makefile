@@ -34,7 +34,7 @@ $(DIST_EGG):
 exe: $(DIST_EXE)
 
 $(DIST_EXE):
-	$(SETUP) py2exe --dist-dir $(DIST_DIR)
+	pyinstaller -F main.py -n nightmare -i resource/nightmare.ico
 
 dist:
 	$(SETUP) sdist --dist-dir $(DIST_DIR)
