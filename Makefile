@@ -14,7 +14,7 @@ VALIDATION_FLAGS =-o
 
 RES         =resource
 
-DIST_EGG    =$(DIST_DIR)/$(shell $(SETUP) --fullname)-py2.7.egg
+DIST_EGG    =$(DIST_DIR)/$(shell $(SETUP) --fullname)-py3.7.egg
 DIST_EXE    =$(DIST_DIR)/$(NAME).exe
 
 .PHONY: build dist egg exe clean doc validate info icon
