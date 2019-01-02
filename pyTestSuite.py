@@ -289,6 +289,9 @@ class TestSuite(object):
                     logger.log("\tYou know, memory garbage doesn't collect itself?!")
         return self.calcRate()
 
+    def failedTests(self):
+        return self.failed + self.error + self.assertions + self.segfaults
+
     def __str__(self):
         self.toString(prefix="")
 
