@@ -45,7 +45,7 @@ class TestSuite:
             "commands": False,
             "pipeLimit": None,
         }
-        self.options.update(options)
+        self.options.update({k: v for k, v in options.items() if v is not None})
         self.setMode(self.options["mode"])
         """The test suite mode"""
         self.testList = [t for t in tests]
@@ -98,7 +98,8 @@ class TestSuite:
         """
         Sets the mode of the testsuite
         """
-        self.mode = mode
+        if mode is not None:
+            self.mode = mode
 
     def setDUT(self, DUT=None):
         """Define the 'Device under Test'"""
