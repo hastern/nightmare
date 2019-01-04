@@ -201,6 +201,10 @@ class TestSuite:
         self.rate = float(self.success) / float(len(self)) * 100
         return self.rate
 
+    @property
+    def total_failures(self):
+        return self.failed + self.error + self.assertions + self.segfaults
+
     def stats(self, quiet=False):
         """
         Displays the statistics of the test run on stdout.

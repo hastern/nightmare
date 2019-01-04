@@ -5,7 +5,7 @@ import os
 import sys
 
 from .case import TestState
-from .suite import TestSuite
+from .suite import TestSuite, TestSuiteMode
 from .runner import TestRunner
 from .utils import TermColor
 
@@ -58,7 +58,11 @@ def main():
                 pass
             if not runner.options["info"] and not runner.options["length"] and not runner.options["quiet"]:
                 print(f"{suite.getRate():2.2f}%")
-            sys.exit(int(suite.lastResult) if suite.lastResult not in [TestState.Waiting, TestState.InfoOnly] else 0)
+
+            if suite.mode == TestSuiteMode.Continuous:
+                sys.exit(suite.total_failures)
+            else:
+                sys.exit(int(suite.lastResult) if suite.lastResult not in [TestState.Waiting, TestState.InfoOnly] else 0)
         else:
             sys.exit(1)
 
