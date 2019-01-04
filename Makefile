@@ -26,12 +26,12 @@ all: build egg exe
 build: validate
 	$(SETUP) build --build-base $(BUILD_DIR)
 
-egg: $(DIST_EGG)
+egg: $(DIST_EGG) ## Build an egg
 
 $(DIST_EGG):
 	$(SETUP) bdist_egg --dist-dir $(DIST_DIR)
 
-exe: $(DIST_EXE)
+exe: $(DIST_EXE) ## Build an exe
 
 $(DIST_EXE):
 	pyinstaller -F main.py -n nightmare -i resource/nightmare.ico
@@ -39,18 +39,21 @@ $(DIST_EXE):
 dist:
 	$(SETUP) sdist --dist-dir $(DIST_DIR)
 
-release: validate egg exe
+release: validate egg exe ## Make a release
 
-doc:
+doc: ## Build the docs
 	cd docs && sphinx-build . _build/html
 
-validate:
+validate: ## Do a self validation
 	@$(PY) -m nightmare --no-gui --bench nightmare/$(VALIDATION_BENCH) --dut "$(PY) -m nightmare" --suite $(VALIDATION_SUITE) $(VALIDATION_FLAGS)
 
 icon:
 	@png2ico $(RES)/$(NAME).ico $(RES)/$(NAME).png $(RES)/$(NAME)128.png $(RES)/$(NAME)48.png $(RES)/$(NAME)32.png $(RES)/$(NAME)16.png
 
-clean:
+clean: ## Clean up
 	$(SETUP) clean
 	rm -rf $(BUILD_DIR) $(DIST_DIR) $(shell $(SETUP) --fullname).egg-info doc
 	rm -f *.pyc
+
+help: ## Show this help
+	@grep -E '^[a-zA-Z0-9%._-]+:.*?## .*$$' Makefile | sed 's/%/<FILE>/g' | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
