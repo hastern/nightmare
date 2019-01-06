@@ -1,0 +1,9 @@
+
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ["setuptools", "wheel", "sphinx"]  # PEP 508 specifications.
+
+
+[tool.black]
+# We're using black to auto format this code
+line-length = 128

@@ -1,12 +1,11 @@
 # pyTest creation makefile
 # author: Hanno Sternberg
-# 
+#
 
 PY               =python
 DIST_DIR         =dist
 BUILD_DIR        =build
 SETUP            =$(PY) setup.py
-DOC              =epydoc
 NAME             =$(shell $(SETUP) --name)
 
 VALIDATION_BENCH =validation.py
@@ -15,10 +14,10 @@ VALIDATION_FLAGS =-o
 
 RES         =resource
 
-DIST_EGG    =$(DIST_DIR)/$(shell $(SETUP) --fullname)-py2.7.egg
+DIST_EGG    =$(DIST_DIR)/$(shell $(SETUP) --fullname)-py3.7.egg
 DIST_EXE    =$(DIST_DIR)/$(NAME).exe
 
-.PHONY: build dist clean doc profile license validate description info version icon
+.PHONY: build dist egg exe clean doc validate info icon
 
 default: all
 
@@ -27,57 +26,34 @@ all: build egg exe
 build: validate
 	$(SETUP) build --build-base $(BUILD_DIR)
 
-egg: $(DIST_EGG)
+egg: $(DIST_EGG) ## Build an egg
 
 $(DIST_EGG):
 	$(SETUP) bdist_egg --dist-dir $(DIST_DIR)
 
-exe: $(DIST_EXE)
+exe: $(DIST_EXE) ## Build an exe
 
-$(DIST_EXE): 
-	$(SETUP) py2exe --dist-dir $(DIST_DIR)
-
+$(DIST_EXE):
+	pyinstaller -F main.py -n nightmare -i resource/nightmare.ico
 
 dist:
 	$(SETUP) sdist --dist-dir $(DIST_DIR)
 
-release: validate version egg exe
+release: validate egg exe ## Make a release
 
-doc:
-	$(PY) -c "from epydoc.cli import cli; cli()" --config=epydocfile
+doc: ## Build the docs
+	cd docs && sphinx-build . _build/html
 
-profile:
-	$(PY) -m cProfile -o profile.out pyTestMain.py
-
-validate:
-	@$(PY) $(VALIDATION_BENCH)
-
-license:
-	@$(SETUP) --license
-
-version:
-	@$(PY) version.py
-
-version-major:
-	@$(PY) version.py major
-version-minor:
-	@$(PY) version.py minor
-version-build:
-	@$(PY) version.py build
-
-description:
-	@$(SETUP) --long-description
-
-info: license description
+validate: ## Do a self validation
+	@$(PY) -m nightmare --no-gui --bench nightmare/$(VALIDATION_BENCH) --dut "$(PY) -m nightmare" --suite $(VALIDATION_SUITE) $(VALIDATION_FLAGS)
 
 icon:
 	@png2ico $(RES)/$(NAME).ico $(RES)/$(NAME).png $(RES)/$(NAME)128.png $(RES)/$(NAME)48.png $(RES)/$(NAME)32.png $(RES)/$(NAME)16.png
 
-clean:
+clean: ## Clean up
 	$(SETUP) clean
-	rm -rf build dist $(shell $(SETUP) --fullname).egg-info doc
+	rm -rf $(BUILD_DIR) $(DIST_DIR) $(shell $(SETUP) --fullname).egg-info doc
 	rm -f *.pyc
-	
-	
 
-
+help: ## Show this help
+	@grep -E '^[a-zA-Z0-9%._-]+:.*?## .*$$' Makefile | sed 's/%/<FILE>/g' | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

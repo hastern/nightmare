@@ -1,14 +1,14 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
 import sys
 
 try:
     from pyparsing import *
-    from pyTest import Test
+    from .case import Test
 
     def syntax():
-        ParserElement.setDefaultWhitespaceChars(' \t')
+        ParserElement.setDefaultWhitespaceChars(" \t")
         LN = LineEnd().suppress()
         eqSym = Literal("=").suppress()
         lBrace, rBrace = Literal("{").suppress(), Literal("}").suppress()
@@ -38,6 +38,8 @@ try:
 
     def buildTestList(ast):
         return map(buildTest, ast)
+
+
 except:
     syntax = None
     buildTest = None
