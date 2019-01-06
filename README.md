@@ -10,18 +10,18 @@ You must really, really love to test!
 nightmare is a tool for automatic testing of non-interactive commandline
 applications.
 
-    usage: nightmare-2.0-py2.7.egg [-h] [--bench BENCH] [--suite SUITE]
-                                   [--dut DUT] [--test TEST [TEST ...]]
-                                   [--timeout TIMEOUT] [--arnold] [--save FILE]
-                                   [--limit LIMIT] [--quiet] [--verbose]
-                                   [--commands] [--length] [--info-only]
-                                   [--pipe-streams] [--output-fails]
-                                   [--unify-fails] [--no-color] [--continue]
-                                   [--error] [--ignoreEmptyLines] [--relative]
-                                   [--cr] [--ln] [--crln] [--gui] [--no-gui]
-                                   [--version]
+    usage: nightmare-3.0.0-py3.7.egg [-h] [--bench BENCH] [--suite SUITE]
+                                     [--dut DUT] [--test TEST [TEST ...]]
+                                     [--timeout TIMEOUT] [--arnold] [--save FILE]
+                                     [--limit LIMIT] [--quiet] [--verbose]
+                                     [--commands] [--length] [--info-only]
+                                     [--pipe-streams] [--output-fails]
+                                     [--unify-fails] [--no-color] [--continue]
+                                     [--error] [--ignoreEmptyLines] [--relative]
+                                     [--cr] [--ln] [--crln] [--gui] [--no-gui]
+                                     [--version]
 
-    A test tool for non-interactive commandline programms
+    A test tool for non-interactive command line programs
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -64,13 +64,12 @@ applications.
       --ln                  Force the line separation character (Unix / Mac OS-X).
       --crln                Force the line separation character (Windows).
 
-
 Additional to the commandline interface there is a GUI using the
 wxPython. The GUI is limited in its capabilities compared to the CLI,
 especially when it comes to testbench editing.
 
-Be careful when you save your testbench! You might loose data, if it originates
-from a handwritten testbench.
+Be careful when you save your testbench! You might loose data, if it
+originates from a handwritten testbench.
 
 
 Testbench files
@@ -80,8 +79,8 @@ A collection of test is called a "testbench".
 Inside a testbench there are a number of suites grouping tests together.
 
 The testbench files a normal python files, which get evaluated by calling
-the internal "`execfile`" function. This might not be the savest approach, but
-it is definitly one of the easiest ones.
+the internal "`execfile`" function. This might not be the safest approach,
+but it is definitely one of the easiest ones.
 
 Here is a example for a minimal testbench.
 
@@ -96,14 +95,14 @@ Here is a example for a minimal testbench.
 
     # Test definitions
     suite = [
-        Test (
+        Test(
             name = "Test 1",
             description = "A successfull run",
             command = "$DUT pyTest",
             stdout = "pyTest",
             returnCode = 0
         ),
-        Test (
+        Test(
             name = "Test 2",
             description = "Testing output on stderr",
             command = "$DUT pyTest 1>&2",
@@ -129,12 +128,12 @@ Here's a list of all possible fields in a test definition:
 Almost every field in the test is optional expect the command. The reason
 should be obvious.
 
-One reason for the testfiles to be real python script is the possibility to use
-lambda functions for testing the output against an expectation.
+One reason for the testfiles to be real python script is the possibility
+to use lambda functions for testing the output against an expectation.
 
 The following example shows a test using a lambda function:
 
-    Test (
+    Test(
         name "Lambda",
         description = "A test with lambda function",
         command = "echo Hello World",
@@ -150,7 +149,7 @@ expression.
 
 The following example shows a test using a regular expression:
 
-    Test (
+    Test(
         name "Regex",
         description = "A test with regular expression",
         command = "echo Hello World",
@@ -174,7 +173,7 @@ There are three predefined Expectations/ Stringifiers:
 - `ExpectFile(filename)`: compares the output byte-wise with a given
   file.
 
-        Test (
+        Test(
             ...
             stdout = ExpectFile("output.txt")
         )
@@ -185,7 +184,7 @@ There are three predefined Expectations/ Stringifiers:
         # Assumption: there exists a class Image
         img = Image.read("image.png")
 
-        Test (
+        Test(
             ...
             stdout = Stringifier(img)
         )
@@ -193,24 +192,68 @@ There are three predefined Expectations/ Stringifiers:
 - `StringifiedFile(filename)`: loads the contents of a text-file for
   line by line comparison.
 
-        Test (
+        Test(
             ...
             stdout = StringifiedFile("output.txt")
         )
 
+To make the test benches more readable the following expectations are
+defined.
+
+- `Regex`: Syntactic sugar Expectation to represent a regular expression.
+
+        Test(
+            name="stdout Regular Expression",
+            description="Test if the comparison with regular expressions works correctly",
+            command="echo this should be a success",
+            stdout=Regex("^this [a-z]+ [a-z ]+s.c*.s*$"),
+        )
+
+- `Contains`: Checks that a list of strings is in the output
+
+        Test(
+            name="Example 4",
+            description="Contains-Expectation fail",
+            command="echo Some more text",
+            stdout=Contains("text")
+        )
+
+- `ContainsNot`: Checks that a list of strings is not in the output
+
+        Test(
+            name="Example 4",
+            description="Contains-Expectation fail",
+            command="echo Some more text",
+            stdout=ContainsNot("test")
+        )
+
+- `Startswith`: Syntactic sugar Expectation for finding multiple texts
+                in the output
+
+        Test(
+            name="Example 9",
+            description="Syntactic sugar: Startswith-Expectation success",
+            command="$DUT Some more text",
+            stdout=Startswith("Some more"),
+        )
+
+- `NonZero`: Syntactic sugar Expectation for return code checking
+- `Negative`: Syntactic sugar Expectation for return code checking
+
 History / Background
 --------------------
 
-The development started in 2012 at FH-Wedel as a addition / replacement to the
-aging "[arnold](http://stud.fh-wedel.de/~arnold)"-tool, which is a tcl-script.
-Since I'm a notorious windows user I was annoyed by the fact, that tcl/expect
-barely works on windows. Being a fan of the python language I decided to
-develop a new tool which fulfills the same requirements but by using a (in my
-humble opinion) more modern language.
+The development started in 2012 at FH-Wedel as a addition / replacement
+to the aging "[arnold](http://stud.fh-wedel.de/~arnold)"-tool, which is
+a tcl-script. Since I'm a notorious windows user I was annoyed by the
+fact, that tcl/expect barely works on windows. Being a fan of the python
+language I decided to develop a new tool which fulfills the same
+requirements but by using a (in my humble opinion) more modern language.
 
 As part of my job at the FH Wedel it was successfully used as the primary
-testing tool, to check if the implementation of the programming exercise meet
-the required specifications.
-Since "arnold" is an acronym, this tool's name needed to be equally ridiculous.
-The name "*nightmare*" was given as a consequence, because most of the students
-in the exercises absolutely hated the strictness of my tests.
+testing tool, to check if the implementation of the programming exercise
+meet the required specifications.
+Since "arnold" is an acronym, this tool's name needed to be equally
+ridiculous. The name "*nightmare*" was given as a consequence, because
+most of the students in the exercises absolutely hated the strictness of
+my tests.

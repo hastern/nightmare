@@ -144,16 +144,72 @@ else:
         Test(name="Example 1", description="This test should be a success", command="$DUT success", stdout="success"),
         Test(name="Example 2", description="This test is doomed to fail", command="$DUT FAIL", stdout="failed"),
         Test(name="Example 3", description="This test will produce an error"),
-        Test(name="Example 4", description="Lambda expression fail", command="$DUT Some more text", stdout=Contains("test")),
-        Test(name="Example 5", description="Lambda expression success", command="$DUT Some more text", stdout=Contains("text")),
+        Test(
+            name="Example 4",
+            description="Syntactic sugar: Contains-Expectation fail",
+            command="$DUT Some more text",
+            stdout=Contains("test"),
+        ),
+        Test(
+            name="Example 5",
+            description="Syntactic sugar: Contains-Expectation success",
+            command="$DUT Some more text",
+            stdout=Contains("text"),
+        ),
+        Test(
+            name="Example 6",
+            description="Syntactic sugar: ContainsNot-Expectation fail",
+            command="$DUT Some more text",
+            stdout=ContainsNot("text"),
+        ),
+        Test(
+            name="Example 7",
+            description="Syntactic sugar: ContainsNot-Expectation success",
+            command="$DUT Some more text",
+            stdout=ContainsNot("test"),
+        ),
+        Test(
+            name="Example 8",
+            description="Syntactic sugar: Startswith-Expectation fail",
+            command="$DUT Some more text",
+            stdout=Startswith("Some most"),
+        ),
+        Test(
+            name="Example 9",
+            description="Syntactic sugar: Startswith-Expectation success",
+            command="$DUT Some more text",
+            stdout=Startswith("Some more"),
+        ),
     )
 
     suiteWithOptions = Suite(
         Test(name="Example 1", description="This test should be a success", command="$DUT success", stdout="success"),
         Test(name="Example 2", description="This test is doomed to fail", command="$DUT FAIL", stdout="failed"),
         Test(name="Example 3", description="This test will produce an error"),
-        Test(name="Example 4", description="Lambda expression fail", command="$DUT Some more text", stdout=Contains("test")),
-        Test(name="Example 5", description="Lambda expression success", command="$DUT Some more text", stdout=Contains("text")),
+        Test(
+            name="Example 4",
+            description="Syntactic sugar: Contains-Expectation fail",
+            command="$DUT Some more text",
+            stdout=Contains("test"),
+        ),
+        Test(
+            name="Example 5",
+            description="Syntactic sugar: Contains-Expectation success",
+            command="$DUT Some more text",
+            stdout=Contains("text"),
+        ),
+        Test(
+            name="Example 6",
+            description="Syntactic sugar: ContainsNot-Expectation fail",
+            command="$DUT Some more text",
+            stdout=ContainsNot("text"),
+        ),
+        Test(
+            name="Example 7",
+            description="Syntactic sugar: ContainsNot-Expectation success",
+            command="$DUT Some more text",
+            stdout=ContainsNot("test"),
+        ),
         pipe=True,
         mode=Mode.Continuous,
     )
@@ -282,7 +338,7 @@ else:
             description="Suite Instance",
             command="$DUT --no-gui --bench nightmare/validation.py --suite suiteInstance --dut echo -c",
             stdout=Contains(
-                f"I ran {len(suiteInstance)} out of {len(suiteInstance)} tests in total", "Errors: 1", "Success: 2", "Failed: 2"
+                f"I ran {len(suiteInstance)} out of {len(suiteInstance)} tests in total", "Errors: 1", "Success: 4", "Failed: 4"
             ),
         ),
         Test(
@@ -292,8 +348,8 @@ else:
             stdout=Contains(
                 f"I ran {len(suiteWithOptions)} out of {len(suiteWithOptions)} tests in total",
                 "Errors: 1",
-                "Success: 2",
-                "Failed: 2",
+                "Success: 3",
+                "Failed: 3",
                 "Some more text",
             ),
         ),
