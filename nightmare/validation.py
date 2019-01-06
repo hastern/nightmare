@@ -183,7 +183,51 @@ else:
             description="This test splits the output into two lines with a mismatch",
             command="echo spam&& echo eggs",
             stdout=Stringifier("ham\r\neggs\r\n"),
-        )
+        ),
+    ]
+
+    continuationModeRegression = [
+        Test(
+            name="Continuation Mode Regression 01",
+            description="This test should succeed",
+            command="echo success",
+            stdout="success",
+        ),
+        Test(
+            name="Continuation Mode Regression 02",
+            description="This test should succeed",
+            command="echo fail",
+            stdout="success",
+        ),
+        Test(
+            name="Continuation Mode Regression 03",
+            description="This test should succeed",
+            command="echo fail",
+            stdout="success",
+        ),
+        Test(
+            name="Continuation Mode Regression 04",
+            description="This test should succeed",
+            command="echo success",
+            stdout="success",
+        ),
+    ]
+
+    regressionTests = [
+        Test(
+            name="Continuation Mode 01",
+            description="Make sure the testsuite will halt on the first fail",
+            command='$DUT --no-gui --bench nightmare/validation.py --dut "$DUT" --suite continuationModeRegression',
+            stdout=Contains(f"I ran 2 out of 4 tests in total", f"Success: 1", f"Failed: 1"),
+            returnCode=State.Fail.value,  # This reflects the state of the last test (failed)
+        ),
+        Test(
+            name="Continuation Mode 02",
+            description="Make sure the testsuite will run all test in continuation mode",
+            command='$DUT --no-gui --bench nightmare/validation.py --dut "$DUT" --suite continuationModeRegression -c',
+            stdout=Contains(f"I ran 4 out of 4 tests in total", f"Success: 2", f"Failed: 2"),
+            returnCode=2,  # Continuation mode will return the number of failed tests: 2
+        ),
     ]
 
     validateThisNightmare = [
@@ -265,6 +309,17 @@ else:
             name="CLI-10",
             description="Stringifier Tests",
             command="$DUT --no-gui --bench nightmare/validation.py --suite stringifierTests -c -u",
-            stdout=Contains(f"I ran {len(stringifierTests)} out of {len(stringifierTests)} tests in total", "Success: 1", "-spam", "+ham"),
+            stdout=Contains(
+                f"I ran {len(stringifierTests)} out of {len(stringifierTests)} tests in total", "Success: 1", "-spam", "+ham"
+            ),
+        ),
+        Test(
+            name="CLI-11",
+            description="Regression Tests",
+            command="$DUT --no-gui --bench nightmare/validation.py --suite regressionTests -c -u",
+            stdout=Contains(
+                f"I ran {len(regressionTests)} out of {len(regressionTests)} tests in total", f"Success: {len(regressionTests)}"
+            ),
         ),
     ]
+
